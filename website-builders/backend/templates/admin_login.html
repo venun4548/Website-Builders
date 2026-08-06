@@ -358,7 +358,7 @@
     <div class="login-box">
       <div class="login-header">
         <div class="shield-icon"><i class="fa-solid fa-shield-halved"></i></div>
-        <h2 class="login-title">Admin Sign In</h2>
+        <h2 class="login-title" id="login-title">Admin Sign In</h2>
         <p class="login-sub">Restricted to authorised personnel only</p>
       </div>
 
@@ -461,6 +461,8 @@
       activeCard.style.background = 'rgba(124,58,237,0.05)';
       activeCard.querySelector('i').style.color = 'var(--purple-light)';
       activeCard.querySelector('span').style.color = 'var(--text)';
+
+      document.getElementById('login-title').textContent = selected.value + ' Sign In';
     }
 
     function togglePw() {
