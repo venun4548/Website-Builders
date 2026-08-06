@@ -251,6 +251,21 @@ img {
   cursor: pointer;
 }
 
+.user-nav-container {
+  margin-left: auto;
+}
+
+.user-nav {
+  display: none;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

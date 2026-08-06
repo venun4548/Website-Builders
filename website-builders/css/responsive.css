@@ -50,6 +50,20 @@
     z-index: 1001;
   }
 
+  .user-nav-container {
+    margin-left: 0;
+    margin-top: 1rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .user-nav {
+    flex-direction: column;
+    width: 80%;
+    text-align: center;
+  }
+
   .hero-content {
     grid-template-columns: 1fr;
     text-align: center;
@@ -68,11 +82,7 @@
     margin-top: 2rem;
   }
 
-  .process-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pricing-grid {
+  .process-grid, .pricing-grid, .services-grid, .portfolio-grid, .testimonials-grid {
     grid-template-columns: 1fr;
   }
 }
