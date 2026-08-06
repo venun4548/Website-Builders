@@ -30,6 +30,8 @@ CORS(app, supports_credentials=True, origins=[
 if os.environ.get('RENDER'):
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['REMEMBER_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    app.config['REMEMBER_COOKIE_SAMESITE'] = 'None'
 
 # Initialize extensions
 db.init_app(app)
@@ -187,6 +189,11 @@ def user_login():
             db.session.commit()
             login_user(user, remember=remember)
             logger.info(f"User login successful: {email}")
+            
+            # Redirect to Vercel frontend if configured
+            frontend_url = os.environ.get('FRONTEND_URL')
+            if frontend_url:
+                return redirect(f"{frontend_url.rstrip('/')}/index.html")
             return redirect('/index.html')
             
         logger.warning(f"Failed User login attempt for email: {email}")

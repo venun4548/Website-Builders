@@ -578,7 +578,9 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        const res = await fetch('https://website-builders.onrender.com/api/me');
+        const res = await fetch('https://website-builders.onrender.com/api/me', {
+          credentials: 'include'
+        });
         const user = await res.json();
         if (user.authenticated) {
           const userNav = document.getElementById('user-nav');
