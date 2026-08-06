@@ -42,8 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const scrollProgress = document.getElementById('scroll-progress');
   if(scrollProgress) {
     window.addEventListener('scroll', () => {
-      const totalScroll = document.documentElement.scrollTop;
-      const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const totalScroll = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop;
+      const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
       const scrollValue = `${(totalScroll / windowHeight) * 100}%`;
       scrollProgress.style.width = scrollValue;
     });
@@ -154,5 +154,37 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // 7. Scroll Spy for Navigation Links
+  const sections = document.querySelectorAll('section[id], header[id]');
+  const navItems = document.querySelectorAll('.nav-links a');
+
+  if (sections.length > 0 && navItems.length > 0) {
+    window.addEventListener('scroll', () => {
+      let current = '';
+      
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.scrollY >= (sectionTop - 250)) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      if (current) {
+        navItems.forEach(a => {
+          const href = a.getAttribute('href');
+          if (href && (href.startsWith('#') || href.startsWith('index.html#'))) {
+            a.classList.remove('active');
+            if (href === `#${current}` || href === `index.html#${current}`) {
+              a.classList.add('active');
+            }
+          }
+        });
+      }
+    });
+    // Trigger once on load to set initial state
+    window.dispatchEvent(new Event('scroll'));
+  }
 
 });

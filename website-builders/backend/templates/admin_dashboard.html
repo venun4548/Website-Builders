@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Website Builders</title>
+  
+  <!-- Font Awesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #0f172a;
+      --primary-light: #1e293b;
+      --secondary: #3b82f6;
+      --accent: #8b5cf6;
+      --bg-color: #0b1120;
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --gradient-primary: linear-gradient(135deg, var(--secondary), var(--accent));
+      --gradient-text: linear-gradient(to right, #60a5fa, #a78bfa);
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1.25rem;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.1), transparent 40%);
+      pointer-events: none;
+    }
+
+    /* Navigation Header */
+    header {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      text-decoration: none;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo span {
+      background: var(--gradient-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-info {
+      text-align: right;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .user-role {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* Main Dashboard Grid */
+    main {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .metric-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .metric-details h3 {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-val {
+      font-size: 2rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .metric-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    /* Metric Icon Color Themes */
+    .theme-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .theme-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+    .theme-yellow { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .theme-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .theme-red { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    /* Filters Section */
+    .filters-section {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .filter-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .filter-input {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.8rem;
+      color: white;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .filter-input:focus {
+      border-color: var(--secondary);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .btn-action {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.3s;
+    }
+
+    .btn-action:hover {
+      background: rgba(59, 130, 246, 0.3);
+    }
+
+    /* Table Container */
+    .table-container {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      margin-bottom: 2.5rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(15, 23, 42, 0.8);
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      color: #e2e8f0;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-status-new { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .badge-status-in-progress { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .badge-status-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-status-failed { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 650px;
+      padding: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Modal Form / Grid */
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .details-item h4 {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    .details-item p {
+      font-size: 0.95rem;
+      word-break: break-all;
+    }
+
+    .details-item-full {
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="#" class="logo">
+      <img src="/images/logo.png" alt="Website Builders Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
+      <span>Website</span>Builders
+    </a>
+    
+    <div class="user-profile">
+      <div class="user-info">
+        <div class="user-name">{{ user.full_name }}</div>
+        <div class="user-role">{{ user.role }}</div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-details">
+          <h3>Total Enquiries</h3>
+          <div class="metric-val" id="metric-total">0</div>
+        </div>
+        <div class="metric-icon theme-blue"><i class="fa-solid fa-clipboard-list"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-details">
+          <h3>New Tickets</h3>
+          <div class="metric-val" id="metric-new">0</div>
+        </div>
+        <div class="metric-icon theme-purple"><i class="fa-solid fa-ticket"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-details">
+          <h3>Sent Emails</h3>
+          <div class="metric-val" id="metric-sent">0</div>
+        </div>
+        <div class="metric-icon theme-green"><i class="fa-solid fa-paper-plane"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-details">
+          <h3>Failed Emails</h3>
+          <div class="metric-val" id="metric-failed">0</div>
+        </div>
+        <div class="metric-icon theme-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="filter-group" style="flex: 2;">
+        <label for="search-input">Search enquiries</label>
+        <input type="text" id="search-input" class="filter-input" placeholder="Search by ID, Name, Email or Mobile...">
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-status">Ticket Status</label>
+        <select id="filter-status" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
+          <option value="">All Statuses</option>
+          <option value="New">New</option>
+          <option value="Assigned">Assigned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Contacted">Contacted</option>
+          <option value="Completed">Completed</option>
+          <option value="Closed">Closed</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-email">Email Status</label>
+        <select id="filter-email" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
+          <option value="">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Sent">Sent</option>
+          <option value="Failed">Failed</option>
+        </select>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn-action" onclick="fetchEnquiries()">
+          <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+        <button class="btn-action" onclick="exportData('csv')">
+          <i class="fa-solid fa-file-csv"></i> CSV
+        </button>
+        <button class="btn-action" onclick="window.print()">
+          <i class="fa-solid fa-file-pdf"></i> PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Assignee</th>
+            <th>Follow-up</th>
+            <th>Date</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="enquiries-tbody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+              <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 1rem;"></i>
+              <p>Loading enquiries...</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Details & Edit Modal -->
+  <div class="modal" id="details-modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="modal-title">Enquiry Details</h3>
+      
+      <div class="details-grid" id="details-view">
+        <!-- Filled dynamically -->
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+
+      <h3 class="modal-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Update Enquiry Settings</h3>
+      <form id="update-form" onsubmit="submitUpdate(event)">
+        <input type="hidden" id="update-sub-id">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="filter-group">
+            <label for="update-status">Ticket Status</label>
+            <select id="update-status" class="filter-input" style="background: #1e293b;">
+              <option value="New">New</option>
+              <option value="Assigned">Assigned</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Contacted">Contacted</option>
+              <option value="Completed">Completed</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="update-assignee">Assign To</label>
+            <select id="update-assignee" class="filter-input" style="background: #1e293b;">
+              <option value="">Unassigned</option>
+              <!-- Populated dynamically from API -->
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="update-followup">Follow-up Status</label>
+            <select id="update-followup" class="filter-input" style="background: #1e293b;">
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+
+          <div class="filter-group" style="grid-column: span 2;">
+            <label for="update-remarks">Remarks &amp; Notes</label>
+            <textarea id="update-remarks" class="filter-input" rows="3" placeholder="Add custom notes here..."></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let enquiries = [];
+    let users = [];
+    const currentUserRole = "{{ user.role }}";
+    const currentUserName = "{{ user.full_name }}";
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchUsers();
+      fetchEnquiries();
+      // Auto refresh every 30 seconds
+      setInterval(fetchEnquiries, 30000);
+      
+      // Setup live filters
+      document.getElementById('search-input').addEventListener('input', applyFilters);
+      document.getElementById('filter-status').addEventListener('change', applyFilters);
+      document.getElementById('filter-email').addEventListener('change', applyFilters);
+    });
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch('/api/users');
+        const result = await res.json();
+        if (result.status === 'success') {
+          users = result.data;
+          populateAssigneeDropdown();
+        }
+      } catch (err) {
+        console.error('Error fetching users:', err);
+      }
+    }
+
+    function populateAssigneeDropdown() {
+      const select = document.getElementById('update-assignee');
+      select.innerHTML = '<option value="">Unassigned</option>';
+      users.forEach(u => {
+        select.innerHTML += `<option value="${u.full_name}">${u.full_name} (${u.role})</option>`;
+      });
+    }
+
+    async function fetchEnquiries() {
+      try {
+        const res = await fetch('/api/enquiries');
+        const result = await res.json();
+        if (result.status === 'success') {
+          enquiries = result.data;
+          applyFilters();
+        } else {
+          document.getElementById('enquiries-tbody').innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align: center; color: #f87171; padding: 2rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i> ${result.message}
+              </td>
+            </tr>
+          `;
+        }
+      } catch (err) {
+        console.error('Error fetching enquiries:', err);
+      }
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const statusFilter = document.getElementById('filter-status').value;
+      const emailFilter = document.getElementById('filter-email').value;
+
+      const filtered = enquiries.filter(e => {
+        const matchesSearch = 
+          e.submissionId.toLowerCase().includes(search) ||
+          e.customerName.toLowerCase().includes(search) ||
+          e.email.toLowerCase().includes(search) ||
+          e.mobileNumber.toLowerCase().includes(search);
+          
+        const matchesStatus = !statusFilter || e.ticketStatus === statusFilter;
+        const matchesEmail = !emailFilter || e.emailStatus === emailFilter;
+
+        return matchesSearch && matchesStatus && matchesEmail;
+      });
+
+      renderTable(filtered);
+      renderMetrics(filtered);
+    }
+
+    function renderMetrics(data) {
+      document.getElementById('metric-total').textContent = enquiries.length;
+      document.getElementById('metric-new').textContent = enquiries.filter(e => e.ticketStatus === 'New').length;
+      document.getElementById('metric-sent').textContent = enquiries.filter(e => e.emailStatus === 'Sent').length;
+      document.getElementById('metric-failed').textContent = enquiries.filter(e => e.emailStatus === 'Failed').length;
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('enquiries-tbody');
+      if (data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+              No enquiries match the current filters.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      data.forEach(e => {
+        const badgeClass = `badge-status-${e.ticketStatus.toLowerCase().replace(' ', '-')}`;
+        tbody.innerHTML += `
+          <tr>
+            <td><strong style="color: var(--secondary); font-family: monospace;">${e.submissionId}</strong></td>
+            <td>${e.customerName}</td>
+            <td><a href="mailto:${e.email}" style="color: var(--secondary);">${e.email}</a></td>
+            <td><span class="badge ${badgeClass}">${e.ticketStatus}</span></td>
+            <td>${e.assignedTo || '<span style="color: var(--text-muted);">Unassigned</span>'}</td>
+            <td><span class="badge ${e.followUpStatus === 'Completed' ? 'badge-status-completed' : 'badge-status-in-progress'}">${e.followUpStatus}</span></td>
+            <td style="font-size: 0.8rem; color: var(--text-muted);">${e.timestamp}</td>
+            <td style="text-align: right;">
+              <button class="btn-action" style="padding: 0.4rem 0.8rem; display: inline-flex;" onclick="openDetails('${e.submissionId}')">
+                <i class="fa-solid fa-eye"></i> Manage
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function openDetails(subId) {
+      const item = enquiries.find(e => e.submissionId === subId);
+      if (!item) return;
+
+      // Fill details view
+      const view = document.getElementById('details-view');
+      view.innerHTML = `
+        <div class="details-item">
+          <h4>Submission ID</h4>
+          <p><strong>${item.submissionId}</strong></p>
+        </div>
+        <div class="details-item">
+          <h4>Timestamp</h4>
+          <p>${item.timestamp}</p>
+        </div>
+        <div class="details-item">
+          <h4>Customer Name</h4>
+          <p>${item.customerName}</p>
+        </div>
+        <div class="details-item">
+          <h4>Email Address</h4>
+          <p>${item.email}</p>
+        </div>
+        <div class="details-item">
+          <h4>Mobile Number</h4>
+          <p>${item.mobileNumber}</p>
+        </div>
+        <div class="details-item">
+          <h4>City / Address</h4>
+          <p>${item.address || 'N/A'}</p>
+        </div>
+        <div class="details-item">
+          <h4>Email Status</h4>
+          <p>${item.emailStatus} ${item.emailSentAt ? `(${item.emailSentAt})` : ''}</p>
+        </div>
+        <div class="details-item">
+          <h4>Source Page</h4>
+          <p>${item.sourcePage || 'N/A'}</p>
+        </div>
+        <div class="details-item details-item-full">
+          <h4>Message Body</h4>
+          <p style="white-space: pre-wrap; background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">${item.message}</p>
+        </div>
+      `;
+
+      // Fill edit inputs
+      document.getElementById('update-sub-id').value = item.submissionId;
+      document.getElementById('update-status').value = item.ticketStatus;
+      document.getElementById('update-assignee').value = item.assignedTo;
+      document.getElementById('update-followup').value = item.followUpStatus;
+      document.getElementById('update-remarks').value = item.remarks || '';
+
+      document.getElementById('details-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('details-modal').classList.remove('active');
+    }
+
+    async function submitUpdate(event) {
+      event.preventDefault();
+      const submissionId = document.getElementById('update-sub-id').value;
+      const ticketStatus = document.getElementById('update-status').value;
+      const assignedTo = document.getElementById('update-assignee').value;
+      const followUpStatus = document.getElementById('update-followup').value;
+      const remarks = document.getElementById('update-remarks').value;
+
+      try {
+        const res = await fetch('/api/enquiries/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ submissionId, ticketStatus, assignedTo, followUpStatus, remarks })
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          closeModal();
+          fetchEnquiries();
+        } else {
+          alert('Update failed: ' + result.message);
+        }
+      } catch (err) {
+        console.error('Error updating enquiry:', err);
+      }
+    }
+
+    function exportData(format) {
+      if (format === 'csv') {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Submission ID,Timestamp,Customer Name,Email,Mobile,Address,Ticket Status,Assigned To,Follow-up Status,Remarks\n";
+        
+        enquiries.forEach(e => {
+          const row = [
+            e.submissionId || '',
+            e.timestamp || '',
+            `"${(e.customerName || '').replace(/"/g, '""')}"`,
+            e.email || '',
+            e.mobileNumber || '',
+            `"${(e.address || '').replace(/"/g, '""')}"`,
+            e.ticketStatus || '',
+            e.assignedTo || '',
+            e.followUpStatus || '',
+            `"${(e.remarks || '').replace(/"/g, '""')}"`
+          ].join(",");
+          csvContent += row + "\n";
+        });
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `website_builders_enquiries_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  </script>
+</body>
+</html>

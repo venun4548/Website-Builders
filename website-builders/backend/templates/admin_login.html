@@ -329,7 +329,7 @@
     <div class="grid-bg"></div>
 
     <a href="#" class="brand">
-      <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <img src="/images/logo.png" alt="Website Builders Logo" style="width: 48px; height: 48px; border-radius: 14px; object-fit: cover;">
       <span class="brand-name"><span>Website</span>Builders</span>
     </a>
 
@@ -377,6 +377,33 @@
 
       <form action="{{ url_for('admin_login') }}" method="POST">
         <div class="form-group">
+          <label class="form-label">Select Admin Role</label>
+          <div class="role-selector" style="display: flex; gap: 0.5rem; justify-content: space-between; margin-bottom: 1rem;">
+            <label class="role-btn" style="flex:1;">
+              <input type="radio" name="role" value="Super Admin" required style="display:none;" onchange="updateRoleUI(this)">
+              <div class="role-card" style="text-align:center; padding: 0.8rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; cursor: pointer; transition: 0.2s;">
+                <i class="fa-solid fa-crown" style="display:block; margin-bottom: 0.3rem; color: var(--muted);"></i>
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted);">Super Admin</span>
+              </div>
+            </label>
+            <label class="role-btn" style="flex:1;">
+              <input type="radio" name="role" value="Admin" required style="display:none;" onchange="updateRoleUI(this)">
+              <div class="role-card" style="text-align:center; padding: 0.8rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; cursor: pointer; transition: 0.2s;">
+                <i class="fa-solid fa-user-shield" style="display:block; margin-bottom: 0.3rem; color: var(--muted);"></i>
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted);">Admin</span>
+              </div>
+            </label>
+            <label class="role-btn" style="flex:1;">
+              <input type="radio" name="role" value="Staff" required style="display:none;" onchange="updateRoleUI(this)">
+              <div class="role-card" style="text-align:center; padding: 0.8rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; cursor: pointer; transition: 0.2s;">
+                <i class="fa-solid fa-user-tie" style="display:block; margin-bottom: 0.3rem; color: var(--muted);"></i>
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--muted);">Staff</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label class="form-label" for="email">Admin Email</label>
           <div class="input-wrap">
             <i class="fa-regular fa-envelope input-icon"></i>
@@ -422,6 +449,20 @@
   </div>
 
   <script>
+    function updateRoleUI(selected) {
+      document.querySelectorAll('.role-card').forEach(card => {
+        card.style.borderColor = 'rgba(255,255,255,0.09)';
+        card.style.background = 'rgba(255,255,255,0.04)';
+        card.querySelector('i').style.color = 'var(--muted)';
+        card.querySelector('span').style.color = 'var(--muted)';
+      });
+      const activeCard = selected.nextElementSibling;
+      activeCard.style.borderColor = 'var(--violet)';
+      activeCard.style.background = 'rgba(124,58,237,0.05)';
+      activeCard.querySelector('i').style.color = 'var(--purple-light)';
+      activeCard.querySelector('span').style.color = 'var(--text)';
+    }
+
     function togglePw() {
       const pw = document.getElementById('password');
       const icon = document.getElementById('pw-toggle');

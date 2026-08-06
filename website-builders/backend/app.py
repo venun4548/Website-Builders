@@ -9,8 +9,9 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 
+from functools import wraps
 from config import Config
-from models import db, User, PasswordResetToken
+from models import db, User, PasswordResetToken, AuditLog
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -63,6 +64,27 @@ SHARED_SECRET = 'sec_wb_crm_77c4e569bbd18f0a1c6a58'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def role_required(*roles):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorated_view(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return login_manager.unauthorized()
+            if current_user.role not in roles:
+                flash(f'Access denied. Required role: {", ".join(roles)}', 'error')
+                return redirect(url_for('dashboard'))
+            return fn(*args, **kwargs)
+        return decorated_view
+    return wrapper
+
+def log_audit(action, user_email, status="Success", target_user=None):
+    try:
+        log = AuditLog(action=action, user_email=user_email, status=status, target_user=target_user)
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        logger.error(f"Audit Log Error: {str(e)}")
+
 # Security headers middleware
 @app.after_request
 def add_security_headers(response):
@@ -79,6 +101,19 @@ def add_security_headers(response):
 def init_db():
     with app.app_context():
         db.create_all()
+        # Seed Super Admin
+        super_admin = User.query.filter_by(email='super@websitebuilders.com').first()
+        if not super_admin:
+            super_admin = User(
+                full_name='Super Administrator',
+                email='super@websitebuilders.com',
+                mobile='+91 0000000000',
+                role='Super Admin',
+                is_active=True
+            )
+            super_admin.set_password('Super@1234')
+            db.session.add(super_admin)
+
         # Seed an Admin if none exists
         admin = User.query.filter_by(email='admin@websitebuilders.com').first()
         if not admin:
@@ -92,7 +127,22 @@ def init_db():
             admin.set_password('Admin@1234')
             db.session.add(admin)
             
-            # Seed a User
+        # Seed a Staff
+        staff = User.query.filter_by(email='staff@websitebuilders.com').first()
+        if not staff:
+            staff = User(
+                full_name='Staff Member',
+                email='staff@websitebuilders.com',
+                mobile='+91 1111111111',
+                role='Staff',
+                is_active=True
+            )
+            staff.set_password('Staff@1234')
+            db.session.add(staff)
+
+        # Seed a User
+        normal_user = User.query.filter_by(email='user@websitebuilders.com').first()
+        if not normal_user:
             normal_user = User(
                 full_name='Venu Gopal',
                 email='user@websitebuilders.com',
@@ -103,8 +153,8 @@ def init_db():
             normal_user.set_password('User@1234')
             db.session.add(normal_user)
 
-            db.session.commit()
-            logger.info("Database seeded successfully with Admin and User roles.")
+        db.session.commit()
+        logger.info("Database seeded successfully with Super Admin, Admin, Staff, and User roles.")
 
 # --- Authentication Routes ---
 
@@ -142,23 +192,38 @@ def admin_login():
 
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
+        selected_role = request.form.get('role', '')
         remember = True if request.form.get('remember') else False
         
         user = User.query.filter_by(email=email).first()
         
         if user and user.is_active and user.check_password(password):
-            # Authorize ONLY Admin on this endpoint
-            if user.role != 'Admin':
+            if not selected_role:
+                flash('Please select a role to log in.', 'error')
+                return render_template('admin_login.html')
+                
+            if user.role != selected_role:
+                flash(f'Invalid credentials for the selected role.', 'error')
+                return render_template('admin_login.html')
+                
+            if user.role not in ['Super Admin', 'Admin', 'Staff']:
                 flash('Please use the User Portal to log in.', 'error')
                 return render_template('admin_login.html')
 
             user.last_login = datetime.utcnow()
             db.session.commit()
             login_user(user, remember=remember)
-            logger.info(f"Admin login successful: {email}")
-            return redirect(url_for('dashboard'))
+            log_audit(f"Logged in", user.email)
+            logger.info(f"{user.role} login successful: {email}")
+            
+            if user.role == 'Super Admin':
+                return redirect(url_for('super_admin_dashboard'))
+            elif user.role == 'Staff':
+                return redirect(url_for('staff_dashboard'))
+            return redirect(url_for('admin_dashboard'))
             
         logger.warning(f"Failed Admin login attempt for email: {email}")
+
         flash('Invalid email or password.', 'error')
         
     return render_template('admin_login.html')
@@ -310,10 +375,33 @@ def logout():
 
 # --- Dashboard Routes ---
 
+@app.route('/super-admin')
+@role_required('Super Admin')
+def super_admin_dashboard():
+    return render_template('super_admin_dashboard.html', user=current_user)
+
+@app.route('/admin')
+@role_required('Admin', 'Super Admin')
+def admin_dashboard():
+    return render_template('admin_dashboard.html', user=current_user)
+
+@app.route('/staff')
+@role_required('Staff')
+def staff_dashboard():
+    return render_template('staff_dashboard.html', user=current_user)
+
+# To maintain backwards compatibility if something redirects to dashboard
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html', user=current_user)
+    if current_user.role == 'Super Admin':
+        return redirect(url_for('super_admin_dashboard'))
+    elif current_user.role == 'Admin':
+        return redirect(url_for('admin_dashboard'))
+    elif current_user.role == 'Staff':
+        return redirect(url_for('staff_dashboard'))
+    return redirect(url_for('home'))
+
 
 @app.route('/profile')
 @login_required
@@ -368,8 +456,8 @@ def get_enquiries():
             if result.get('status') == 'success':
                 all_enquiries = result.get('data', [])
                 
-                # Filter logic for User role (only show assigned to them)
-                if current_user.role == 'User':
+                # Filter logic for User and Staff roles (only show assigned to them)
+                if current_user.role in ['User', 'Staff']:
                     all_enquiries = [e for e in all_enquiries if e.get('assignedTo') == current_user.full_name]
                     
                 return jsonify({'status': 'success', 'data': all_enquiries})
@@ -396,15 +484,15 @@ def update_enquiry():
         return jsonify({'status': 'error', 'message': 'Submission ID is required.'}), 400
 
     try:
-        # If User, verify they are only updating their assigned item
-        if current_user.role == 'User':
+        # If User or Staff, verify they are only updating their assigned item
+        if current_user.role in ['User', 'Staff']:
             # Fetch existing state first
             res = requests.get(GAS_WEB_APP_URL, params={'token': SHARED_SECRET}, timeout=15)
             if res.status_code == 200:
                 all_enquiries = res.json().get('data', [])
                 matching = next((e for e in all_enquiries if e.get('submissionId') == submission_id), None)
                 if not matching or matching.get('assignedTo') != current_user.full_name:
-                    return jsonify({'status': 'error', 'message': 'Permission denied: Users can only manage assigned enquiries.'}), 403
+                    return jsonify({'status': 'error', 'message': 'Permission denied: You can only manage assigned enquiries.'}), 403
             else:
                 return jsonify({'status': 'error', 'message': 'Failed to verify assignment permissions.'})
 
@@ -437,6 +525,79 @@ def get_users():
     # Only Admin and Super Admin can fetch assignees
     users = User.query.filter_by(is_active=True).all()
     return jsonify({'status': 'success', 'data': [u.to_dict() for u in users]})
+
+# --- User Management API (Super Admin) ---
+
+@app.route('/api/super-admin/users', methods=['GET', 'POST'])
+@role_required('Super Admin')
+def manage_users():
+    if request.method == 'GET':
+        users = User.query.all()
+        return jsonify({'status': 'success', 'data': [u.to_dict() for u in users]})
+        
+    if request.method == 'POST':
+        data = request.json
+        full_name = data.get('full_name')
+        email = data.get('email')
+        mobile = data.get('mobile')
+        password = data.get('password')
+        role = data.get('role')
+        status = data.get('status', True)
+        
+        if User.query.filter_by(email=email).first():
+            return jsonify({'status': 'error', 'message': 'Email already exists'})
+            
+        new_user = User(full_name=full_name, email=email, mobile=mobile, role=role, is_active=status)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        log_audit('Created User', current_user.email, target_user=email)
+        return jsonify({'status': 'success', 'message': 'User created successfully'})
+
+@app.route('/api/super-admin/users/<int:user_id>', methods=['PUT', 'DELETE'])
+@role_required('Super Admin')
+def modify_user(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    if request.method == 'PUT':
+        data = request.json
+        user.full_name = data.get('full_name', user.full_name)
+        user.mobile = data.get('mobile', user.mobile)
+        user.role = data.get('role', user.role)
+        if 'status' in data:
+            user.is_active = data['status']
+            
+        db.session.commit()
+        log_audit('Updated User', current_user.email, target_user=user.email)
+        return jsonify({'status': 'success', 'message': 'User updated successfully'})
+        
+    if request.method == 'DELETE':
+        email = user.email
+        db.session.delete(user)
+        db.session.commit()
+        log_audit('Deleted User', current_user.email, target_user=email)
+        return jsonify({'status': 'success', 'message': 'User deleted successfully'})
+
+@app.route('/api/super-admin/users/<int:user_id>/reset-password', methods=['POST'])
+@role_required('Super Admin')
+def reset_user_password(user_id):
+    user = User.query.get_or_404(user_id)
+    new_password = request.json.get('password')
+    
+    if not new_password:
+        return jsonify({'status': 'error', 'message': 'Password is required'})
+        
+    user.set_password(new_password)
+    db.session.commit()
+    log_audit('Reset User Password', current_user.email, target_user=user.email)
+    return jsonify({'status': 'success', 'message': 'Password reset successfully'})
+
+@app.route('/api/super-admin/audit-logs', methods=['GET'])
+@role_required('Super Admin')
+def get_audit_logs():
+    logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).all()
+    return jsonify({'status': 'success', 'data': [log.to_dict() for log in logs]})
 
 if __name__ == '__main__':
     init_db()

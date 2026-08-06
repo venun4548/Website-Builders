@@ -11,7 +11,7 @@ const CONFIG = {
   BUSINESS_EMAIL  : 'venun4548@gmail.com', // Recipient for owner notifications
   BUSINESS_PHONE  : '+91 7386204885',
   BUSINESS_ADDRESS: 'Tirupathi, Balaji Colony, 517502',
-  BUSINESS_WEBSITE: 'https://websitebuilders.com',
+  BUSINESS_WEBSITE: 'https://website-builders-wine.vercel.app',
   DELAY_MINUTES   : 5,
   SHARED_SECRET   : 'sec_wb_crm_77c4e569bbd18f0a1c6a58' // Shared secret for Flask-to-GAS auth
 };

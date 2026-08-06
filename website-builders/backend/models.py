@@ -46,3 +46,23 @@ class PasswordResetToken(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    action = db.Column(db.String(255), nullable=False)
+    user_email = db.Column(db.String(120), nullable=False)
+    target_user = db.Column(db.String(120), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(50), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'action': self.action,
+            'user_email': self.user_email,
+            'target_user': self.target_user,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'status': self.status
+        }
