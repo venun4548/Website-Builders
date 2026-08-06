@@ -2,8 +2,7 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'de34f56a29bc718de11e9f45b6ccba9a2245fb0a')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 
-        'sqlite:////data/database.db' if os.environ.get('RENDER') else 'sqlite:///database.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Session options
