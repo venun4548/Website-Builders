@@ -578,21 +578,21 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        const res = await fetch('/api/me');
+        const res = await fetch('https://website-builders.onrender.com/api/me');
         const user = await res.json();
         if (user.authenticated) {
           const userNav = document.getElementById('user-nav');
           if (userNav) {
             let html = '';
-            if (user.role === 'Admin') {
-              html += `<a href="/dashboard" style="font-weight: 600; font-size: 0.9rem; color: #a78bfa;"><i class="fa-solid fa-gauge"></i> CRM</a>`;
-            }
-            html += `<a href="/profile" style="font-weight: 600; font-size: 0.9rem; color: white;"><i class="fa-solid fa-circle-user" style="color: var(--secondary);"></i> Profile</a>`;
-            html += `<a href="/logout" style="font-weight: 600; font-size: 0.9rem; color: #f87171;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>`;
+            html += `<a href="https://website-builders.onrender.com/profile" style="font-weight: 600; font-size: 0.9rem; color: white;"><i class="fa-solid fa-circle-user" style="color: var(--secondary);"></i> Profile</a>`;
+            html += `<a href="https://website-builders.onrender.com/logout" style="font-weight: 600; font-size: 0.9rem; color: #f87171;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>`;
             
             userNav.innerHTML = html;
             userNav.style.display = 'flex';
           }
+        } else {
+            // Redirect unauthenticated users to login
+            window.location.href = 'https://website-builders.onrender.com/user/login';
         }
       } catch (err) {
         console.error('Session state fetch error:', err);
