@@ -1,0 +1,101 @@
+/* css/animations.css */
+
+/* Keyframes */
+@keyframes float {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(2deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Scroll Reveal Classes (added by JS) */
+.reveal {
+  /* opacity removed to guarantee visibility */
+  transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+}
+
+.reveal.active {
+  /* transform is handled by specific classes below */
+}
+
+.reveal.fade-up {
+  transform: translateY(40px);
+}
+.reveal.fade-up.active {
+  transform: translateY(0);
+}
+
+.reveal.fade-left {
+  transform: translateX(-40px);
+}
+.reveal.fade-left.active {
+  transform: translateX(0);
+}
+
+.reveal.fade-right {
+  transform: translateX(40px);
+}
+.reveal.fade-right.active {
+  transform: translateX(0);
+}
+
+.reveal.scale-up {
+  transform: scale(0.9);
+}
+.reveal.scale-up.active {
+  transform: scale(1);
+}
+
+/* Staggered animations */
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
+.delay-400 { transition-delay: 400ms; }
+.delay-500 { transition-delay: 500ms; }
+
+/* Interactive Hover Effects */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+.hover-glow:hover {
+  animation: pulse-glow 1.5s infinite;
+}
+
+.hover-tilt {
+  transition: transform 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.animated-gradient-bg {
+  background-size: 200% 200%;
+  animation: gradient-shift 5s ease infinite;
+}

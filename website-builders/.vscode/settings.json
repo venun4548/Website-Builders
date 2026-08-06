@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend/venv/Lib/site-packages"
+  ],
+  "python.terminal.activateEnvironment": true,
+  "pyrefly.pythonInterpreter": "${workspaceFolder}/backend/venv/Scripts/python.exe"
+}

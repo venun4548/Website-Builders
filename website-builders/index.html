@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Website Builders - Premium Website Design & Development Agency">
+  <meta name="theme-color" content="#0b1120">
+  <title>Website Builders - Premium Web Design Agency</title>
+
+  <!-- Open Graph Tags -->
+  <meta property="og:title" content="Website Builders - Premium Web Design Agency">
+  <meta property="og:description" content="We build beautiful, responsive, modern, and high-performing business websites.">
+  <meta property="og:type" content="website">
+
+  <!-- Font Awesome (local - avoids CDN tracking prevention on file://) -->
+  <link rel="stylesheet" href="css/fontawesome.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- Scroll Progress (managed by JS) -->
+  <div class="scroll-progress" id="scroll-progress"></div>
+
+  <!-- Loading Screen -->
+  <div class="loader-wrapper">
+    <div class="loader"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <i class="fa-solid fa-code"></i>
+        <span>Website</span>Builders
+      </a>
+      
+      <button class="mobile-menu-btn" aria-label="Toggle Menu">
+        <i class="fa-solid fa-bars-staggered"></i>
+      </button>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="javascript:void(0)" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">About</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="javascript:void(0)" onclick="document.getElementById('portfolio').scrollIntoView({behavior:'smooth'})">Portfolio</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="contact.html" class="btn btn-primary">Start Project</a></li>
+      </ul>
+      <div class="user-nav" id="user-nav" style="display: none; align-items: center; gap: 1.5rem; background: rgba(30, 41, 59, 0.6); padding: 0.5rem 1.2rem; border-radius: var(--radius-full); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(8px); margin-left: 1.5rem;"></div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero" style="background: linear-gradient(135deg, #0b1120 0%, #1e1040 40%, #0b1120 100%);
+position:relative;">
+    <div class="container hero-content">
+      <div class="hero-text reveal fade-up active">
+        <h1>Crafting <span>Digital</span><br>Excellence</h1>
+        <p>We build award-winning, responsive, and high-performing business websites for ambitious brands and forward-thinking companies.</p>
+        <div class="hero-buttons">
+          <a href="contact.html" class="btn btn-primary">Start Your Project <i class="fa-solid fa-arrow-right"></i></a>
+          <a href="javascript:void(0)" onclick="document.getElementById('portfolio').scrollIntoView({behavior:'smooth'})" class="btn btn-outline">View Our Work</a>
+        </div>
+      </div>
+      
+      <div class="hero-image reveal fade-left delay-200">
+        <div class="mockup-container">
+          <!-- Main Mockup -->
+          <img src="images/portfolio_saas.png" alt="Website Dashboard" class="mockup-main">
+          <!-- Sub Mockup -->
+          <img src="images/portfolio_fintech.png" alt="Mobile UI" class="mockup-sub">
+          
+          <div class="floating-badge badge-1">
+            <i class="fa-solid fa-bolt" style="color: var(--warning);"></i> Fast Performance
+          </div>
+          <div class="floating-badge badge-2">
+            <i class="fa-solid fa-award" style="color: var(--secondary);"></i> Award Winning
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Statistics Section -->
+  <section class="section" style="padding-top: 0; padding-bottom: 4rem;">
+    <div class="container">
+      <div class="stats-grid reveal fade-up">
+        <div class="stat-card">
+          <div class="stat-number" data-target="250">0</div>
+          <div class="stat-label">Projects Launched</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-target="15">0</div>
+          <div class="stat-label">Years Experience</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-target="99">0</div><span style="font-size:3.5rem;font-weight:900;background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">%</span>
+          <div class="stat-label">Client Satisfaction</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-target="40">0</div><span style="font-size:3.5rem;font-weight:900;background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">+</span>
+          <div class="stat-label">Design Awards</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="section section-bg">
+    <div class="container">
+      <div class="hero-content" style="grid-template-columns: 1fr 1fr; gap: 5rem;">
+        <div class="reveal fade-right">
+          <div style="position:relative; border-radius: var(--radius-xl); overflow:hidden; box-shadow: var(--shadow-xl);">
+            <img src="images/portfolio_ecommerce.png" alt="Our Team" style="width:100%; height:auto; object-fit:cover;">
+            <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(15,23,42,0.9), transparent);"></div>
+            <div style="position:absolute; bottom:30px; left:30px; color:white;">
+              <h3 style="font-size:2rem; font-weight:800; margin-bottom:0.5rem;">Innovators</h3>
+              <p style="color:var(--text-muted);">At the intersection of design and technology.</p>
+            </div>
+          </div>
+        </div>
+        <div class="reveal fade-left">
+          <h2 style="font-size:3rem; font-weight:800; margin-bottom:1.5rem; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">We build digital experiences that matter.</h2>
+          <p style="color:var(--text-muted); font-size:1.1rem; margin-bottom:1.5rem;">Website Builders is a premier digital agency specializing in high-end web development, UI/UX design, and brand strategy. We partner with industry leaders and ambitious startups to create products that are beautiful, functional, and highly successful.</p>
+          <p style="color:var(--text-muted); font-size:1.1rem; margin-bottom:2.5rem;">Our team of senior developers and designers are obsessed with pixel-perfect precision and lightning-fast performance.</p>
+          <ul style="margin-bottom:2.5rem; display:flex; flex-direction:column; gap:1rem;">
+            <li style="display:flex; align-items:center; gap:1rem; font-weight:600;"><i class="fa-solid fa-check-circle" style="color:var(--success); font-size:1.5rem;"></i> Premium Quality Standards</li>
+            <li style="display:flex; align-items:center; gap:1rem; font-weight:600;"><i class="fa-solid fa-check-circle" style="color:var(--success); font-size:1.5rem;"></i> Modern Technology Stack</li>
+            <li style="display:flex; align-items:center; gap:1rem; font-weight:600;"><i class="fa-solid fa-check-circle" style="color:var(--success); font-size:1.5rem;"></i> Data-Driven Strategies</li>
+          </ul>
+          <a href="services.html" class="btn btn-outline">Discover Our Services</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features / Why Choose Us Section -->
+  <section class="section" style="background: linear-gradient(135deg, #0f172a 0%, #1a1040 50%, #0b1120 100%); position: relative;">
+    <div class="container relative z-10">
+      <div class="section-header reveal fade-up">
+        <h2>Why Top Brands Choose Us</h2>
+        <p>We deliver exceptional quality with a focus on cutting-edge design aesthetics, superior user experience, and modern architecture.</p>
+      </div>
+
+      <div class="services-grid">
+        <div class="service-card reveal fade-up delay-100">
+          <div class="service-icon"><i class="fa-solid fa-pen-nib"></i></div>
+          <h3>Premium UI/UX Design</h3>
+          <p>We craft stunning, modern, and intuitive interfaces that engage users and elevate your brand identity to the highest standards.</p>
+        </div>
+        
+        <div class="service-card reveal fade-up delay-200">
+          <div class="service-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+          <h3>Flawless Responsiveness</h3>
+          <p>Your platform will look and function perfectly across all devices and screen sizes—from massive 4K monitors to smartphones.</p>
+        </div>
+
+        <div class="service-card reveal fade-up delay-300">
+          <div class="service-icon"><i class="fa-solid fa-gauge-high"></i></div>
+          <h3>Lightning Fast</h3>
+          <p>Highly optimized code and assets ensure your pages load instantly, providing a superior user experience and better SEO rankings.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio Section -->
+  <section id="portfolio" class="section section-bg">
+    <div class="container">
+      <div class="section-header reveal fade-up">
+        <h2>Selected Works</h2>
+        <p>A glimpse into our award-winning portfolio of digital products and brand identities.</p>
+      </div>
+
+      <div class="portfolio-grid">
+        <div class="portfolio-item reveal fade-up delay-100">
+          <img src="images/portfolio_fintech.png" alt="Fintech App">
+          <div class="portfolio-overlay">
+            <span class="portfolio-tag">Fintech / Web App</span>
+            <h3 class="portfolio-title">Nova Banking Platform</h3>
+          </div>
+        </div>
+        <div class="portfolio-item reveal fade-up delay-200">
+          <img src="images/portfolio_ecommerce.png" alt="E-Commerce Store">
+          <div class="portfolio-overlay">
+            <span class="portfolio-tag">E-Commerce / UI Design</span>
+            <h3 class="portfolio-title">Luxe Fashion Store</h3>
+          </div>
+        </div>
+        <div class="portfolio-item reveal fade-up delay-300">
+          <img src="images/portfolio_saas.png" alt="SaaS Dashboard">
+          <div class="portfolio-overlay">
+            <span class="portfolio-tag">SaaS / Dashboard</span>
+            <h3 class="portfolio-title">Analytics Pro Dashboard</h3>
+          </div>
+        </div>
+        <div class="portfolio-item reveal fade-up delay-400">
+          <img src="images/portfolio_realestate.png" alt="Corporate Website">
+          <div class="portfolio-overlay">
+            <span class="portfolio-tag">Corporate / Web Design</span>
+            <h3 class="portfolio-title">Vertex Real Estate</h3>
+          </div>
+        </div>
+      </div>
+      <div class="text-center" style="margin-top: 4rem;">
+        <a href="services.html" class="btn btn-outline reveal fade-up">View All Projects</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="section" style="background: linear-gradient(135deg, #0f172a 0%, #1e1040 50%, #0f172a 100%); position: relative;">
+    <div class="container relative z-10">
+      <div class="section-header reveal fade-up">
+        <h2>Client Success Stories</h2>
+        <p>Don't just take our word for it. Hear from the visionary leaders we've partnered with.</p>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal fade-up delay-100">
+          <i class="fa-solid fa-quote-right quote-icon"></i>
+          <div class="stars">
+            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+          </div>
+          <p class="testimonial-text">"Website Builders transformed our digital presence completely. The new platform is blazing fast, stunningly beautiful, and our conversion rates have jumped by 140% since launch. A truly world-class team."</p>
+          <div class="client-info">
+            <div class="client-img" style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:white;flex-shrink:0;">MR</div>
+            <div>
+              <div class="client-name">Michael Reynolds</div>
+              <div class="client-role">CEO, TechFlow Inc.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal fade-up delay-200">
+          <i class="fa-solid fa-quote-right quote-icon"></i>
+          <div class="stars">
+            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+          </div>
+          <p class="testimonial-text">"Their attention to detail and understanding of modern UI/UX principles is unmatched. They didn't just build a website; they engineered an immersive brand experience that our customers absolutely love."</p>
+          <div class="client-info">
+            <div class="client-img" style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;color:white;flex-shrink:0;">SJ</div>
+            <div>
+              <div class="client-name">Sarah Jenkins</div>
+              <div class="client-role">CMO, Luxe Brands</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Process Section -->
+  <section class="section section-bg">
+    <div class="container">
+      <div class="section-header reveal fade-up">
+        <h2>Our Methodology</h2>
+        <p>A proven, transparent, and highly effective workflow from concept to global launch.</p>
+      </div>
+
+      <div class="process-grid reveal fade-up delay-200">
+        <div class="process-step">
+          <div class="step-number">01</div>
+          <h3 style="font-size:1.5rem; margin-bottom:1rem;">Discovery</h3>
+          <p style="color:var(--text-muted);">Deep dive into your business goals, target audience, and technical requirements.</p>
+        </div>
+        <div class="process-step">
+          <div class="step-number">02</div>
+          <h3 style="font-size:1.5rem; margin-bottom:1rem;">Design</h3>
+          <p style="color:var(--text-muted);">Crafting wireframes, user journeys, and stunning high-fidelity visual prototypes.</p>
+        </div>
+        <div class="process-step">
+          <div class="step-number">03</div>
+          <h3 style="font-size:1.5rem; margin-bottom:1rem;">Development</h3>
+          <p style="color:var(--text-muted);">Engineering the platform using cutting-edge, scalable, and secure technologies.</p>
+        </div>
+        <div class="process-step">
+          <div class="step-number">04</div>
+          <h3 style="font-size:1.5rem; margin-bottom:1rem;">Deployment</h3>
+          <p style="color:var(--text-muted);">Rigorous quality assurance testing followed by a seamless global launch.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner Section -->
+  <section class="section animated-gradient-bg" style="background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 50%, #2563eb 100%); background-size: 200% 200%;">
+    <div class="container">
+      <div class="glass-card text-center reveal scale-up" style="background: rgba(15, 23, 42, 0.6); max-width: 800px; margin: 0 auto; border-color: rgba(255,255,255,0.2);">
+        <h2 style="color: white; font-size: 3rem; font-weight: 800; margin-bottom: 1.5rem;">Ready to dominate your industry?</h2>
+        <p style="font-size: 1.125rem; margin-bottom: 2.5rem; color: #e2e8f0;">Let's collaborate to build an exceptional digital experience that drives real business growth.</p>
+        <a href="contact.html" class="btn btn-primary" style="background: white; color: var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.2);">Start Your Project Now <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <a href="index.html" class="logo" style="font-size:1.75rem;">
+            <i class="fa-solid fa-code" style="color:var(--secondary);"></i>
+            <span>Website</span>Builders
+          </a>
+          <p>Premium web design and software development agency for modern, forward-thinking businesses. We engineer the digital future.</p>
+          <div class="social-links">
+            <a href="javascript:void(0)"><i class="fa-brands fa-twitter"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-instagram"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-github"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-dribbble"></i></a>
+          </div>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Expertise</h4>
+          <ul>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Corporate Websites</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> E-Commerce Platforms</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> SaaS Dashboards</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Mobile App UI/UX</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="javascript:void(0)" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> About Agency</a></li>
+            <li><a href="javascript:void(0)" onclick="document.getElementById('portfolio').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Selected Works</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Services & Pricing</a></li>
+            <li><a href="contact.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Contact & Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Contact</h4>
+          <ul>
+            <li style="color:var(--text-muted); display:flex; gap:10px;"><i class="fa-solid fa-envelope" style="margin-top:5px; color:var(--secondary); flex-shrink:0;"></i> venun4548@gmail.com</li>
+            <li style="color:var(--text-muted); display:flex; gap:10px;"><i class="fa-solid fa-phone" style="margin-top:5px; color:var(--secondary); flex-shrink:0;"></i> +91 7386204885</li>
+            <li style="color:var(--text-muted); display:flex; gap:10px;"><i class="fa-solid fa-location-dot" style="margin-top:5px; color:var(--secondary); flex-shrink:0;"></i> Balaji Colony, Tirupathi<br>AP &mdash; 517502, India</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2026 Website Builders. Engineered with excellence. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/me');
+        const user = await res.json();
+        if (user.authenticated) {
+          const userNav = document.getElementById('user-nav');
+          if (userNav) {
+            let html = '';
+            html += `<a href="/profile" style="font-weight: 600; font-size: 0.9rem; color: white;"><i class="fa-solid fa-circle-user" style="color: var(--secondary);"></i> Profile</a>`;
+            html += `<a href="/logout" style="font-weight: 600; font-size: 0.9rem; color: #f87171;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>`;
+            
+            userNav.innerHTML = html;
+            userNav.style.display = 'flex';
+          }
+        }
+      } catch (err) {
+        console.error('Session state fetch error:', err);
+      }
+    });
+  </script>
+</body>
+</html>

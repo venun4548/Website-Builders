@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Website Builders - Contact Us for Premium Web Design Services">
+  <meta name="theme-color" content="#0b1120">
+  <title>Contact Us - Website Builders</title>
+
+  <!-- Font Awesome (local) -->
+  <link rel="stylesheet" href="css/fontawesome.min.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <style>
+    /* ── Contact-page-specific styles ── */
+
+    /* Success state */
+    .success-state {
+      display: none;
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .success-state.show {
+      display: block;
+    }
+
+    .success-icon-wrap {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 1.5rem;
+      animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes successPop {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .success-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .success-msg {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      max-width: 420px;
+      margin: 0 auto 2rem;
+    }
+
+    .timer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+      padding: 0.6rem 1.4rem;
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+
+    /* Submit button states */
+    #submit-btn {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    #submit-btn .btn-text,
+    #submit-btn .btn-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+
+    #submit-btn .btn-loading {
+      display: none;
+    }
+
+    #submit-btn.loading .btn-text {
+      display: none;
+    }
+
+    #submit-btn.loading .btn-loading {
+      display: flex;
+    }
+
+    #submit-btn.loading {
+      opacity: 0.8;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* Error message */
+    .form-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+
+    .form-error.show {
+      display: block;
+    }
+
+    /* Input validation */
+    .form-control.invalid {
+      border-color: #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+    }
+
+    .form-control.valid {
+      border-color: #10b981;
+    }
+
+    /* Location badge */
+    .location-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      color: var(--accent);
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Map banner */
+    .map-banner {
+      background: linear-gradient(135deg, #0f172a 0%, #1a1040 50%, #0b1120 100%);
+      padding: 4rem 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+    }
+
+    .map-pin-anim {
+      font-size: 3rem;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.6));
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Scroll Progress -->
+  <div class="scroll-progress" id="scroll-progress"></div>
+
+  <!-- Loading Screen -->
+  <div class="loader-wrapper">
+    <div class="loader"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar scrolled">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <i class="fa-solid fa-code" style="color:var(--secondary);"></i>
+        <span>Website</span>Builders
+      </a>
+
+      <button class="mobile-menu-btn" aria-label="Toggle Menu">
+        <i class="fa-solid fa-bars-staggered"></i>
+      </button>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html">About</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="index.html">Portfolio</a></li>
+        <li><a href="contact.html" class="active">Contact</a></li>
+        <li><a href="contact.html" class="btn btn-primary">Start Project</a></li>
+      </ul>
+      <div class="user-nav" id="user-nav" style="display: none; align-items: center; gap: 1.5rem; background: rgba(30, 41, 59, 0.6); padding: 0.5rem 1.2rem; border-radius: var(--radius-full); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(8px); margin-left: 1.5rem;"></div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <header class="section"
+    style="padding-top: 12rem; padding-bottom: 6rem; background: linear-gradient(135deg, #0b1120 0%, #1e1040 40%, #0b1120 100%); border-bottom: 1px solid rgba(255,255,255,0.05); position:relative; overflow:hidden;">
+    <div
+      style="position:absolute;inset:0;background:radial-gradient(circle at 70% 50%,rgba(139,92,246,0.12),transparent 60%),radial-gradient(circle at 20% 30%,rgba(59,130,246,0.08),transparent 50%);pointer-events:none;">
+    </div>
+    <div class="container text-center reveal fade-up" style="position:relative;z-index:2;">
+      <div class="location-badge"><i class="fa-solid fa-location-dot"></i> Tirupathi, India</div>
+      <h1
+        style="font-size: 4rem; font-weight: 900; margin-bottom: 1rem; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Start a Conversation</h1>
+      <p style="color: var(--text-muted); font-size: 1.2rem; max-width: 600px; margin: 0 auto;">Ready to elevate your
+        digital presence? Reach out and let's discuss your next big project.</p>
+    </div>
+  </header>
+
+  <!-- Contact Section -->
+  <section class="section section-bg">
+    <div class="container contact-container">
+
+      <!-- Left: Contact Info -->
+      <div class="contact-info-card reveal fade-right">
+        <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; color:white;">Get in Touch</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2.5rem; font-size: 1rem; line-height:1.7;">
+          Whether you need a business website, e-commerce platform, or landing page — we are here to help you succeed
+          online.
+        </p>
+
+        <div class="contact-item">
+          <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+          <div>
+            <h4 style="font-size: 1.1rem; margin-bottom: 0.4rem; color: white;">Our Location</h4>
+            <p style="color: var(--text-muted);">Balaji Colony<br>Tirupathi, Andhra Pradesh — 517502</p>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon"><i class="fa-solid fa-envelope"></i></div>
+          <div>
+            <h4 style="font-size: 1.1rem; margin-bottom: 0.4rem; color: white;">Email Us</h4>
+            <p style="color: var(--text-muted);">
+              <a href="mailto:venun4548@gmail.com" style="color: var(--secondary);">venun4548@gmail.com</a>
+            </p>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon"><i class="fa-solid fa-phone"></i></div>
+          <div>
+            <h4 style="font-size: 1.1rem; margin-bottom: 0.4rem; color: white;">Call / WhatsApp</h4>
+            <p style="color: var(--text-muted);">
+              <a href="tel:+917386204885" style="color: var(--secondary);">+91 7386204885</a><br>
+              <span style="font-size:0.85rem;">Mon–Sat, 9am – 7pm IST</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="contact-item">
+          <div class="contact-icon"><i class="fa-brands fa-whatsapp"></i></div>
+          <div>
+            <h4 style="font-size: 1.1rem; margin-bottom: 0.4rem; color: white;">WhatsApp</h4>
+            <p style="color: var(--text-muted);">
+              <a href="https://wa.me/917386204885" target="_blank" style="color: #25D366;">Chat on WhatsApp →</a>
+            </p>
+          </div>
+        </div>
+
+        <div style="margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.08);">
+          <h4 style="margin-bottom: 1rem; color: white; font-size:1rem;">Follow Us</h4>
+          <div class="social-links" style="justify-content: flex-start;">
+            <a href="javascript:void(0)"><i class="fa-brands fa-twitter"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-instagram"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Contact Form -->
+      <div class="glass-card reveal fade-left delay-200" style="padding: 3rem;">
+
+        <!-- Error Banner -->
+        <div class="form-error" id="form-error">
+          <i class="fa-solid fa-circle-exclamation"></i> <span id="error-text">Something went wrong. Please try
+            again.</span>
+        </div>
+
+        <!-- ── FORM STATE ── -->
+        <div id="form-state">
+          <h3 style="font-size: 2rem; margin-bottom: 0.5rem; color: white;">Send a Message</h3>
+          <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:2rem;">All fields marked * are required.
+          </p>
+
+          <form id="contact-form" novalidate>
+            <div class="form-group">
+              <input type="text" class="form-control" id="name" name="name" placeholder="Your Full Name *"
+                autocomplete="name" required>
+            </div>
+
+            <div class="form-group">
+              <input type="email" class="form-control" id="email" name="email" placeholder="Your Email Address *"
+                autocomplete="email" required>
+            </div>
+
+            <div class="form-group">
+              <input type="tel" class="form-control" id="mobile" name="mobile"
+                placeholder="Mobile Number * (e.g. +91 9876543210)" autocomplete="tel" required>
+            </div>
+
+            <div class="form-group">
+              <input type="text" class="form-control" id="address" name="address" placeholder="Your City / Address"
+                autocomplete="address-level2">
+            </div>
+
+            <div class="form-group">
+              <textarea class="form-control" id="message" name="message"
+                placeholder="Tell us about your project, goals, and timeline... *" rows="5" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+              <span class="btn-text">
+                Send Message &nbsp;<i class="fa-solid fa-paper-plane"></i>
+              </span>
+              <span class="btn-loading">
+                <div class="spinner"></div> Submitting…
+              </span>
+            </button>
+          </form>
+        </div>
+
+        <!-- ── SUCCESS STATE ── -->
+        <div class="success-state" id="success-state">
+          <div class="success-icon-wrap">✓</div>
+          <h3 class="success-title">Thank you!</h3>
+          <p class="success-msg">
+            Your enquiry has been submitted successfully.<br><br>
+            <strong>Submission ID:</strong> <span id="display-sub-id" style="color: var(--secondary); font-family: monospace; font-size: 1.2rem; background: rgba(59, 130, 246, 0.1); padding: 0.2rem 0.6rem; border-radius: 4px;">WB-XXXXXXXX-XXXX</span><br><br>
+            Our team has received your request.<br>
+            A confirmation email will be sent to your registered email address within approximately 5 minutes.<br>
+            Our team will contact you shortly.
+          </p>
+          <button class="btn btn-outline" onclick="resetContactForm()">Send Another Message</button>
+        </div>
+
+      </div><!-- end glass-card -->
+
+    </div>
+  </section>
+
+  <!-- Location Banner -->
+  <div class="map-banner">
+    <div class="map-pin-anim">📍</div>
+    <h3 style="font-size:1.5rem; font-weight:800; color:white; margin:1rem 0 0.5rem;">Tirupathi, Andhra Pradesh</h3>
+    <p style="color:var(--text-muted);">Balaji Colony · 517502 · India</p>
+    <a href="https://maps.google.com/?q=Tirupathi,Andhra+Pradesh" target="_blank" class="btn btn-outline"
+      style="margin-top:1.5rem; font-size:0.9rem;">
+      <i class="fa-solid fa-map"></i> Open in Google Maps
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top: 0;">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <a href="index.html" class="logo" style="font-size:1.75rem;">
+            <i class="fa-solid fa-code" style="color:var(--secondary);"></i>
+            <span>Website</span>Builders
+          </a>
+          <p>Premium web design and software development for modern, forward-thinking businesses. We engineer the
+            digital future.</p>
+          <div class="social-links">
+            <a href="javascript:void(0)"><i class="fa-brands fa-twitter"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-instagram"></i></a>
+            <a href="javascript:void(0)"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-links">
+          <h4>Expertise</h4>
+          <ul>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>Business Websites</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>E-Commerce Platforms</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>Landing Pages</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>SEO-Friendly Websites</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>About Agency</a></li>
+            <li><a href="index.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>Our Portfolio</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>Services &amp; Pricing</a></li>
+            <li><a href="contact.html"><i class="fa-solid fa-angle-right"
+                  style="margin-right:8px;font-size:0.8rem;color:var(--accent);"></i>Contact &amp; Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Contact</h4>
+          <ul>
+            <li style="color:var(--text-muted);display:flex;gap:10px;">
+              <i class="fa-solid fa-envelope" style="margin-top:5px;color:var(--secondary);flex-shrink:0;"></i>
+              venun4548@gmail.com
+            </li>
+            <li style="color:var(--text-muted);display:flex;gap:10px;">
+              <i class="fa-solid fa-phone" style="margin-top:5px;color:var(--secondary);flex-shrink:0;"></i>
+              +91 7386204885
+            </li>
+            <li style="color:var(--text-muted);display:flex;gap:10px;">
+              <i class="fa-solid fa-location-dot" style="margin-top:5px;color:var(--secondary);flex-shrink:0;"></i>
+              Balaji Colony, Tirupathi<br>AP — 517502, India
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 Website Builders. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    /**
+     * ============================================================
+     * CONTACT FORM – Frontend JS
+     * ============================================================
+     * IMPORTANT: Replace SCRIPT_URL below with your Google Apps
+     * Script Web App URL after deployment.
+     * ============================================================
+     */
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec';
+
+    const form = document.getElementById('contact-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorBanner = document.getElementById('form-error');
+    const errorText = document.getElementById('error-text');
+    const formState = document.getElementById('form-state');
+    const successState = document.getElementById('success-state');
+
+    // ── Live validation ──
+    form.querySelectorAll('.form-control').forEach(input => {
+      input.addEventListener('blur', () => validateField(input));
+      input.addEventListener('input', () => {
+        input.classList.remove('invalid');
+        if (input.value.trim()) input.classList.add('valid');
+      });
+    });
+
+    function validateField(input) {
+      const val = input.value.trim();
+      let ok = true;
+
+      if (input.required && !val) ok = false;
+      if (input.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) ok = false;
+      if (input.id === 'mobile' && val && !/^[\d\s\+\-\(\)]{7,15}$/.test(val)) ok = false;
+
+      input.classList.toggle('invalid', !ok);
+      input.classList.toggle('valid', ok && !!val);
+      return ok;
+    }
+
+    function validateForm() {
+      let allValid = true;
+      form.querySelectorAll('.form-control').forEach(input => {
+        if (!validateField(input)) allValid = false;
+      });
+      return allValid;
+    }
+
+    function showError(msg) {
+      errorText.textContent = msg;
+      errorBanner.classList.add('show');
+      errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideError() {
+      errorBanner.classList.remove('show');
+    }
+
+    // ── Form Submit ──
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      if (!validateForm()) {
+        showError('Please fill in all required fields correctly before submitting.');
+        return;
+      }
+
+      // Check script URL is configured
+      if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
+        showError('⚠ The form backend is not configured yet. Please deploy the Google Apps Script first.');
+        return;
+      }
+
+      // Loading state
+      submitBtn.classList.add('loading');
+      submitBtn.disabled = true;
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          // Display Submission ID
+          const displaySubId = document.getElementById('display-sub-id');
+          if (displaySubId && result.data && result.data.submissionId) {
+            displaySubId.textContent = result.data.submissionId;
+          }
+          // Show success
+          formState.style.display = 'none';
+          successState.classList.add('show');
+          successState.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          showError(result.message || 'Submission failed. Please try again.');
+        }
+
+      } catch (err) {
+        showError('Network error. Please check your connection and try again.');
+        console.error('Form submission error:', err);
+      } finally {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+      }
+    });
+
+    // ── Reset form ──
+    function resetContactForm() {
+      form.reset();
+      form.querySelectorAll('.form-control').forEach(el => {
+        el.classList.remove('valid', 'invalid');
+      });
+      hideError();
+      successState.classList.remove('show');
+      formState.style.display = 'block';
+    }
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/me');
+        const user = await res.json();
+        if (user.authenticated) {
+          const userNav = document.getElementById('user-nav');
+          if (userNav) {
+            let html = '';
+            if (user.role === 'Admin') {
+              html += `<a href="/dashboard" style="font-weight: 600; font-size: 0.9rem; color: #a78bfa;"><i class="fa-solid fa-gauge"></i> CRM</a>`;
+            }
+            html += `<a href="/profile" style="font-weight: 600; font-size: 0.9rem; color: white;"><i class="fa-solid fa-circle-user" style="color: var(--secondary);"></i> Profile</a>`;
+            html += `<a href="/logout" style="font-weight: 600; font-size: 0.9rem; color: #f87171;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>`;
+            
+            userNav.innerHTML = html;
+            userNav.style.display = 'flex';
+          }
+        }
+      } catch (err) {
+        console.error('Session state fetch error:', err);
+      }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block title %}Staff Portal Login - Website Builders{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card" style="border-color: rgba(59, 130, 246, 0.25);">
+    <div class="logo-container">
+      <a href="#">
+        <i class="fa-solid fa-user-tie" style="color:var(--secondary);"></i>
+        <span>Staff</span>Portal
+      </a>
+    </div>
+
+    <h2 class="auth-title">Staff Sign In</h2>
+    <p class="auth-subtitle">Sign in to manage your assigned enquiries</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('login') }}" method="POST">
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="venu@websitebuilders.com" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="password-wrap">
+          <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+          <i class="fa-regular fa-eye password-toggle" onclick="togglePassword()"></i>
+        </div>
+      </div>
+
+      <div class="form-options">
+        <label class="remember-me">
+          <input type="checkbox" name="remember" id="remember">
+          <span>Remember Me</span>
+        </label>
+        <a href="{{ url_for('forgot_password') }}" class="forgot-link">Forgot Password?</a>
+      </div>
+
+      <button type="submit" class="btn" style="background: linear-gradient(135deg, var(--secondary), var(--accent));">
+        <span>Staff Sign In</span>
+        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Are you an Administrator? <a href="{{ url_for('admin_login') }}">Admin Portal</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePassword() {
+    const pw = document.getElementById('password');
+    const toggle = document.querySelector('.password-toggle');
+    if (pw.type === 'password') {
+      pw.type = 'text';
+      toggle.classList.remove('fa-eye');
+      toggle.classList.add('fa-eye-slash');
+    } else {
+      pw.type = 'password';
+      toggle.classList.remove('fa-eye-slash');
+      toggle.classList.add('fa-eye');
+    }
+  }
+</script>
+{% endblock %}

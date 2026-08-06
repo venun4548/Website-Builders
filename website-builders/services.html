@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Website Builders - Our Premium Services and Transparent Pricing">
+  <meta name="theme-color" content="#0b1120">
+  <title>Services & Pricing - Website Builders</title>
+
+  <!-- Font Awesome (local - avoids CDN tracking prevention on file://) -->
+  <link rel="stylesheet" href="css/fontawesome.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- Scroll Progress -->
+  <div class="scroll-progress" id="scroll-progress"></div>
+
+  <!-- Loading Screen -->
+  <div class="loader-wrapper">
+    <div class="loader"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar scrolled">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <i class="fa-solid fa-code" style="color:var(--secondary);"></i>
+        <span>Website</span>Builders
+      </a>
+      
+      <button class="mobile-menu-btn" aria-label="Toggle Menu">
+        <i class="fa-solid fa-bars-staggered"></i>
+      </button>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="services.html" class="active">Services</a></li>
+        <li><a href="index.html#portfolio">Portfolio</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="contact.html" class="btn btn-primary">Start Project</a></li>
+      </ul>
+      <div class="user-nav" id="user-nav" style="display: none; align-items: center; gap: 1.5rem; background: rgba(30, 41, 59, 0.6); padding: 0.5rem 1.2rem; border-radius: var(--radius-full); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(8px); margin-left: 1.5rem;"></div>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <header class="section overlay-dark" style="padding-top: 12rem; padding-bottom: 8rem; background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1920&q=80'); background-attachment: fixed; background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.05);">
+    <div class="container text-center reveal fade-up relative z-10">
+      <h1 style="font-size: 4rem; font-weight: 900; margin-bottom: 1rem; background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Digital Solutions</h1>
+      <p style="color: var(--text-muted); font-size: 1.25rem; max-width: 650px; margin: 0 auto; font-weight: 400;">We offer comprehensive, enterprise-grade web solutions to help your brand dominate the digital landscape.</p>
+    </div>
+  </header>
+
+  <!-- Detailed Services Section -->
+  <section class="section section-bg">
+    <div class="container">
+      <div class="section-header reveal fade-up">
+        <h2>What We Do Best</h2>
+        <p>Our core competencies designed to solve complex business challenges through beautiful digital experiences.</p>
+      </div>
+
+      <div class="services-grid">
+        <!-- Service 1 -->
+        <div class="service-card reveal fade-up">
+          <div class="service-icon"><i class="fa-solid fa-briefcase"></i></div>
+          <h3>Corporate Websites</h3>
+          <p>Professional, highly-scalable corporate platforms designed to build trust, authority, and convert high-ticket clients.</p>
+          <a href="contact.html" class="service-link">Discuss Your Project <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <!-- Service 2 -->
+        <div class="service-card reveal fade-up delay-100">
+          <div class="service-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+          <h3>E-Commerce Platforms</h3>
+          <p>Beautiful, lightning-fast, and conversion-optimized storefronts engineered for modern retail brands and direct-to-consumer businesses.</p>
+          <a href="contact.html" class="service-link">Start Selling <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <!-- Service 3 -->
+        <div class="service-card reveal fade-up delay-200">
+          <div class="service-icon"><i class="fa-solid fa-layer-group"></i></div>
+          <h3>SaaS Dashboards</h3>
+          <p>Intuitive, data-rich user interfaces and dashboards that simplify complex workflows for software applications.</p>
+          <a href="contact.html" class="service-link">Build Your MVP <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <!-- Service 4 -->
+        <div class="service-card reveal fade-up">
+          <div class="service-icon"><i class="fa-solid fa-rocket"></i></div>
+          <h3>Landing Pages</h3>
+          <p>High-converting, performance-driven landing pages tailored precisely for your marketing campaigns and product launches.</p>
+          <a href="contact.html" class="service-link">Boost Conversions <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <!-- Service 5 -->
+        <div class="service-card reveal fade-up delay-100">
+          <div class="service-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+          <h3>Platform Redesign</h3>
+          <p>Modernize your outdated digital presence with a fresh, contemporary, and incredibly user-friendly architecture.</p>
+          <a href="contact.html" class="service-link">Transform Your Brand <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <!-- Service 6 -->
+        <div class="service-card reveal fade-up delay-200">
+          <div class="service-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+          <h3>Technical SEO</h3>
+          <p>Websites built with semantic HTML, flawless accessibility, and optimized structure for top-tier search engine rankings.</p>
+          <a href="contact.html" class="service-link">Rank Higher <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="section" style="background-color: var(--bg-color);">
+    <div class="container">
+      <div class="section-header reveal fade-up">
+        <h2>Transparent Investments</h2>
+        <p>Premium solutions tailored to businesses serious about digital growth.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Professional Plan -->
+        <div class="pricing-card reveal fade-up">
+          <h3>Professional</h3>
+          <div class="price">$5k<span>/project</span></div>
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">Perfect for growing businesses establishing a premium presence.</p>
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-check"></i> Up to 10 Pages Custom Design</li>
+            <li><i class="fa-solid fa-check"></i> Advanced Animations & Interactions</li>
+            <li><i class="fa-solid fa-check"></i> Lightning Fast Performance</li>
+            <li><i class="fa-solid fa-check"></i> Basic CMS Integration</li>
+            <li><i class="fa-solid fa-check"></i> Technical SEO Foundation</li>
+          </ul>
+          <a href="contact.html" class="btn btn-outline" style="width: 100%;">Select Professional</a>
+        </div>
+
+        <!-- Enterprise Plan -->
+        <div class="pricing-card popular reveal fade-up delay-100">
+          <div class="popular-badge">Most Popular</div>
+          <h3>Enterprise</h3>
+          <div class="price">$15k<span>/project</span></div>
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">Ideal for established brands needing advanced capabilities.</p>
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-check"></i> Unlimited Scalable Pages</li>
+            <li><i class="fa-solid fa-check"></i> E-Commerce / Advanced Logic</li>
+            <li><i class="fa-solid fa-check"></i> Full Headless CMS Architecture</li>
+            <li><i class="fa-solid fa-check"></i> Complex API Integrations</li>
+            <li><i class="fa-solid fa-check"></i> 6 Months Priority Support</li>
+          </ul>
+          <a href="contact.html" class="btn btn-primary" style="width: 100%;">Select Enterprise</a>
+        </div>
+
+        <!-- Retainer Plan -->
+        <div class="pricing-card reveal fade-up delay-200">
+          <h3>Agency Partner</h3>
+          <div class="price">$4k<span>/month</span></div>
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">For continuous design, development, and optimization.</p>
+          <ul class="pricing-features">
+            <li><i class="fa-solid fa-check"></i> Dedicated Design & Dev Team</li>
+            <li><i class="fa-solid fa-check"></i> Continuous A/B Testing</li>
+            <li><i class="fa-solid fa-check"></i> Monthly Performance Audits</li>
+            <li><i class="fa-solid fa-check"></i> Unlimited Maintenance</li>
+            <li><i class="fa-solid fa-check"></i> 24/7 Slack Channel Support</li>
+          </ul>
+          <a href="contact.html" class="btn btn-outline" style="width: 100%;">Discuss Partnership</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section section-bg">
+    <div class="container">
+      <div class="section-header reveal fade-up">
+        <h2>Frequently Asked Questions</h2>
+        <p>Insights into our process, timelines, and deliverables.</p>
+      </div>
+
+      <div class="faq-container reveal fade-up delay-100">
+        <div class="faq-item">
+          <div class="faq-header">
+            How long does a typical project take?
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-content">
+            <p>Our commitment to quality means we don't rush. A premium corporate website typically takes 4-6 weeks from initial discovery to global launch. Complex platforms like custom e-commerce or web apps can span 8-12 weeks.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-header">
+            Do you use templates or custom designs?
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-content">
+            <p>We are a 100% custom design agency. We do not use pre-built templates or rigid themes. Every pixel is crafted specifically for your brand, ensuring a unique and memorable digital presence.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-header">
+            Who owns the website and code after launch?
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-content">
+            <p>You do. Upon final payment and launch, full intellectual property rights, source code, and design assets are transferred to your company. There are no hidden licensing fees.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-header">
+            Do you offer post-launch support?
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-content">
+            <p>Absolutely. The launch is just the beginning. We offer dedicated retainer packages for ongoing feature development, security updates, performance monitoring, and conversion rate optimization.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <a href="index.html" class="logo" style="font-size:1.75rem;">
+            <i class="fa-solid fa-code" style="color:var(--secondary);"></i>
+            <span>Website</span>Builders
+          </a>
+          <p>Premium web design and software development agency for modern, forward-thinking businesses. We engineer the digital future.</p>
+          <div class="social-links">
+            <a href="#"><i class="fa-brands fa-twitter"></i></a>
+            <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#"><i class="fa-brands fa-github"></i></a>
+            <a href="#"><i class="fa-brands fa-dribbble"></i></a>
+          </div>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Expertise</h4>
+          <ul>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Corporate Websites</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> E-Commerce Platforms</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> SaaS Dashboards</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Mobile App UI/UX</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html#about"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> About Agency</a></li>
+            <li><a href="index.html#portfolio"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Selected Works</a></li>
+            <li><a href="services.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Services & Pricing</a></li>
+            <li><a href="contact.html"><i class="fa-solid fa-angle-right" style="margin-right:8px; font-size:0.8rem; color:var(--accent);"></i> Contact & Support</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Contact</h4>
+          <ul>
+            <li style="color:var(--text-muted); display:flex; gap:10px;"><i class="fa-solid fa-envelope" style="margin-top:5px; color:var(--secondary); flex-shrink:0;"></i> venun4548@gmail.com</li>
+            <li style="color:var(--text-muted); display:flex; gap:10px;"><i class="fa-solid fa-phone" style="margin-top:5px; color:var(--secondary); flex-shrink:0;"></i> +91 7386204885</li>
+            <li style="color:var(--text-muted); display:flex; gap:10px;"><i class="fa-solid fa-location-dot" style="margin-top:5px; color:var(--secondary); flex-shrink:0;"></i> Balaji Colony, Tirupathi<br>AP &mdash; 517502, India</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2026 Website Builders. Engineered with excellence. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const res = await fetch('/api/me');
+        const user = await res.json();
+        if (user.authenticated) {
+          const userNav = document.getElementById('user-nav');
+          if (userNav) {
+            let html = '';
+            html += `<a href="/profile" style="font-weight: 600; font-size: 0.9rem; color: white;"><i class="fa-solid fa-circle-user" style="color: var(--secondary);"></i> Profile</a>`;
+            html += `<a href="/logout" style="font-weight: 600; font-size: 0.9rem; color: #f87171;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>`;
+            
+            userNav.innerHTML = html;
+            userNav.style.display = 'flex';
+          }
+        }
+      } catch (err) {
+        console.error('Session state fetch error:', err);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block title %}User Portal Registration - Website Builders{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card" style="border-color: rgba(16, 185, 129, 0.25);">
+    <div class="logo-container">
+      <a href="#">
+        <i class="fa-solid fa-user-plus" style="color:var(--success);"></i>
+        <span>User</span>Registration
+      </a>
+    </div>
+
+    <h2 class="auth-title">Create User Account</h2>
+    <p class="auth-subtitle">Register a new user portal account</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('user_register') }}" method="POST" onsubmit="return validatePasswords()">
+      <div class="form-group">
+        <label class="form-label" for="full_name">Full Name</label>
+        <input type="text" class="form-control" id="full_name" name="full_name" placeholder="John Doe" required autocomplete="name">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="name@websitebuilders.com" required autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="mobile">Mobile Number</label>
+        <input type="tel" class="form-control" id="mobile" name="mobile" placeholder="+91 98765 43210" required autocomplete="tel">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required autocomplete="new-password">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirm_password">Confirm Password</label>
+        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="••••••••" required autocomplete="new-password">
+      </div>
+
+      <button type="submit" class="btn" style="background: linear-gradient(135deg, var(--success), var(--secondary));">
+        <span>Create Account</span>
+        <i class="fa-solid fa-user-plus"></i>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{{ url_for('user_login') }}">Sign In</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function validatePasswords() {
+    const pw = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+    if (pw !== confirm) {
+      alert("Passwords do not match.");
+      return false;
+    }
+    return true;
+  }
+</script>
+{% endblock %}
