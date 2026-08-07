@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard - Website Builders</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #0f172a;
+      --primary-light: #1e293b;
+      --secondary: #3b82f6;
+      --accent: #8b5cf6;
+      --bg-color: #0b1120;
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --gradient-primary: linear-gradient(135deg, var(--secondary), var(--accent));
+      --gradient-text: linear-gradient(to right, #60a5fa, #a78bfa);
+      --radius-sm: 0.5rem;
+      --radius-md: 0.75rem;
+      --radius-lg: 1.25rem;
+      --radius-full: 9999px;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; position: relative; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: -1; background-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1), transparent 40%), radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.1), transparent 40%); pointer-events: none; }
+    
+    header { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .logo { text-decoration: none; color: white; font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; }
+    .logo span { background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .user-profile { display: flex; align-items: center; gap: 1rem; }
+    .user-info { text-align: right; }
+    .user-name { font-weight: 600; font-size: 0.95rem; }
+    .user-role { font-size: 0.8rem; color: var(--text-muted); }
+    .btn-logout { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; padding: 0.4rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.3s; }
+    .btn-logout:hover { background: rgba(239, 68, 68, 0.25); }
+    
+    .layout-container { display: flex; min-height: calc(100vh - 70px); }
+    .sidebar { width: 250px; background: rgba(15, 23, 42, 0.5); border-right: 1px solid var(--border-color); padding: 2rem 1rem; }
+    .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .sidebar-menu a { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1.2rem; text-decoration: none; color: var(--text-muted); font-weight: 500; border-radius: var(--radius-sm); transition: all 0.3s ease; }
+    .sidebar-menu a.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-left: 3px solid #3b82f6; }
+    .sidebar-menu a:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: white; }
+    
+    main { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; overflow-y: auto; }
+    
+    /* Project Card */
+    .project-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); animation: fadeUp 0.6s ease-out forwards; }
+    .project-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .project-title { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700; color: white; }
+    .project-id { font-size: 0.9rem; color: var(--secondary); font-family: monospace; letter-spacing: 1px; margin-top: 0.2rem; }
+    .badge { display: inline-flex; align-items: center; padding: 0.3rem 0.8rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-status { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    
+    .project-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .info-item h4 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .info-item p { font-size: 1rem; font-weight: 500; color: #e2e8f0; }
+    
+    /* Progress Bar */
+    .progress-container { margin-bottom: 2.5rem; background: rgba(15, 23, 42, 0.6); border-radius: var(--radius-lg); padding: 1.5rem; border: 1px solid var(--border-color); }
+    .progress-header { display: flex; justify-content: space-between; margin-bottom: 0.8rem; }
+    .progress-title { font-weight: 600; color: #e2e8f0; }
+    .progress-percent { font-weight: 700; color: var(--accent); font-family: 'Outfit', sans-serif; font-size: 1.2rem; }
+    .progress-bar-bg { height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: var(--radius-full); overflow: hidden; position: relative; }
+    .progress-bar-fill { height: 100%; background: var(--gradient-primary); border-radius: var(--radius-full); width: 0%; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+    
+    /* Interactive Timeline */
+    .timeline-container { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color); overflow-x: auto; padding-bottom: 1rem; }
+    .timeline { display: flex; align-items: flex-start; justify-content: space-between; min-width: 800px; position: relative; }
+    .timeline::before { content: ''; position: absolute; top: 20px; left: 0; right: 0; height: 3px; background: rgba(255, 255, 255, 0.1); z-index: 1; }
+    .timeline-progress-line { position: absolute; top: 20px; left: 0; height: 3px; background: var(--gradient-primary); z-index: 2; transition: width 1s ease; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8); }
+    
+    .timeline-stage { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 3; width: 120px; text-align: center; }
+    .stage-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--primary-light); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--text-muted); transition: all 0.4s ease; margin-bottom: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .stage-name { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); transition: color 0.3s; }
+    
+    .timeline-stage.completed .stage-icon { background: rgba(16, 185, 129, 0.15); border-color: #34d399; color: #34d399; }
+    .timeline-stage.completed .stage-name { color: #e2e8f0; }
+    
+    .timeline-stage.current .stage-icon { background: var(--gradient-primary); border-color: transparent; color: white; transform: scale(1.15); box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); animation: pulse 2s infinite; }
+    .timeline-stage.current .stage-name { color: white; font-weight: 700; }
+
+    /* Updates Section */
+    .updates-section { margin-top: 3rem; }
+    .updates-title { font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
+    .update-card { background: rgba(15, 23, 42, 0.4); border-left: 3px solid var(--secondary); padding: 1.5rem; border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; animation: slideInLeft 0.5s ease-out forwards; opacity: 0; }
+    .update-meta { display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); }
+    .update-meta span { display: flex; align-items: center; gap: 0.4rem; }
+    .update-message { font-size: 1rem; line-height: 1.6; color: #f1f5f9; margin-top: 0.5rem; }
+    
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(139, 92, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
+    
+    .empty-state { text-align: center; padding: 5rem 2rem; background: var(--card-bg); border-radius: var(--radius-lg); border: 1px dashed var(--border-color); }
+    .empty-state i { font-size: 3rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+    .empty-state h3 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .empty-state p { color: var(--text-muted); max-width: 400px; margin: 0 auto; }
+    
+    /* Search Bar */
+    .search-bar { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.8rem 1.2rem; color: white; width: 100%; max-width: 400px; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.8rem; }
+    .search-bar input { background: transparent; border: none; outline: none; color: white; width: 100%; font-size: 0.95rem; }
+    .search-bar input::placeholder { color: var(--text-muted); }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="#" class="logo">
+      <img src="/images/logo.png" alt="Website Builders Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
+      <span>Website</span>Builders
+    </a>
+    
+    <div class="user-profile">
+      <div class="user-info">
+        <div class="user-name">{{ user.full_name }}</div>
+        <div class="user-role">{{ user.role }}</div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+      </a>
+    </div>
+  </header>
+
+  <div class="layout-container">
+    <aside class="sidebar">
+      <ul class="sidebar-menu">
+        <li>
+          <a href="#" class="active"><i class="fa-solid fa-briefcase"></i> My Projects</a>
+        </li>
+        <li>
+          <a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile Settings</a>
+        </li>
+      </ul>
+    </aside>
+
+    <main id="projects-container">
+      <div class="search-bar">
+        <i class="fa-solid fa-search" style="color: var(--text-muted);"></i>
+        <input type="text" id="search-input" placeholder="Search projects by name or ID...">
+      </div>
+
+      <div id="projects-list">
+        <!-- Projects will be injected here via JS -->
+        <div class="empty-state" id="loading-state">
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <h3>Loading Projects...</h3>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const STAGES = [
+      'Requirement Gathering',
+      'Planning',
+      'UI Design',
+      'Development',
+      'Testing',
+      'Deployment',
+      'Support'
+    ];
+    
+    const STAGE_ICONS = [
+      'fa-list-check',
+      'fa-compass-drafting',
+      'fa-pen-nib',
+      'fa-code',
+      'fa-bug-slash',
+      'fa-rocket',
+      'fa-headset'
+    ];
+
+    let allProjects = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchProjects();
+      
+      document.getElementById('search-input').addEventListener('input', (e) => {
+        renderProjects(e.target.value.toLowerCase());
+      });
+      
+      // Real-time updates check every 30 seconds
+      setInterval(fetchProjects, 30000);
+    });
+
+    async function fetchProjects() {
+      try {
+        const res = await fetch('/api/projects');
+        const data = await res.json();
+        if (data.status === 'success') {
+          allProjects = data.data;
+          // Fetch updates for each project
+          for (let p of allProjects) {
+            const updatesRes = await fetch(`/api/projects/${p.id}/updates`);
+            const updatesData = await updatesRes.json();
+            p.updates = updatesData.status === 'success' ? updatesData.data : [];
+          }
+          const searchTerm = document.getElementById('search-input').value.toLowerCase();
+          renderProjects(searchTerm);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderProjects(searchTerm = '') {
+      const container = document.getElementById('projects-list');
+      container.innerHTML = '';
+      
+      const filtered = allProjects.filter(p => 
+        p.name.toLowerCase().includes(searchTerm) || 
+        p.project_id.toLowerCase().includes(searchTerm)
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-solid fa-folder-open"></i>
+            <h3>No Projects Found</h3>
+            <p>You don't have any projects matching your search criteria, or no projects have been assigned to your account yet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach((p, index) => {
+        // Calculate timeline UI
+        const currentStageIdx = STAGES.indexOf(p.stage) !== -1 ? STAGES.indexOf(p.stage) : STAGES.length - 1;
+        const progressLineWidth = (currentStageIdx / (STAGES.length - 1)) * 100;
+        
+        let timelineHTML = '';
+        STAGES.forEach((stage, idx) => {
+          let statusClass = '';
+          let iconContent = `<i class="fa-solid ${STAGE_ICONS[idx]}"></i>`;
+          
+          if (idx < currentStageIdx) {
+            statusClass = 'completed';
+            iconContent = '<i class="fa-solid fa-check"></i>';
+          } else if (idx === currentStageIdx) {
+            statusClass = 'current';
+          }
+          
+          timelineHTML += `
+            <div class="timeline-stage ${statusClass}">
+              <div class="stage-icon">${iconContent}</div>
+              <div class="stage-name">${stage}</div>
+            </div>
+          `;
+        });
+
+        // Updates UI
+        let updatesHTML = '';
+        if (p.updates && p.updates.length > 0) {
+          p.updates.forEach((u, uIdx) => {
+            const delay = uIdx * 0.1;
+            const dateObj = new Date(u.timestamp);
+            updatesHTML += `
+              <div class="update-card" style="animation-delay: ${delay}s;">
+                <div class="update-meta">
+                  <span><i class="fa-regular fa-calendar"></i> ${dateObj.toLocaleDateString()}</span>
+                  <span><i class="fa-regular fa-clock"></i> ${dateObj.toLocaleTimeString()}</span>
+                  <span><i class="fa-solid fa-user-pen"></i> Updated By: ${u.updated_by_name}</span>
+                </div>
+                <div class="update-message">${u.message}</div>
+              </div>
+            `;
+          });
+        } else {
+          updatesHTML = `<p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No updates posted yet.</p>`;
+        }
+
+        const html = `
+          <div class="project-card" style="animation-delay: ${index * 0.1}s;">
+            <div class="project-header">
+              <div>
+                <h2 class="project-title">${p.name}</h2>
+                <div class="project-id">${p.project_id}</div>
+              </div>
+              <span class="badge badge-status">${p.status}</span>
+            </div>
+            
+            <div class="project-info-grid">
+              <div class="info-item">
+                <h4>Start Date</h4>
+                <p>${p.start_date ? new Date(p.start_date).toLocaleDateString() : 'TBD'}</p>
+              </div>
+              <div class="info-item">
+                <h4>Expected Delivery</h4>
+                <p>${p.expected_delivery ? new Date(p.expected_delivery).toLocaleDateString() : 'TBD'}</p>
+              </div>
+              <div class="info-item">
+                <h4>Assigned Team Member</h4>
+                <p><i class="fa-solid fa-user-astronaut" style="color: var(--secondary); margin-right: 5px;"></i> ${p.assigned_staff_name || 'Pending Assignment'}</p>
+              </div>
+              <div class="info-item">
+                <h4>Last Updated</h4>
+                <p>${new Date(p.updated_at).toLocaleString()}</p>
+              </div>
+            </div>
+            
+            <div class="progress-container">
+              <div class="progress-header">
+                <span class="progress-title">Overall Progress</span>
+                <span class="progress-percent">${p.progress}%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${p.progress}%"></div>
+              </div>
+              
+              <div class="timeline-container">
+                <div class="timeline">
+                  <div class="timeline-progress-line" style="width: ${progressLineWidth}%;"></div>
+                  ${timelineHTML}
+                </div>
+              </div>
+            </div>
+            
+            <div class="updates-section">
+              <h3 class="updates-title"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i> Latest Updates</h3>
+              ${updatesHTML}
+            </div>
+          </div>
+        `;
+        container.innerHTML += html;
+      });
+    }
+  </script>
+</body>
+</html>

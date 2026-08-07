@@ -4,14 +4,13 @@ import requests
 import logging
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 
 from functools import wraps
 from config import Config
-from models import db, User, PasswordResetToken, AuditLog
+from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -258,8 +257,8 @@ def user_login():
             # Redirect to Vercel frontend if configured
             frontend_url = os.environ.get('FRONTEND_URL')
             if frontend_url:
-                return redirect(f"{frontend_url.rstrip('/')}/index.html")
-            return redirect('/index.html')
+                return redirect(f"{frontend_url.rstrip('/')}/my-projects")
+            return redirect(url_for('my_projects'))
             
         logger.warning(f"Failed User login attempt for email: {email}")
         flash('Invalid email or password.', 'error')
@@ -339,7 +338,7 @@ def reset_password(token):
     
     if not token_record or token_record.expires_at < datetime.utcnow():
         flash('Invalid or expired password reset link.', 'error')
-        return redirect(url_for('login'))
+        return redirect(url_for('user_login'))
         
     if request.method == 'POST':
         password = request.form.get('password', '')
@@ -355,7 +354,7 @@ def reset_password(token):
             token_record.used = True
             db.session.commit()
             flash('Password reset successful. Please log in.', 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('user_login'))
             
         flash('Error resetting password.', 'error')
         
@@ -365,7 +364,7 @@ def reset_password(token):
 @login_required
 def logout():
     # Detect role for smart redirect
-    is_admin = current_user.role == 'Admin'
+    is_admin = current_user.role in ['Super Admin', 'Admin', 'Staff']
     logout_user()
     session.clear()
     flash('Logged out successfully.', 'success')
@@ -374,6 +373,13 @@ def logout():
     return redirect(url_for('user_login'))
 
 # --- Dashboard Routes ---
+
+@app.route('/my-projects')
+@login_required
+def my_projects():
+    if current_user.role != 'User':
+        return redirect(url_for('dashboard'))
+    return render_template('customer_dashboard.html', user=current_user)
 
 @app.route('/super-admin')
 @role_required('Super Admin')
@@ -400,7 +406,7 @@ def dashboard():
         return redirect(url_for('admin_dashboard'))
     elif current_user.role == 'Staff':
         return redirect(url_for('staff_dashboard'))
-    return redirect(url_for('home'))
+    return redirect(url_for('my_projects'))
 
 
 @app.route('/profile')
@@ -574,10 +580,14 @@ def modify_user(user_id):
         
     if request.method == 'DELETE':
         email = user.email
-        db.session.delete(user)
-        db.session.commit()
-        log_audit('Deleted User', current_user.email, target_user=email)
-        return jsonify({'status': 'success', 'message': 'User deleted successfully'})
+        try:
+            db.session.delete(user)
+            db.session.commit()
+            log_audit('Deleted User', current_user.email, target_user=email)
+            return jsonify({'status': 'success', 'message': 'User deleted successfully'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/super-admin/users/<int:user_id>/reset-password', methods=['POST'])
 @role_required('Super Admin')
@@ -592,6 +602,151 @@ def reset_user_password(user_id):
     db.session.commit()
     log_audit('Reset User Password', current_user.email, target_user=user.email)
     return jsonify({'status': 'success', 'message': 'Password reset successfully'})
+
+# --- Project Management API ---
+
+@app.route('/api/projects', methods=['GET'])
+@login_required
+def get_projects():
+    try:
+        if current_user.role in ['Super Admin', 'Admin']:
+            projects = Project.query.order_by(Project.created_at.desc()).all()
+        elif current_user.role == 'Staff':
+            projects = Project.query.filter_by(assigned_staff_id=current_user.id).order_by(Project.created_at.desc()).all()
+        else:
+            projects = Project.query.filter_by(customer_id=current_user.id).order_by(Project.created_at.desc()).all()
+            
+        return jsonify({'status': 'success', 'data': [p.to_dict() for p in projects]})
+    except Exception as e:
+        logger.error(f"Error fetching projects: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/projects', methods=['POST'])
+@role_required('Super Admin', 'Admin')
+def create_project():
+    data = request.json
+    try:
+        # Generate WBP-YYYYMMDD-XXXX
+        today = datetime.utcnow().strftime('%Y%m%d')
+        last_project = Project.query.filter(Project.project_id.like(f"WBP-{today}-%")).order_by(Project.project_id.desc()).first()
+        if last_project:
+            last_num = int(last_project.project_id.split('-')[-1])
+            new_num = f"{(last_num + 1):04d}"
+        else:
+            new_num = "0001"
+            
+        new_project_id = f"WBP-{today}-{new_num}"
+        
+        start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date() if data.get('start_date') else None
+        expected_delivery = datetime.strptime(data.get('expected_delivery'), '%Y-%m-%d').date() if data.get('expected_delivery') else None
+        
+        new_project = Project(
+            project_id=new_project_id,
+            name=data.get('name'),
+            customer_id=data.get('customer_id'),
+            submission_id=data.get('submission_id'),
+            start_date=start_date,
+            expected_delivery=expected_delivery,
+            assigned_staff_id=data.get('assigned_staff_id') or None,
+            status=data.get('status', 'Not Started'),
+            stage=data.get('stage', 'Requirement Gathering'),
+            progress=data.get('progress', 0)
+        )
+        
+        db.session.add(new_project)
+        db.session.commit()
+        log_audit('Created Project', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Project created successfully', 'data': new_project.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creating project: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/projects/<int:project_id>', methods=['PUT', 'DELETE'])
+@login_required
+def manage_project(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Check permissions
+    if request.method == 'DELETE':
+        if current_user.role not in ['Super Admin', 'Admin']:
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+            
+        db.session.delete(project)
+        db.session.commit()
+        log_audit('Deleted Project', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Project deleted successfully'})
+        
+    if request.method == 'PUT':
+        if current_user.role == 'User':
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+            
+        if current_user.role == 'Staff' and project.assigned_staff_id != current_user.id:
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+            
+        data = request.json
+        
+        # Staff can only update progress and stage and status
+        if 'progress' in data:
+            project.progress = int(data['progress'])
+        if 'stage' in data:
+            project.stage = data['stage']
+        if 'status' in data:
+            project.status = data['status']
+        
+        # Admins can update everything
+        if current_user.role in ['Super Admin', 'Admin']:
+            if 'name' in data:
+                project.name = data['name']
+            if 'expected_delivery' in data and data['expected_delivery']:
+                project.expected_delivery = datetime.strptime(data['expected_delivery'], '%Y-%m-%d').date()
+            if 'assigned_staff_id' in data:
+                project.assigned_staff_id = data['assigned_staff_id'] or None
+                
+        db.session.commit()
+        log_audit(f'Updated Project {project.project_id}', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Project updated successfully'})
+
+@app.route('/api/projects/<int:project_id>/updates', methods=['GET', 'POST'])
+@login_required
+def project_updates(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Permission check
+    if current_user.role == 'User' and project.customer_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+    if current_user.role == 'Staff' and project.assigned_staff_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        
+    if request.method == 'GET':
+        updates = ProjectUpdate.query.filter_by(project_id=project.id).order_by(ProjectUpdate.timestamp.desc()).all()
+        return jsonify({'status': 'success', 'data': [u.to_dict() for u in updates]})
+        
+    if request.method == 'POST':
+        if current_user.role == 'User':
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+            
+        message = request.json.get('message')
+        if not message:
+            return jsonify({'status': 'error', 'message': 'Message is required'})
+            
+        new_update = ProjectUpdate(
+            project_id=project.id,
+            updated_by_id=current_user.id,
+            message=message
+        )
+        db.session.add(new_update)
+        db.session.commit()
+        
+        # Mock Email Notification Logging
+        logger.info("== EMAIL NOTIFICATION ==")
+        logger.info(f"To: {project.customer.email if project.customer else 'Unknown'}")
+        logger.info(f"Subject: Project Update - {project.project_id} - {project.name}")
+        logger.info(f"Current Stage: {project.stage} | Progress: {project.progress}%")
+        logger.info(f"Latest Update: {message}")
+        logger.info("========================")
+        
+        return jsonify({'status': 'success', 'message': 'Update added successfully'})
 
 @app.route('/api/super-admin/audit-logs', methods=['GET'])
 @role_required('Super Admin')

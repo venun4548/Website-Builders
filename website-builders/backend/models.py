@@ -66,3 +66,66 @@ class AuditLog(db.Model):
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
             'status': self.status
         }
+
+class Project(db.Model):
+    __tablename__ = 'projects'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    submission_id = db.Column(db.String(100), nullable=True)
+    start_date = db.Column(db.Date, nullable=True)
+    expected_delivery = db.Column(db.Date, nullable=True)
+    assigned_staff_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    status = db.Column(db.String(50), default='Not Started')
+    stage = db.Column(db.String(50), default='Requirement Gathering')
+    progress = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    customer = db.relationship('User', foreign_keys=[customer_id], backref=db.backref('projects', cascade='all, delete-orphan'))
+    assigned_staff = db.relationship('User', foreign_keys=[assigned_staff_id], backref='assigned_projects')
+    updates = db.relationship('ProjectUpdate', backref='project', cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'name': self.name,
+            'customer_id': self.customer_id,
+            'customer_name': self.customer.full_name if self.customer else None,
+            'customer_email': self.customer.email if self.customer else None,
+            'submission_id': self.submission_id,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'expected_delivery': self.expected_delivery.isoformat() if self.expected_delivery else None,
+            'assigned_staff_id': self.assigned_staff_id,
+            'assigned_staff_name': self.assigned_staff.full_name if self.assigned_staff else None,
+            'status': self.status,
+            'stage': self.stage,
+            'progress': self.progress,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class ProjectUpdate(db.Model):
+    __tablename__ = 'project_updates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
+    updated_by_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    updated_by = db.relationship('User', foreign_keys=[updated_by_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'updated_by_id': self.updated_by_id,
+            'updated_by_name': self.updated_by.full_name if self.updated_by else 'System',
+            'message': self.message,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
+        }
