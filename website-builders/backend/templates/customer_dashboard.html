@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Customer Dashboard - Website Builders</title>
   
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
@@ -107,7 +107,43 @@
     .empty-state p { color: var(--text-muted); max-width: 400px; margin: 0 auto; }
     
     /* Search Bar */
-    .search-bar { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.8rem 1.2rem; color: white; width: 100%; max-width: 400px; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.8rem; }
+    /* Filters Section */
+    .filters-section {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      align-items: flex-end;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 150px;
+    }
+    .filter-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .filter-input {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.8rem;
+      color: white;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .filter-input:focus { border-color: var(--secondary); }
+    .search-bar { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.8rem 1.2rem; color: white; width: 100%; display: flex; align-items: center; gap: 0.8rem; }
     .search-bar input { background: transparent; border: none; outline: none; color: white; width: 100%; font-size: 0.95rem; }
     .search-bar input::placeholder { color: var(--text-muted); }
 
@@ -116,10 +152,9 @@
 <body>
 
   <header>
-    <a href="#" class="logo">
-      <img src="/images/logo.png" alt="Website Builders Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
-      <span>Website</span>Builders
-    </a>
+      <a href="{{ url_for('customer_dashboard') }}" class="logo" style="gap: 0;">
+        <img src="/images/logo.png" alt="Website Builders Logo" style="height: 45px; width: auto; object-fit: contain;">
+      </a>
     
     <div class="user-profile">
       <div class="user-info">
@@ -145,9 +180,51 @@
     </aside>
 
     <main id="projects-container">
-      <div class="search-bar">
-        <i class="fa-solid fa-search" style="color: var(--text-muted);"></i>
-        <input type="text" id="search-input" placeholder="Search projects by name or ID...">
+      <div class="filters-section">
+        <div class="filter-group" style="flex: 2; min-width: 250px;">
+          <label for="search-input">Search Projects</label>
+          <div class="search-bar" style="margin-bottom: 0;">
+            <i class="fa-solid fa-search" style="color: var(--text-muted);"></i>
+            <input type="text" id="search-input" placeholder="Search by name or ID...">
+          </div>
+        </div>
+        
+        <div class="filter-group">
+          <label for="filter-status">Project Status</label>
+          <select id="filter-status" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
+            <option value="">All Statuses</option>
+            <option value="Not Started">Not Started</option>
+            <option value="Requirement Gathering">Requirement Gathering</option>
+            <option value="Planning">Planning</option>
+            <option value="UI Design">UI Design</option>
+            <option value="Development">Development</option>
+            <option value="Testing">Testing</option>
+            <option value="Deployment">Deployment</option>
+            <option value="Completed">Completed</option>
+            <option value="Support">Support</option>
+            <option value="On Hold">On Hold</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="filter-progress">Progress</label>
+          <select id="filter-progress" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
+            <option value="">All Progress</option>
+            <option value="0-25">0% - 25%</option>
+            <option value="26-50">26% - 50%</option>
+            <option value="51-75">51% - 75%</option>
+            <option value="76-100">76% - 100%</option>
+            <option value="100">100% Completed</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-date">Delivery Date</label>
+          <select id="filter-date" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
+            <option value="asc">Earliest First</option>
+            <option value="desc">Latest First</option>
+          </select>
+        </div>
       </div>
 
       <div id="projects-list">
@@ -186,9 +263,10 @@
     document.addEventListener('DOMContentLoaded', () => {
       fetchProjects();
       
-      document.getElementById('search-input').addEventListener('input', (e) => {
-        renderProjects(e.target.value.toLowerCase());
-      });
+      document.getElementById('search-input').addEventListener('input', () => renderProjects());
+      document.getElementById('filter-status').addEventListener('change', () => renderProjects());
+      document.getElementById('filter-progress').addEventListener('change', () => renderProjects());
+      document.getElementById('filter-date').addEventListener('change', () => renderProjects());
       
       // Real-time updates check every 30 seconds
       setInterval(fetchProjects, 30000);
@@ -206,22 +284,43 @@
             const updatesData = await updatesRes.json();
             p.updates = updatesData.status === 'success' ? updatesData.data : [];
           }
-          const searchTerm = document.getElementById('search-input').value.toLowerCase();
-          renderProjects(searchTerm);
+          renderProjects();
         }
       } catch (err) {
         console.error(err);
       }
     }
 
-    function renderProjects(searchTerm = '') {
+    function renderProjects() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      const statusFilter = document.getElementById('filter-status').value;
+      const progressFilter = document.getElementById('filter-progress').value;
+      const dateFilter = document.getElementById('filter-date').value;
+      
       const container = document.getElementById('projects-list');
       container.innerHTML = '';
       
-      const filtered = allProjects.filter(p => 
-        p.name.toLowerCase().includes(searchTerm) || 
-        p.project_id.toLowerCase().includes(searchTerm)
-      );
+      let filtered = allProjects.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm) || p.project_id.toLowerCase().includes(searchTerm);
+        const matchesStatus = statusFilter === '' || p.status === statusFilter;
+        let matchesProgress = true;
+        
+        if (progressFilter === '0-25') matchesProgress = p.progress >= 0 && p.progress <= 25;
+        else if (progressFilter === '26-50') matchesProgress = p.progress >= 26 && p.progress <= 50;
+        else if (progressFilter === '51-75') matchesProgress = p.progress >= 51 && p.progress <= 75;
+        else if (progressFilter === '76-100') matchesProgress = p.progress >= 76 && p.progress <= 100;
+        else if (progressFilter === '100') matchesProgress = p.progress === 100;
+        
+        return matchesSearch && matchesStatus && matchesProgress;
+      });
+      
+      filtered.sort((a, b) => {
+        const dateA = a.expected_delivery ? new Date(a.expected_delivery).getTime() : Number.MAX_SAFE_INTEGER;
+        const dateB = b.expected_delivery ? new Date(b.expected_delivery).getTime() : Number.MAX_SAFE_INTEGER;
+        
+        if (dateFilter === 'asc') return dateA - dateB;
+        return dateB - dateA;
+      });
 
       if (filtered.length === 0) {
         container.innerHTML = `

@@ -6,7 +6,7 @@
   <title>CRM Dashboard - Website Builders</title>
   
   <!-- Font Awesome & Google Fonts -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
@@ -80,9 +80,7 @@
     }
 
     .logo span {
-      background: var(--gradient-text);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      display: none;
     }
 
     .user-profile {
@@ -375,9 +373,8 @@
 <body>
 
   <header>
-    <a href="#" class="logo">
-      <i class="fa-solid fa-code" style="color:var(--secondary);"></i>
-      <span>Website</span>Builders
+    <a href="#" class="logo" style="gap: 0;">
+      <img src="/images/logo.png" alt="Website Builders Logo" style="height: 45px; width: auto; object-fit: contain;">
     </a>
     
     <div class="user-profile">
