@@ -798,6 +798,13 @@
   </div>
 
   <script>
+    function toggleSection(sectionId) {
+       if (sectionId === 'section-enquiries') switchTab('enquiries');
+       else if (sectionId === 'section-projects') switchTab('projects');
+       else if (sectionId === 'section-users') switchTab('users');
+       else if (sectionId === 'section-audit') switchTab('audit');
+       else alert('This section is under development.');
+    }
 
     function switchTab(tab) {
       document.getElementById('section-enquiries').style.display = 'none';

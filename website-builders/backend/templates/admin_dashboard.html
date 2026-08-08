@@ -694,6 +694,10 @@
   </div>
 
   <script>
+    function toggleSection(sectionId) {
+      if (sectionId === 'section-enquiries') return;
+      alert('This section is currently under development.');
+    }
     let enquiries = [];
     let users = [];
     const currentUserRole = "{{ user.role }}";
