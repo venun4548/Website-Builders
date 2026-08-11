@@ -334,13 +334,13 @@
     
     <!-- Topbar -->
     <header>
-      <div class="search-box">
+      <div class="search-box" onclick="document.getElementById('search-modal').style.display='flex'; document.getElementById('global-search-input').focus();" style="cursor: pointer;">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Search (Ctrl + K)...">
+        <span style="color: var(--text-muted); font-size: 14px;">Search (Ctrl + K)...</span>
       </div>
       
       <div class="topbar-actions">
-        <button class="btn-icon">
+        <button class="btn-icon" onclick="toggleNotifications()">
           <i class="fa-regular fa-bell"></i>
           <span class="notif-dot"></span>
         </button>
@@ -404,7 +404,8 @@
       <!-- Projects Tables -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">My Active Projects</h2>
+          <h2 class="card-title" style="flex:1;">My Active Projects</h2>
+          <button class="btn btn-secondary" onclick="openFileModal()"><i class="fa-solid fa-upload"></i> Upload Asset</button>
           <button class="btn btn-secondary">View All</button>
         </div>
         <div class="table-responsive">
@@ -427,25 +428,121 @@
     </div>
   </div>
 
+  
+  <!-- Global Search Modal -->
+  <div class="modal" id="search-modal">
+    <div class="modal-content" style="max-width: 600px; padding: 1rem; align-self: flex-start; margin-top: 10vh;">
+      <div style="display: flex; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); margin-right: 1rem; font-size: 1.25rem;"></i>
+        <input type="text" id="global-search-input" style="width: 100%; border: none !important; background: transparent !important; font-size: 1.25rem !important; padding: 0 !important; box-shadow: none !important;" placeholder="Search projects, users, or tickets...">
+      </div>
+      <div id="search-results" style="max-height: 400px; overflow-y: auto; margin-top: 1rem;">
+        <div style="padding: 1rem; text-align: center; color: var(--text-muted);">Type to start searching...</div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- File Upload Modal -->
+  <div class="modal" id="file-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <button class="modal-close" onclick="closeFileModal()"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="modal-title">Upload Project Asset</h3>
+      <form id="file-form" onsubmit="submitFile(event)">
+        <input type="hidden" id="file-project-id">
+        <div class="filter-group" style="margin-bottom: 1rem;">
+          <label>Select Project</label>
+          <select id="file-project-select" class="filter-input" required></select>
+        </div>
+        <div class="filter-group" style="margin-bottom: 1rem;">
+          <label>Asset Category</label>
+          <select id="file-category" class="filter-input">
+            <option value="Design">Design</option>
+            <option value="Document">Document</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="filter-group" style="margin-bottom: 1.5rem;">
+          <label>File</label>
+          <input type="file" id="file-input" class="filter-input" required>
+        </div>
+        <button type="submit" class="btn-action" style="width: 100%; justify-content: center; background: rgba(16, 185, 129, 0.15); color: #34d399;">Upload Asset</button>
+      </form>
+    </div>
+  </div>
+
   <script>
+    
+    function openFileModal() {
+       document.getElementById('file-modal').style.display = 'flex';
+       const select = document.getElementById('file-project-select');
+       select.innerHTML = '<option value="">Loading...</option>';
+       fetch('/api/projects').then(r => r.json()).then(d => {
+          if(d.status === 'success') {
+             select.innerHTML = d.data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+          }
+       });
+    }
+    
+    function closeFileModal() {
+       document.getElementById('file-modal').style.display = 'none';
+    }
+
+    async function submitFile(e) {
+       e.preventDefault();
+       const projectId = document.getElementById('file-project-select').value;
+       const file = document.getElementById('file-input').files[0];
+       const category = document.getElementById('file-category').value;
+       
+       if(!projectId || !file) return alert('Missing fields');
+       
+       const formData = new FormData();
+       formData.append('file', file);
+       formData.append('category', category);
+       
+       try {
+         const res = await fetch(`/api/projects/${projectId}/files`, {
+            method: 'POST',
+            body: formData
+         });
+         const data = await res.json();
+         if(data.status === 'success') {
+            alert('File uploaded successfully!');
+            closeFileModal();
+         } else {
+            alert(data.message);
+         }
+       } catch (err) {
+         console.error(err);
+         alert('Upload failed');
+       }
+    }
+
     async function fetchDashboardData() {
       try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        if (data.status === 'success') {
-          document.getElementById('metric-projects').innerText = data.data.length;
-          document.getElementById('metric-clients').innerText = data.data.length;
+        // Fetch Metrics
+        const statRes = await fetch('/api/stats/staff');
+        const statData = await statRes.json();
+        if (statData.status === 'success') {
+          const stats = statData.data;
+          document.getElementById('metric-projects').innerText = stats.assigned_projects;
+          document.getElementById('metric-clients').innerText = stats.active_projects;
+        }
 
-          // Projects Table
+        // Fetch Projects
+        const projRes = await fetch('/api/projects');
+        const projData = await projRes.json();
+        if (projData.status === 'success') {
           const ptbody = document.getElementById('projects-tbody');
           ptbody.innerHTML = '';
+          const activeProjects = projData.data.filter(p => p.status !== 'Completed');
           
-          if (data.data.length === 0) {
+          if (activeProjects.length === 0) {
             ptbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active projects.</td></tr>';
             return;
           }
           
-          data.data.slice(0, 5).forEach(p => {
+          activeProjects.slice(0, 5).forEach(p => {
             let badgeClass = 'badge-pending';
             if (p.status === 'Completed') badgeClass = 'badge-completed';
             if (p.status === 'In Progress') badgeClass = 'badge-progress';

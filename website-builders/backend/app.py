@@ -11,7 +11,7 @@ from flask_cors import CORS
 
 from functools import wraps
 from config import Config
-from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate, Notification, ProjectFile, Website, Task
+from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate, Notification, ProjectFile, Website, Task, SystemSetting, EnquiryState
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -983,3 +983,151 @@ def download_file(filename):
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, port=5000)
+
+
+# ==========================================
+# NEW DASHBOARD STATS API
+# ==========================================
+@app.route('/api/stats/super-admin', methods=['GET'])
+@login_required
+@requires_permission('manage_users')
+def stats_super_admin():
+    total_users = User.query.count()
+    total_admins = User.query.filter_by(role='Admin').count()
+    total_staff = User.query.filter_by(role='Staff').count()
+    total_customers = User.query.filter_by(role='User').count()
+    total_projects = Project.query.count()
+    active_projects = Project.query.filter(Project.status != 'Completed').count()
+    completed_projects = Project.query.filter_by(status='Completed').count()
+    unread_messages = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+    
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'total_users': total_users,
+            'total_admins': total_admins,
+            'total_staff': total_staff,
+            'total_customers': total_customers,
+            'total_projects': total_projects,
+            'active_projects': active_projects,
+            'completed_projects': completed_projects,
+            'unread_messages': unread_messages,
+            'pending_emails': 0, # Placeholder until email tracking is added
+            'total_enquiries': 0 # We will fetch this dynamically below or frontend does it
+        }
+    })
+
+@app.route('/api/stats/admin', methods=['GET'])
+@login_required
+@requires_permission('manage_projects')
+def stats_admin():
+    active_projects = Project.query.filter(Project.status != 'Completed').count()
+    completed_projects = Project.query.filter_by(status='Completed').count()
+    unread_messages = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+    
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'active_projects': active_projects,
+            'completed_projects': completed_projects,
+            'unread_messages': unread_messages,
+            'pending_emails': 0
+        }
+    })
+
+@app.route('/api/stats/staff', methods=['GET'])
+@login_required
+def stats_staff():
+    assigned_projects = Project.query.filter_by(assigned_staff_id=current_user.id).count()
+    active_projects = Project.query.filter(Project.assigned_staff_id == current_user.id, Project.status != 'Completed').count()
+    completed_projects = Project.query.filter_by(assigned_staff_id=current_user.id, status='Completed').count()
+    unread_messages = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+    
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'assigned_projects': assigned_projects,
+            'active_projects': active_projects,
+            'completed_projects': completed_projects,
+            'unread_messages': unread_messages,
+            'pending_updates': 0
+        }
+    })
+
+@app.route('/api/settings', methods=['GET', 'POST'])
+@login_required
+@requires_permission('manage_users')
+def manage_settings():
+    if request.method == 'GET':
+        settings = SystemSetting.query.all()
+        return jsonify({'status': 'success', 'data': {s.key: s.value for s in settings}})
+    else:
+        data = request.json
+        for k, v in data.items():
+            setting = SystemSetting.query.filter_by(key=k).first()
+            if setting:
+                setting.value = str(v)
+            else:
+                new_setting = SystemSetting(key=k, value=str(v))
+                db.session.add(new_setting)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Settings saved successfully'})
+
+
+
+@app.route('/api/reports', methods=['GET'])
+@login_required
+@requires_permission('view_reports')
+def get_reports():
+    report_type = request.args.get('type', 'projects')
+    if report_type == 'projects':
+        projects = Project.query.all()
+        return jsonify({'status': 'success', 'data': [{'id': p.project_id, 'name': p.name, 'status': p.status, 'progress': p.progress} for p in projects]})
+    elif report_type == 'users':
+        users = User.query.all()
+        return jsonify({'status': 'success', 'data': [u.to_dict() for u in users]})
+    return jsonify({'status': 'error', 'message': 'Invalid report type'})
+
+@app.route('/api/super-admin/users/<int:user_id>/change-role', methods=['PUT'])
+@login_required
+@requires_permission('manage_users')
+def change_user_role(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        return jsonify({'status': 'error', 'message': 'Cannot change your own role'})
+    
+    data = request.json
+    new_role = data.get('role')
+    if new_role not in ['Super Admin', 'Admin', 'Staff', 'User']:
+        return jsonify({'status': 'error', 'message': 'Invalid role'})
+        
+    user.role = new_role
+    db.session.commit()
+    log_audit('Changed Role', current_user.email, target_user=user.email)
+    return jsonify({'status': 'success', 'message': 'Role updated successfully'})
+
+
+@app.route('/api/super-admin/users/<int:user_id>', methods=['PUT', 'DELETE'])
+@login_required
+@requires_permission('manage_users')
+def manage_single_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if request.method == 'PUT':
+        data = request.json
+        user.full_name = data.get('full_name', user.full_name)
+        user.mobile = data.get('mobile', user.mobile)
+        user.is_active = data.get('status', user.is_active)
+        if 'role' in data and user.id != current_user.id:
+            user.role = data['role']
+        db.session.commit()
+        log_audit('Updated User', current_user.email, target_user=user.email)
+        return jsonify({'status': 'success', 'message': 'User updated successfully'})
+    
+    if request.method == 'DELETE':
+        if user.id == current_user.id:
+            return jsonify({'status': 'error', 'message': 'Cannot delete your own account'})
+        email = user.email
+        db.session.delete(user)
+        db.session.commit()
+        log_audit('Deleted User', current_user.email, target_user=email)
+        return jsonify({'status': 'success', 'message': 'User deleted successfully'})

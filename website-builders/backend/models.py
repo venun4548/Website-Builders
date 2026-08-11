@@ -275,3 +275,23 @@ class ProjectFile(db.Model):
             'category': self.category,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None
         }
+
+
+class SystemSetting(db.Model):
+    __tablename__ = 'system_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class EnquiryState(db.Model):
+    __tablename__ = 'enquiry_states'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.String(100), unique=True, nullable=False)
+    status = db.Column(db.String(50), default='New')
+    assigned_staff_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    is_converted = db.Column(db.Boolean, default=False)
+    
+    assigned_staff = db.relationship('User', foreign_keys=[assigned_staff_id])

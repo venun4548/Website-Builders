@@ -343,6 +343,7 @@
 
       <div class="nav-section">System</div>
       <a href="#" class="nav-link" id="nav-audit" onclick="switchTab('section-audit')"><i class="fa-solid fa-list-check"></i> Audit Logs</a>
+      <a href="#" class="nav-link" id="nav-settings" onclick="switchTab('section-settings')"><i class="fa-solid fa-gear"></i> Settings</a>
       <a href="{{ url_for('profile') }}" class="nav-link"><i class="fa-solid fa-user-circle"></i> Profile Settings</a>
       <a href="/" class="nav-link"><i class="fa-solid fa-globe"></i> Back to Website</a>
     </ul>
@@ -353,13 +354,13 @@
     
     <!-- Topbar -->
     <header>
-      <div class="search-box">
+      <div class="search-box" onclick="document.getElementById('search-modal').style.display='flex'; document.getElementById('global-search-input').focus();" style="cursor: pointer;">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Search (Ctrl + K)...">
+        <span style="color: var(--text-muted); font-size: 14px;">Search (Ctrl + K)...</span>
       </div>
       
       <div class="topbar-actions">
-        <button class="btn-icon">
+        <button class="btn-icon" onclick="toggleNotifications()">
           <i class="fa-regular fa-bell"></i>
           <span class="notif-dot" style="background: var(--status-new);"></span>
         </button>
@@ -394,34 +395,50 @@
     <div class="metrics-grid">
       <div class="metric-card">
         <div class="metric-details">
+          <h3>Total Users</h3>
+          <div class="metric-val loading-metric" id="metric-users">0</div>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-details">
+          <h3>Total Projects</h3>
+          <div class="metric-val loading-metric" id="metric-projects">0</div>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-briefcase"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-details">
+          <h3>Active Projects</h3>
+          <div class="metric-val loading-metric" id="metric-active-projects">0</div>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-spinner fa-spin-pulse"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-details">
+          <h3>Completed Projects</h3>
+          <div class="metric-val loading-metric" id="metric-completed-projects">0</div>
+        </div>
+        <div class="metric-icon"><i class="fa-solid fa-check-circle"></i></div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-details">
           <h3>Total Enquiries</h3>
-          <div class="metric-val" id="metric-total">0</div>
+          <div class="metric-val loading-metric" id="metric-total-enquiries">0</div>
         </div>
-        <div class="metric-icon theme-blue"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div class="metric-icon"><i class="fa-solid fa-inbox"></i></div>
       </div>
 
       <div class="metric-card">
         <div class="metric-details">
-          <h3>New Tickets</h3>
-          <div class="metric-val" id="metric-new">0</div>
+          <h3>Unread Messages</h3>
+          <div class="metric-val loading-metric" id="metric-unread-messages">0</div>
         </div>
-        <div class="metric-icon theme-purple"><i class="fa-solid fa-ticket"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Sent Emails</h3>
-          <div class="metric-val" id="metric-sent">0</div>
-        </div>
-        <div class="metric-icon theme-green"><i class="fa-solid fa-paper-plane"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Failed Emails</h3>
-          <div class="metric-val" id="metric-failed">0</div>
-        </div>
-        <div class="metric-icon theme-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="metric-icon"><i class="fa-solid fa-envelope"></i></div>
       </div>
     </div>
 
@@ -788,7 +805,102 @@
     </div>
   </div>
 
+  
+  <div id="section-settings" style="display: none;">
+    <div class="filters-section">
+      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">System Settings</h2>
+      <button class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #34d399;" onclick="saveSettings()"><i class="fa-solid fa-save"></i> Save Settings</button>
+      <button class="btn-action" onclick="fetchSettings()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+    <div class="card" style="max-width: 800px; margin-bottom: 2rem;">
+      <h3 style="margin-bottom: 1.5rem; color: var(--primary-dark);">General Configuration</h3>
+      <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+        <div class="filter-group">
+          <label>Platform Name</label>
+          <input type="text" id="setting-platform-name" class="filter-input" placeholder="Website Builders">
+        </div>
+        <div class="filter-group">
+          <label>Admin Notification Email</label>
+          <input type="email" id="setting-admin-email" class="filter-input" placeholder="admin@example.com">
+        </div>
+        <div class="filter-group">
+          <label>Maintenance Mode</label>
+          <select id="setting-maintenance" class="filter-input">
+            <option value="false">Disabled</option>
+            <option value="true">Enabled</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Global Search Modal -->
+  <div class="modal" id="search-modal">
+    <div class="modal-content" style="max-width: 600px; padding: 1rem; align-self: flex-start; margin-top: 10vh;">
+      <div style="display: flex; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); margin-right: 1rem; font-size: 1.25rem;"></i>
+        <input type="text" id="global-search-input" style="width: 100%; border: none !important; background: transparent !important; font-size: 1.25rem !important; padding: 0 !important; box-shadow: none !important;" placeholder="Search projects, users, or tickets...">
+      </div>
+      <div id="search-results" style="max-height: 400px; overflow-y: auto; margin-top: 1rem;">
+        <div style="padding: 1rem; text-align: center; color: var(--text-muted);">Type to start searching...</div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    
+    async function fetchSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.status === 'success') {
+          document.getElementById('setting-platform-name').value = data.data['platform_name'] || '';
+          document.getElementById('setting-admin-email').value = data.data['admin_email'] || '';
+          document.getElementById('setting-maintenance').value = data.data['maintenance_mode'] || 'false';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function saveSettings() {
+      const payload = {
+        'platform_name': document.getElementById('setting-platform-name').value,
+        'admin_email': document.getElementById('setting-admin-email').value,
+        'maintenance_mode': document.getElementById('setting-maintenance').value
+      };
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert(data.message);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchSuperAdminStats() {
+      try {
+        const res = await fetch('/api/stats/super-admin');
+        const data = await res.json();
+        if (data.status === 'success') {
+          const stats = data.data;
+          document.getElementById('metric-users').innerText = stats.total_users;
+          document.getElementById('metric-projects').innerText = stats.total_projects;
+          document.getElementById('metric-active-projects').innerText = stats.active_projects;
+          document.getElementById('metric-completed-projects').innerText = stats.completed_projects;
+          document.getElementById('metric-total-enquiries').innerText = stats.total_enquiries || 0;
+          document.getElementById('metric-unread-messages').innerText = stats.unread_messages;
+        }
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+      }
+    }
+
     function toggleSection(sectionId) {
        if (sectionId === 'section-enquiries') switchTab('enquiries');
        else if (sectionId === 'section-projects') switchTab('projects');
@@ -962,6 +1074,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       fetchUsers();
       fetchEnquiries();
+    fetchSuperAdminStats();
       // Auto refresh every 30 seconds
       setInterval(fetchEnquiries, 30000);
       
@@ -977,14 +1090,23 @@
       document.getElementById('section-users').style.display = 'none';
       document.getElementById('section-audit').style.display = 'none';
       document.getElementById('section-messages').style.display = 'none';
+      if(document.getElementById('section-settings')) document.getElementById('section-settings').style.display = 'none';
       
       document.getElementById(tabId).style.display = 'block';
+
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach(el => el.classList.remove('active'));
+      let linkId = tabId.replace('section-', 'nav-');
+      if (document.getElementById(linkId)) {
+        document.getElementById(linkId).classList.add('active');
+      }
+
 
       // Load data lazily based on tab
       if (tabId === 'section-users') fetchManageUsers();
       if (tabId === 'section-audit') fetchAuditLogs();
       if (tabId === 'section-projects') fetchAdminProjects();
       if (tabId === 'section-messages') fetchMessages();
+      if (tabId === 'section-settings') fetchSettings();
     }
 
     async function fetchManageUsers() {
@@ -1282,6 +1404,7 @@
         if (result.status === 'success') {
           closeModal();
           fetchEnquiries();
+    fetchSuperAdminStats();
         } else {
           alert('Update failed: ' + result.message);
         }
