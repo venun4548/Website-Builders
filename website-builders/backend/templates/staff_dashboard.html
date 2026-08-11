@@ -6,26 +6,36 @@
   <title>My Workspace - Website Builders</title>
   
   <link rel="stylesheet" href="/css/fontawesome.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
     :root {
+      --bg-color: #F5F8F7;
+      --card-bg: #FFFFFF;
+      --secondary-surface: #F0F7F5;
+      
       --primary: #0F766E;
       --primary-dark: #115E59;
-      --secondary: #64746F;
-      --accent: #5EEAD4;
-      --bg-color: #F1F7F4;
-      --card-bg: #FFFFFF;
+      --soft-mint: #DDF4EF;
+      
       --text-main: #17211F;
-      --text-muted: #64746F;
-      --border-color: rgba(15, 118, 110, 0.12);
-      --radius-sm: 0.5rem;
-      --radius-md: 0.75rem;
-      --radius-lg: 1.5rem;
-      --success: #16A34A;
-      --warning: #D97706;
-      --danger: #DC2626;
-      --info: #0284C7;
+      --text-secondary: #52635F;
+      --text-muted: #71817D;
+      
+      --border-color: #D9E4E1;
+      --input-border: #B8C8C3;
+      --input-bg: #FFFFFF;
+      
+      --success: #15803D;
+      --warning: #B45309;
+      --danger: #B91C1C;
+      --info: #0369A1;
+
+      --radius-md: 8px;
+      --radius-lg: 18px;
+      
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,21 +49,11 @@
       flex-direction: column;
     }
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background-image: 
-        radial-gradient(circle at 50% 50%, rgba(15, 118, 110, 0.05), transparent 60%), transparent 30%),
-        radial-gradient(circle at 50% 50%, rgba(15, 118, 110, 0.05), transparent 60%), transparent 40%);
-      pointer-events: none;
-    }
+    h1, h2, h3, h4, h5 { font-family: 'Manrope', sans-serif; color: var(--text-main); }
 
     /* Topbar */
     header {
-      background: rgba(255, 255, 255, 0.85);
-      
+      background: #FFFFFF;
       border-bottom: 1px solid var(--border-color);
       padding: 1rem 2rem;
       display: flex;
@@ -67,12 +67,18 @@
     .logo {
       text-decoration: none;
       color: var(--primary-dark);
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Manrope', sans-serif;
       font-size: 1.5rem;
       font-weight: 800;
       display: flex;
       align-items: center;
       gap: 0.75rem;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
     }
 
     .user-profile {
@@ -82,20 +88,16 @@
     }
 
     .user-info { text-align: right; }
-    .user-name { font-weight: 600; font-size: 0.95rem; }
-    .user-role { font-size: 0.8rem; color: var(--primary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .user-name { font-weight: 600; font-size: 0.95rem; color: var(--text-main); }
+    .user-role { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* Layout */
-    .layout-container {
-      display: flex;
-      flex: 1;
-    }
+    .layout-container { display: flex; flex: 1; }
 
     /* Sidebar */
     .sidebar {
       width: 260px;
-      background: rgba(255, 255, 255, 0.6);
-      
+      background: #FFFFFF;
       border-right: 1px solid var(--border-color);
       padding: 2rem 1rem;
       display: flex;
@@ -103,9 +105,9 @@
     }
 
     .sidebar-section-title {
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       text-transform: uppercase;
-      color: var(--secondary);
+      color: var(--text-muted);
       font-weight: 700;
       letter-spacing: 1px;
       margin: 1.5rem 0 0.5rem 1rem;
@@ -117,31 +119,68 @@
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding: 0.85rem 1rem;
-      color: var(--text-main);
+      padding: 0.75rem 1rem;
+      color: var(--text-secondary);
       text-decoration: none;
       border-radius: var(--radius-md);
-      transition: all 0.3s;
+      transition: all 0.2s ease;
       font-weight: 500;
+      font-size: 0.95rem;
       margin-bottom: 0.25rem;
     }
 
-    .sidebar-menu a:hover, .sidebar-menu a.active {
-      background: rgba(15, 118, 110, 0.08);
+    .sidebar-menu a:hover:not(.active) {
+      background: var(--secondary-surface);
       color: var(--primary-dark);
     }
 
-    .sidebar-menu a.active { font-weight: 600; }
-    .sidebar-menu i { width: 20px; text-align: center; color: var(--primary); }
+    .sidebar-menu a.active { 
+      font-weight: 600;
+      background: #E6F7F3;
+      color: #115E59;
+    }
+    
+    .sidebar-menu a.active i { color: #0F766E; }
+    .sidebar-menu i { width: 20px; text-align: center; color: var(--text-muted); }
 
     /* Main Content */
     main { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
     
     .page-header { margin-bottom: 2rem; }
-    .page-title { font-family: 'Outfit', sans-serif; font-size: 2rem; color: var(--primary-dark); margin-bottom: 0.5rem; }
-    .page-subtitle { color: var(--secondary); }
+    .page-title { font-size: 32px; color: var(--text-main); margin-bottom: 0.5rem; font-weight: 800; }
+    .page-subtitle { color: var(--text-secondary); font-size: 16px; }
 
-    /* Metrics Grid */
+    /* Forms, Inputs, Textareas */
+    input, textarea, select {
+      background: var(--input-bg);
+      color: var(--text-main);
+      border: 1px solid var(--input-border);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input { min-height: 44px; }
+    textarea { min-height: 120px; resize: vertical; }
+    
+    input::placeholder, textarea::placeholder { color: var(--text-muted); }
+    
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 1.5rem;
+    }
+    
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -150,96 +189,56 @@
     }
 
     .metric-card {
-      background: var(--card-bg);
-      
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      transition: transform 0.3s, box-shadow 0.3s;
     }
 
-    .metric-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(15, 118, 110, 0.08);
-    }
-
-    .metric-details h3 { font-size: 0.85rem; color: var(--secondary); font-weight: 600; margin-bottom: 0.5rem; }
-    .metric-val { font-size: 1.8rem; font-weight: 700; color: var(--primary-dark); font-family: 'Outfit', sans-serif; }
+    .metric-details h3 { font-size: 14px; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; }
+    .metric-val { font-size: 32px; font-weight: 800; color: var(--text-main); font-family: 'Manrope', sans-serif; }
     
     /* Tables */
     .table-container {
       background: var(--card-bg);
-      
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       overflow: hidden;
       margin-bottom: 2rem;
+      box-shadow: var(--shadow-sm);
     }
     
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 1rem 1.5rem; text-align: left; }
-    th { background: rgba(255,255,255,0.5); font-weight: 600; color: var(--secondary); font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-    td { border-bottom: 1px solid rgba(15, 118, 110, 0.05); }
+    th { 
+      background: #F0F7F5; 
+      font-weight: 600; 
+      color: var(--text-secondary); 
+      font-size: 13px; 
+      text-transform: uppercase; 
+      border-bottom: 1px solid var(--border-color); 
+    }
+    td { 
+      background: #FFFFFF; 
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+      color: var(--text-main);
+    }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(255,255,255,0.4); }
+    tr:hover td { background: #F5FAF8; }
 
+    /* Badges */
     .badge {
-      padding: 0.3rem 0.8rem;
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 99px;
+      font-size: 13px;
       font-weight: 600;
+      display: inline-block;
     }
-    .badge-status-new { background: rgba(2, 132, 199, 0.1); color: var(--info); }
-    .badge-status-progress { background: rgba(217, 119, 6, 0.1); color: var(--warning); }
-    .badge-status-completed { background: rgba(22, 163, 74, 0.1); color: var(--success); }
-
-    .btn-action {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius-md);
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.3s;
-      text-decoration: none;
-    }
-    .btn-action:hover { background: var(--primary-dark); }
-    .btn-ghost { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
-    .btn-ghost:hover { background: rgba(15, 118, 110, 0.1); }
-  
-    input, textarea, select {
-      background: #FFFFFF !important;
-      color: #17211F !important;
-      border: 1px solid #CBD5E1 !important;
-      outline: none;
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: #0F766E !important;
-      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2) !important;
-    }
-    .modal-content, .table-container, .metric-card {
-      background: #FFFFFF !important;
-      border: 1px solid #E2E8F0 !important;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-    }
-    th {
-      background: #F8FAFC !important;
-      color: #334155 !important;
-    }
-    td {
-      background: #FFFFFF !important;
-    }
-    header, .sidebar {
-      background: #FFFFFF !important;
-    }
+    .badge-completed { background: #DCFCE7; color: #166534; }
+    .badge-progress { background: #DDF4EF; color: #115E59; }
+    .badge-pending { background: #FEF3C7; color: #92400E; }
     
+    .section-title { font-size: 20px; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-main); }
   </style>
 </head>
 <body>
@@ -250,8 +249,8 @@
       <span>Website Builders</span>
     </a>
     
-    <div style="display: flex; gap: 1rem; align-items: center;">
-      <button class="btn-action btn-ghost" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search (Ctrl+K)</button>
+    <div class="topbar-actions">
+      <div style="font-size: 14px; color: var(--text-secondary);">Breadcrumbs / My Workspace</div>
       <div class="user-profile">
         <div class="user-info">
           <div class="user-name">{{ user.full_name }}</div>
@@ -264,11 +263,11 @@
 
   <div class="layout-container">
     <aside class="sidebar">
-      <div class="sidebar-section-title">My Workspace</div>
+      <div class="sidebar-section-title">My Work</div>
       <ul class="sidebar-menu">
         <li><a href="#" class="active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> Dashboard</a></li>
-        <li><a href="#" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> My Projects</a></li>
         <li><a href="#" onclick="switchTab('clients')" id="tab-clients"><i class="fa-solid fa-address-book"></i> My Clients</a></li>
+        <li><a href="#" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> My Projects</a></li>
         <li><a href="#" onclick="switchTab('websites')" id="tab-websites"><i class="fa-solid fa-globe"></i> My Websites</a></li>
         <li><a href="#" onclick="switchTab('tasks')" id="tab-tasks"><i class="fa-solid fa-list-check"></i> My Tasks</a></li>
       </ul>
@@ -279,11 +278,11 @@
         <li><a href="#" onclick="switchTab('notifications')" id="tab-notifications"><i class="fa-solid fa-bell"></i> Notifications</a></li>
       </ul>
 
-      <div class="sidebar-section-title">Settings</div>
+      <div class="sidebar-section-title">System</div>
       <ul class="sidebar-menu">
+        <li><a href="#" onclick="switchTab('activity')" id="tab-activity"><i class="fa-solid fa-clock-rotate-left"></i> Activity</a></li>
         <li><a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile</a></li>
         <li><a href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
-        <li><a href="/"><i class="fa-solid fa-arrow-left"></i> Back to Website</a></li>
       </ul>
     </aside>
 
@@ -296,27 +295,33 @@
         </div>
         
         <div class="metrics-grid">
-          <div class="metric-card">
+          <div class="card metric-card">
             <div class="metric-details">
               <h3>My Projects</h3>
               <div class="metric-val" id="count-projects">0</div>
             </div>
           </div>
-          <div class="metric-card">
+          <div class="card metric-card">
             <div class="metric-details">
-              <h3>Pending Tasks</h3>
-              <div class="metric-val" id="count-tasks">0</div>
+              <h3>My Clients</h3>
+              <div class="metric-val" id="count-clients">0</div>
             </div>
           </div>
-          <div class="metric-card">
+          <div class="card metric-card">
             <div class="metric-details">
-              <h3>Unread Messages</h3>
-              <div class="metric-val" id="count-messages">0</div>
+              <h3>Pending Tasks</h3>
+              <div class="metric-val">0</div>
+            </div>
+          </div>
+          <div class="card metric-card">
+            <div class="metric-details">
+              <h3>Completed Tasks</h3>
+              <div class="metric-val">0</div>
             </div>
           </div>
         </div>
 
-        <h2 style="font-family: 'Outfit', sans-serif; color: var(--primary-dark); margin-bottom: 1rem;">My Active Projects</h2>
+        <h2 class="section-title">My Active Projects</h2>
         <div class="table-container">
           <table>
             <thead>
@@ -328,7 +333,7 @@
               </tr>
             </thead>
             <tbody id="dashboard-projects-tbody">
-              <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading projects...</td></tr>
             </tbody>
           </table>
         </div>
@@ -368,19 +373,32 @@
         const data = await res.json();
         if (data.status === 'success') {
           document.getElementById('count-projects').innerText = data.data.length;
+          document.getElementById('count-clients').innerText = data.data.length; // Approximated for demo
+          
           const tbody = document.getElementById('dashboard-projects-tbody');
           tbody.innerHTML = '';
+          if (data.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active projects.</td></tr>';
+            return;
+          }
           data.data.slice(0, 5).forEach(p => {
+            let badgeClass = 'badge-pending';
+            if (p.status === 'Completed') badgeClass = 'badge-completed';
+            if (p.status === 'In Progress') badgeClass = 'badge-progress';
+            
             tbody.innerHTML += `
               <tr>
-                <td><strong>${p.name}</strong></td>
-                <td>${p.customer_name || 'N/A'}</td>
+                <td><strong>${p.name}</strong><br><span style="font-size: 12px; color: var(--text-muted);">${p.project_id}</span></td>
+                <td>${p.customer_name || 'Unassigned'}</td>
                 <td>
-                  <div style="width: 100%; background: rgba(0,0,0,0.1); border-radius: 99px; height: 8px;">
-                    <div style="width: ${p.progress}%; background: var(--success); height: 100%; border-radius: 99px;"></div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 100%; background: var(--secondary-surface); border-radius: 99px; height: 6px; overflow: hidden;">
+                      <div style="width: ${p.progress}%; background: var(--primary); height: 100%;"></div>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 600;">${p.progress}%</span>
                   </div>
                 </td>
-                <td><span class="badge badge-status-progress">${p.status}</span></td>
+                <td><span class="badge ${badgeClass}">${p.status}</span></td>
               </tr>
             `;
           });
@@ -390,7 +408,6 @@
       }
     }
 
-    // Initialize
     fetchDashboardData();
   </script>
 </body>
