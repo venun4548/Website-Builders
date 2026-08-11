@@ -6,323 +6,408 @@
   <title>My Workspace - Website Builders</title>
   
   <link rel="stylesheet" href="/css/fontawesome.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg-color: #F5F8F7;
-      --card-bg: #FFFFFF;
-      --secondary-surface: #F0F7F5;
-      
+      /* Colors */
       --primary: #0F766E;
-      --primary-dark: #115E59;
-      --soft-mint: #DDF4EF;
-      
+      --primary-hover: #0D9488;
+      --accent: #F59E0B;
+      --bg-page: #F5F7F6;
+      --bg-card: #FFFFFF;
       --text-main: #17211F;
-      --text-secondary: #52635F;
-      --text-muted: #71817D;
+      --text-secondary: #64706C;
+      --border: #DCE5E2;
       
-      --border-color: #D9E4E1;
-      --input-border: #B8C8C3;
-      --input-bg: #FFFFFF;
-      
-      --success: #15803D;
-      --warning: #B45309;
-      --danger: #B91C1C;
-      --info: #0369A1;
+      /* Status */
+      --status-new: #0284C7;
+      --status-pending: #D97706;
+      --status-progress: #0F766E;
+      --status-completed: #16A34A;
+      --status-failed: #DC2626;
 
-      --radius-md: 8px;
+      /* Shape */
+      --radius-sm: 8px;
+      --radius-md: 14px;
       --radius-lg: 18px;
+      --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
       
-      --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
-      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      /* Typography */
+      --font-stack: 'Inter', sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-color);
+      font-family: var(--font-stack);
+      background-color: var(--bg-page);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
     }
 
-    h1, h2, h3, h4, h5 { font-family: 'Manrope', sans-serif; color: var(--text-main); }
+    h1, h2, h3, h4, h5 { color: var(--text-main); font-weight: 700; }
+
+    /* Layout */
+    .sidebar {
+      width: 250px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 50;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: 250px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
     /* Topbar */
     header {
-      background: #FFFFFF;
-      border-bottom: 1px solid var(--border-color);
-      padding: 1rem 2rem;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      height: 64px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 0 2rem;
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 40;
     }
 
-    .logo {
-      text-decoration: none;
-      color: var(--primary-dark);
-      font-family: 'Manrope', sans-serif;
-      font-size: 1.5rem;
+    /* Sidebar Logo & Nav */
+    .sidebar-header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      border-bottom: 1px solid var(--border);
       font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--primary);
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+
+    .sidebar-nav {
+      padding: 1.5rem 1rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-section {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      margin: 1.5rem 0 0.5rem 0.5rem;
+    }
+    .nav-section:first-child { margin-top: 0; }
+
+    .nav-link {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      margin-bottom: 0.15rem;
+    }
+
+    .nav-link:hover {
+      background: var(--bg-page);
+      color: var(--text-main);
+    }
+
+    .nav-link.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+    
+    .nav-link i { width: 20px; text-align: center; }
+
+    /* Topbar Components */
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--bg-page);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.75rem;
+      width: 300px;
+      color: var(--text-secondary);
+    }
+    .search-box input {
+      border: none;
+      background: transparent;
+      outline: none;
+      margin-left: 0.5rem;
+      width: 100%;
+      font-family: var(--font-stack);
+      font-size: 0.85rem;
     }
 
     .topbar-actions {
       display: flex;
+      align-items: center;
       gap: 1.5rem;
-      align-items: center;
     }
 
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .user-info { text-align: right; }
-    .user-name { font-weight: 600; font-size: 0.95rem; color: var(--text-main); }
-    .user-role { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    /* Layout */
-    .layout-container { display: flex; flex: 1; }
-
-    /* Sidebar */
-    .sidebar {
-      width: 260px;
-      background: #FFFFFF;
-      border-right: 1px solid var(--border-color);
-      padding: 2rem 1rem;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .sidebar-section-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 700;
-      letter-spacing: 1px;
-      margin: 1.5rem 0 0.5rem 1rem;
-    }
-
-    .sidebar-menu { list-style: none; }
-    
-    .sidebar-menu a {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.75rem 1rem;
+    .btn-icon {
+      background: transparent;
+      border: none;
       color: var(--text-secondary);
-      text-decoration: none;
-      border-radius: var(--radius-md);
-      transition: all 0.2s ease;
-      font-weight: 500;
-      font-size: 0.95rem;
-      margin-bottom: 0.25rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      position: relative;
+    }
+    .btn-icon:hover { color: var(--text-main); }
+    .notif-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
     }
 
-    .sidebar-menu a:hover:not(.active) {
-      background: var(--secondary-surface);
-      color: var(--primary-dark);
-    }
+    .user-profile { display: flex; align-items: center; gap: 0.75rem; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; }
+    .user-meta { text-align: right; }
+    .user-name { font-size: 0.85rem; font-weight: 600; }
+    .user-role { font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); }
 
-    .sidebar-menu a.active { 
-      font-weight: 600;
-      background: #E6F7F3;
-      color: #115E59;
-    }
+    /* Content Area */
+    .content-area { padding: 2rem; }
     
-    .sidebar-menu a.active i { color: #0F766E; }
-    .sidebar-menu i { width: 20px; text-align: center; color: var(--text-muted); }
-
-    /* Main Content */
-    main { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
-    
-    .page-header { margin-bottom: 2rem; }
-    .page-title { font-size: 32px; color: var(--text-main); margin-bottom: 0.5rem; font-weight: 800; }
-    .page-subtitle { color: var(--text-secondary); font-size: 16px; }
-
-    /* Forms, Inputs, Textareas */
-    input, textarea, select {
-      background: var(--input-bg);
-      color: var(--text-main);
-      border: 1px solid var(--input-border);
-      border-radius: var(--radius-md);
-      padding: 0.75rem 1rem;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input { min-height: 44px; }
-    textarea { min-height: 120px; resize: vertical; }
-    
-    input::placeholder, textarea::placeholder { color: var(--text-muted); }
-    
-    input:focus, textarea:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
-    }
+    .page-title { font-size: 1.75rem; margin-bottom: 1.5rem; }
 
     /* Cards */
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-subtle);
       padding: 1.5rem;
     }
-    
-    .metrics-grid {
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .card-title { font-size: 1.1rem; font-weight: 700; }
+
+    /* Metric Grid */
+    .metric-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1.5rem;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
     }
 
     .metric-card {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 0.5rem;
     }
+    
+    .metric-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .metric-icon { 
+      width: 40px; height: 40px; 
+      border-radius: var(--radius-sm); 
+      display: flex; align-items: center; justify-content: center; 
+      background: rgba(15, 118, 110, 0.05); color: var(--primary); 
+    }
+    .metric-val { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .metric-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
+    .metric-trend { font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
+    .trend-up { color: var(--status-completed); }
 
-    .metric-details h3 { font-size: 14px; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; }
-    .metric-val { font-size: 32px; font-weight: 800; color: var(--text-main); font-family: 'Manrope', sans-serif; }
-    
+    /* Buttons */
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--primary); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-card); color: var(--primary); border-color: var(--primary); }
+    .btn-secondary:hover { background: rgba(15, 118, 110, 0.05); }
+
     /* Tables */
-    .table-container {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      margin-bottom: 2rem;
-      box-shadow: var(--shadow-sm);
-    }
-    
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 1rem 1.5rem; text-align: left; }
-    th { 
-      background: #F0F7F5; 
-      font-weight: 600; 
-      color: var(--text-secondary); 
-      font-size: 13px; 
-      text-transform: uppercase; 
-      border-bottom: 1px solid var(--border-color); 
-    }
-    td { 
-      background: #FFFFFF; 
-      border-bottom: 1px solid var(--border-color);
-      font-size: 14px;
-      color: var(--text-main);
-    }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { text-align: left; padding: 0.75rem 1rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-main); }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #F5FAF8; }
+    tr:hover td { background: rgba(245, 247, 246, 0.5); }
+
+    .table-primary-text { font-weight: 600; color: var(--text-main); }
+    .table-sub-text { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
     /* Badges */
     .badge {
-      padding: 0.25rem 0.75rem;
+      padding: 0.25rem 0.6rem;
       border-radius: 99px;
-      font-size: 13px;
+      font-size: 0.75rem;
       font-weight: 600;
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
     }
-    .badge-completed { background: #DCFCE7; color: #166534; }
-    .badge-progress { background: #DDF4EF; color: #115E59; }
-    .badge-pending { background: #FEF3C7; color: #92400E; }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
     
-    .section-title { font-size: 20px; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-main); }
+    .badge-new { background: rgba(2, 132, 199, 0.1); color: var(--status-new); }
+    .badge-new .badge-dot { background: var(--status-new); }
+    
+    .badge-pending { background: rgba(217, 119, 6, 0.1); color: var(--status-pending); }
+    .badge-pending .badge-dot { background: var(--status-pending); }
+    
+    .badge-progress { background: rgba(15, 118, 110, 0.1); color: var(--status-progress); }
+    .badge-progress .badge-dot { background: var(--status-progress); }
+    
+    .badge-completed { background: rgba(22, 163, 74, 0.1); color: var(--status-completed); }
+    .badge-completed .badge-dot { background: var(--status-completed); }
+
+    /* Progress Bar */
+    .progress-container { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 0.5rem; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width 0.5s ease; }
+    
   </style>
 </head>
 <body>
 
-  <header>
-    <a href="#" class="logo">
-      <img src="/images/logo.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px;">
-      <span>Website Builders</span>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="#" class="sidebar-header">
+      <i class="fa-solid fa-layer-group"></i> Website Builders
     </a>
-    
-    <div class="topbar-actions">
-      <div style="font-size: 14px; color: var(--text-secondary);">Breadcrumbs / My Workspace</div>
-      <div class="user-profile">
-        <div class="user-info">
-          <div class="user-name">{{ user.full_name }}</div>
-          <div class="user-role">Staff Member</div>
-        </div>
-        <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%;">
+    <nav class="sidebar-nav">
+      <div class="nav-section">My Workspace</div>
+      <a href="#" class="nav-link active"><i class="fa-solid fa-border-all"></i> Dashboard</a>
+      <a href="#" class="nav-link"><i class="fa-solid fa-address-book"></i> My Clients</a>
+      <a href="#" class="nav-link"><i class="fa-solid fa-briefcase"></i> My Projects</a>
+      <a href="#" class="nav-link"><i class="fa-solid fa-globe"></i> My Websites</a>
+      <a href="#" class="nav-link"><i class="fa-solid fa-list-check"></i> My Tasks</a>
+
+      <div class="nav-section">Communication</div>
+      <a href="#" class="nav-link"><i class="fa-solid fa-envelope"></i> Messages</a>
+      <a href="#" class="nav-link"><i class="fa-solid fa-bell"></i> Notifications</a>
+
+      <div class="nav-section">System</div>
+      <a href="#" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i> Activity</a>
+
+      <div style="margin-top: 2rem;">
+        <a href="{{ url_for('profile') }}" class="nav-link"><i class="fa-solid fa-user-circle"></i> Profile</a>
+        <a href="{{ url_for('logout') }}" class="nav-link" style="color: var(--status-failed);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
       </div>
-    </div>
-  </header>
+    </nav>
+  </aside>
 
-  <div class="layout-container">
-    <aside class="sidebar">
-      <div class="sidebar-section-title">My Work</div>
-      <ul class="sidebar-menu">
-        <li><a href="#" class="active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> Dashboard</a></li>
-        <li><a href="#" onclick="switchTab('clients')" id="tab-clients"><i class="fa-solid fa-address-book"></i> My Clients</a></li>
-        <li><a href="#" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> My Projects</a></li>
-        <li><a href="#" onclick="switchTab('websites')" id="tab-websites"><i class="fa-solid fa-globe"></i> My Websites</a></li>
-        <li><a href="#" onclick="switchTab('tasks')" id="tab-tasks"><i class="fa-solid fa-list-check"></i> My Tasks</a></li>
-      </ul>
+  <!-- Main Content -->
+  <div class="main-content">
+    
+    <!-- Topbar -->
+    <header>
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search (Ctrl + K)...">
+      </div>
       
-      <div class="sidebar-section-title">Communication</div>
-      <ul class="sidebar-menu">
-        <li><a href="#" onclick="switchTab('messages')" id="tab-messages"><i class="fa-solid fa-envelope"></i> Messages</a></li>
-        <li><a href="#" onclick="switchTab('notifications')" id="tab-notifications"><i class="fa-solid fa-bell"></i> Notifications</a></li>
-      </ul>
+      <div class="topbar-actions">
+        <button class="btn-icon">
+          <i class="fa-regular fa-bell"></i>
+          <span class="notif-dot"></span>
+        </button>
+        
+        <div class="user-profile">
+          <div class="user-meta">
+            <div class="user-name">{{ user.full_name }}</div>
+            <div class="user-role">Staff Member</div>
+          </div>
+          <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" class="user-avatar">
+        </div>
+      </div>
+    </header>
 
-      <div class="sidebar-section-title">System</div>
-      <ul class="sidebar-menu">
-        <li><a href="#" onclick="switchTab('activity')" id="tab-activity"><i class="fa-solid fa-clock-rotate-left"></i> Activity</a></li>
-        <li><a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile</a></li>
-        <li><a href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
-      </ul>
-    </aside>
-
-    <main>
-      <!-- DASHBOARD OVERVIEW -->
-      <div id="section-dashboard">
-        <div class="page-header">
-          <h1 class="page-title">My Workspace</h1>
-          <p class="page-subtitle">Here's what needs your attention today, {{ user.full_name.split(' ')[0] }}.</p>
+    <div class="content-area">
+      <h1 class="page-title">My Workspace</h1>
+      
+      <!-- Metrics -->
+      <div class="metric-grid">
+        <div class="card metric-card">
+          <div class="metric-top">
+            <div class="metric-icon"><i class="fa-solid fa-briefcase"></i></div>
+          </div>
+          <div>
+            <div class="metric-val" id="metric-projects">0</div>
+            <div class="metric-label">My Projects</div>
+          </div>
         </div>
         
-        <div class="metrics-grid">
-          <div class="card metric-card">
-            <div class="metric-details">
-              <h3>My Projects</h3>
-              <div class="metric-val" id="count-projects">0</div>
-            </div>
+        <div class="card metric-card">
+          <div class="metric-top">
+            <div class="metric-icon" style="color: var(--accent); background: rgba(245, 158, 11, 0.1);"><i class="fa-solid fa-address-book"></i></div>
           </div>
-          <div class="card metric-card">
-            <div class="metric-details">
-              <h3>My Clients</h3>
-              <div class="metric-val" id="count-clients">0</div>
-            </div>
-          </div>
-          <div class="card metric-card">
-            <div class="metric-details">
-              <h3>Pending Tasks</h3>
-              <div class="metric-val">0</div>
-            </div>
-          </div>
-          <div class="card metric-card">
-            <div class="metric-details">
-              <h3>Completed Tasks</h3>
-              <div class="metric-val">0</div>
-            </div>
+          <div>
+            <div class="metric-val" id="metric-clients">0</div>
+            <div class="metric-label">My Clients</div>
           </div>
         </div>
+        
+        <div class="card metric-card">
+          <div class="metric-top">
+            <div class="metric-icon" style="color: var(--status-new); background: rgba(2, 132, 199, 0.1);"><i class="fa-solid fa-list-check"></i></div>
+          </div>
+          <div>
+            <div class="metric-val">0</div>
+            <div class="metric-label">Pending Tasks</div>
+          </div>
+        </div>
+        
+        <div class="card metric-card">
+          <div class="metric-top">
+            <div class="metric-icon" style="color: var(--status-completed); background: rgba(22, 163, 74, 0.1);"><i class="fa-solid fa-check-double"></i></div>
+          </div>
+          <div>
+            <div class="metric-val">0</div>
+            <div class="metric-label">Completed Tasks</div>
+          </div>
+        </div>
+      </div>
 
-        <h2 class="section-title">My Active Projects</h2>
-        <div class="table-container">
+      <!-- Projects Tables -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">My Active Projects</h2>
+          <button class="btn btn-secondary">View All</button>
+        </div>
+        <div class="table-responsive">
           <table>
             <thead>
               <tr>
@@ -332,73 +417,59 @@
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody id="dashboard-projects-tbody">
-              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading projects...</td></tr>
+            <tbody id="projects-tbody">
+              <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
-      
-      <!-- Placeholder for other tabs -->
-      <div id="section-placeholder" style="display: none;">
-        <div class="page-header">
-          <h1 class="page-title" id="placeholder-title">Section</h1>
-          <p class="page-subtitle">This section is functional and will display relevant data.</p>
-        </div>
-      </div>
-    </main>
+
+    </div>
   </div>
 
   <script>
-    function switchTab(tabId) {
-      document.querySelectorAll('main > div').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.sidebar-menu a').forEach(el => el.classList.remove('active'));
-      
-      const tab = document.getElementById('tab-' + tabId);
-      if (tab) tab.classList.add('active');
-      
-      const section = document.getElementById('section-' + tabId);
-      if (section) {
-        section.style.display = 'block';
-        if (tabId === 'dashboard') fetchDashboardData();
-      } else {
-        document.getElementById('section-placeholder').style.display = 'block';
-        document.getElementById('placeholder-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
-      }
-    }
-
     async function fetchDashboardData() {
       try {
         const res = await fetch('/api/projects');
         const data = await res.json();
         if (data.status === 'success') {
-          document.getElementById('count-projects').innerText = data.data.length;
-          document.getElementById('count-clients').innerText = data.data.length; // Approximated for demo
+          document.getElementById('metric-projects').innerText = data.data.length;
+          document.getElementById('metric-clients').innerText = data.data.length;
+
+          // Projects Table
+          const ptbody = document.getElementById('projects-tbody');
+          ptbody.innerHTML = '';
           
-          const tbody = document.getElementById('dashboard-projects-tbody');
-          tbody.innerHTML = '';
           if (data.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active projects.</td></tr>';
+            ptbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active projects.</td></tr>';
             return;
           }
+          
           data.data.slice(0, 5).forEach(p => {
             let badgeClass = 'badge-pending';
             if (p.status === 'Completed') badgeClass = 'badge-completed';
             if (p.status === 'In Progress') badgeClass = 'badge-progress';
             
-            tbody.innerHTML += `
+            ptbody.innerHTML += `
               <tr>
-                <td><strong>${p.name}</strong><br><span style="font-size: 12px; color: var(--text-muted);">${p.project_id}</span></td>
-                <td>${p.customer_name || 'Unassigned'}</td>
                 <td>
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div style="width: 100%; background: var(--secondary-surface); border-radius: 99px; height: 6px; overflow: hidden;">
-                      <div style="width: ${p.progress}%; background: var(--primary); height: 100%;"></div>
-                    </div>
-                    <span style="font-size: 12px; font-weight: 600;">${p.progress}%</span>
+                  <div class="table-primary-text">${p.name}</div>
+                  <div class="table-sub-text">${p.project_id}</div>
+                </td>
+                <td>
+                  <div class="table-primary-text">${p.customer_name || 'Unassigned'}</div>
+                </td>
+                <td style="width: 30%;">
+                  <span style="font-size: 0.75rem; font-weight: 600;">${p.progress}%</span>
+                  <div class="progress-container">
+                    <div class="progress-fill" style="width: ${p.progress}%;"></div>
                   </div>
                 </td>
-                <td><span class="badge ${badgeClass}">${p.status}</span></td>
+                <td>
+                  <span class="badge ${badgeClass}">
+                    <span class="badge-dot"></span> ${p.status}
+                  </span>
+                </td>
               </tr>
             `;
           });
