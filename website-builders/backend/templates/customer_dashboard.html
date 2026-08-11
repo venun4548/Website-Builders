@@ -15,7 +15,7 @@
       --secondary: #64746F;
       --accent: #5EEAD4;
       --bg-color: #F1F7F4;
-      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-bg: #FFFFFF;
       --text-main: #17211F;
       --text-muted: #64746F;
       --border-color: rgba(15, 118, 110, 0.12);
@@ -45,15 +45,15 @@
       inset: 0;
       z-index: -1;
       background-image: 
-        radial-gradient(circle at 50% 0%, rgba(94, 234, 212, 0.2), transparent 50%),
-        radial-gradient(circle at 100% 100%, rgba(15, 118, 110, 0.1), transparent 40%);
+        radial-gradient(circle at 50% 50%, rgba(15, 118, 110, 0.05), transparent 60%), transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(15, 118, 110, 0.05), transparent 60%), transparent 40%);
       pointer-events: none;
     }
 
     /* Topbar */
     header {
       background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(16px);
+      
       border-bottom: 1px solid var(--border-color);
       padding: 1rem 2rem;
       display: flex;
@@ -95,7 +95,7 @@
     .sidebar {
       width: 260px;
       background: rgba(255, 255, 255, 0.6);
-      backdrop-filter: blur(12px);
+      
       border-right: 1px solid var(--border-color);
       padding: 2rem 1rem;
       display: flex;
@@ -150,7 +150,7 @@
 
     .project-card {
       background: var(--card-bg);
-      backdrop-filter: blur(12px);
+      
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       padding: 1.5rem;
@@ -205,6 +205,33 @@
     .btn-action:hover { background: var(--primary-dark); }
     .btn-ghost { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
     .btn-ghost:hover { background: rgba(15, 118, 110, 0.1); }
+  
+    input, textarea, select {
+      background: #FFFFFF !important;
+      color: #17211F !important;
+      border: 1px solid #CBD5E1 !important;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: #0F766E !important;
+      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2) !important;
+    }
+    .modal-content, .table-container, .metric-card {
+      background: #FFFFFF !important;
+      border: 1px solid #E2E8F0 !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    }
+    th {
+      background: #F8FAFC !important;
+      color: #334155 !important;
+    }
+    td {
+      background: #FFFFFF !important;
+    }
+    header, .sidebar {
+      background: #FFFFFF !important;
+    }
+    
   </style>
 </head>
 <body>
@@ -271,7 +298,7 @@
         </div>
       </div>
       <!-- Search Modal -->
-      <div id="search-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: flex-start; justify-content: center; padding-top: 10vh;">
+      <div id="search-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);  z-index: 1000; align-items: flex-start; justify-content: center; padding-top: 10vh;">
         <div style="background: var(--card-bg); width: 100%; max-width: 600px; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
           <input type="text" id="search-input" placeholder="Search projects..." style="width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1.1rem; margin-bottom: 1rem; background: rgba(255,255,255,0.8); outline: none;">
           <div id="search-results" style="max-height: 400px; overflow-y: auto;"></div>
