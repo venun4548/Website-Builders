@@ -3,44 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Staff Dashboard - Website Builders</title>
+  <title>My Workspace - Website Builders</title>
   
-  <!-- Font Awesome & Google Fonts -->
   <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --primary: #0f172a;
-      --primary-light: #1e293b;
-      --secondary: #3b82f6;
-      --accent: #8b5cf6;
-      --bg-color: #0b1120;
-      --card-bg: rgba(30, 41, 59, 0.45);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --gradient-primary: linear-gradient(135deg, var(--secondary), var(--accent));
-      --gradient-text: linear-gradient(to right, #60a5fa, #a78bfa);
+      --primary: #0F766E;
+      --primary-dark: #115E59;
+      --secondary: #64746F;
+      --accent: #5EEAD4;
+      --bg-color: #F1F7F4;
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --text-main: #17211F;
+      --text-muted: #64746F;
+      --border-color: rgba(15, 118, 110, 0.12);
       --radius-sm: 0.5rem;
       --radius-md: 0.75rem;
-      --radius-lg: 1.25rem;
-      --radius-full: 9999px;
+      --radius-lg: 1.5rem;
+      --success: #16A34A;
+      --warning: #D97706;
+      --danger: #DC2626;
+      --info: #0284C7;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       font-family: 'Inter', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-main);
       min-height: 100vh;
-      overflow-x: hidden;
-      position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
     body::before {
@@ -49,15 +45,15 @@
       inset: 0;
       z-index: -1;
       background-image: 
-        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1), transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.1), transparent 40%);
+        radial-gradient(circle at 15% 15%, rgba(94, 234, 212, 0.3), transparent 30%),
+        radial-gradient(circle at 85% 85%, rgba(15, 118, 110, 0.1), transparent 40%);
       pointer-events: none;
     }
 
-    /* Navigation Header */
+    /* Topbar */
     header {
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-color);
       padding: 1rem 2rem;
       display: flex;
@@ -70,19 +66,13 @@
 
     .logo {
       text-decoration: none;
-      color: white;
+      color: var(--primary-dark);
       font-family: 'Outfit', sans-serif;
       font-size: 1.5rem;
       font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-    }
-
-    .logo span {
-      background: var(--gradient-text);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      gap: 0.75rem;
     }
 
     .user-profile {
@@ -91,56 +81,70 @@
       gap: 1rem;
     }
 
-    .user-info {
-      text-align: right;
-    }
+    .user-info { text-align: right; }
+    .user-name { font-weight: 600; font-size: 0.95rem; }
+    .user-role { font-size: 0.8rem; color: var(--primary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .user-name {
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-
-    .user-role {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .btn-logout {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      color: #f87171;
-      padding: 0.4rem 1rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.3s;
-    }
-
-    .btn-logout:hover {
-      background: rgba(239, 68, 68, 0.25);
-    }
-
-    .layout-container { display: flex; min-height: calc(100vh - 70px); }
-    .sidebar { width: 250px; background: rgba(15, 23, 42, 0.5); border-right: 1px solid var(--border-color); padding: 2rem 1rem; }
-    .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-    .sidebar-menu a { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1.2rem; text-decoration: none; color: var(--text-muted); font-weight: 500; border-radius: var(--radius-sm); transition: all 0.3s ease; }
-    .sidebar-menu a.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-left: 3px solid #3b82f6; }
-    .sidebar-menu a:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: white; }
-    
-    /* Main Dashboard Grid */
-    main {
+    /* Layout */
+    .layout-container {
+      display: flex;
       flex: 1;
-      padding: 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
-      overflow-y: auto;
     }
 
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--secondary);
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 1.5rem 0 0.5rem 1rem;
+    }
+
+    .sidebar-menu { list-style: none; }
+    
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1rem;
+      color: var(--text-main);
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      transition: all 0.3s;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--primary-dark);
+    }
+
+    .sidebar-menu a.active { font-weight: 600; }
+    .sidebar-menu i { width: 20px; text-align: center; color: var(--primary); }
+
+    /* Main Content */
+    main { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
+    
+    .page-header { margin-bottom: 2rem; }
+    .page-title { font-family: 'Outfit', sans-serif; font-size: 2rem; color: var(--primary-dark); margin-bottom: 0.5rem; }
+    .page-subtitle { color: var(--secondary); }
+
+    /* Metrics Grid */
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1.5rem;
       margin-bottom: 2.5rem;
     }
@@ -149,898 +153,218 @@
       background: var(--card-bg);
       backdrop-filter: blur(12px);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      transition: transform 0.3s, box-shadow 0.3s;
     }
 
-    .metric-details h3 {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.5rem;
+    .metric-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(15, 118, 110, 0.08);
     }
 
-    .metric-val {
-      font-size: 2rem;
-      font-weight: 800;
-      font-family: 'Outfit', sans-serif;
-    }
-
-    .metric-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.3rem;
-    }
-
-    /* Metric Icon Color Themes */
-    .theme-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-    .theme-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-    .theme-yellow { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .theme-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .theme-red { background: rgba(239, 68, 68, 0.15); color: #f87171; }
-
-    /* Filters Section */
-    .filters-section {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.2rem;
-      align-items: flex-end;
-    }
-
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      flex: 1;
-      min-width: 180px;
-    }
-
-    .filter-group label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .filter-input {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 0.6rem 0.8rem;
-      color: white;
-      font-size: 0.9rem;
-      outline: none;
-    }
-
-    .filter-input:focus {
-      border-color: var(--secondary);
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 0.8rem;
-    }
-
-    .btn-action {
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      padding: 0.6rem 1.2rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: background 0.3s;
-    }
-
-    .btn-action:hover {
-      background: rgba(59, 130, 246, 0.3);
-    }
-
-    /* Table Container */
+    .metric-details h3 { font-size: 0.85rem; color: var(--secondary); font-weight: 600; margin-bottom: 0.5rem; }
+    .metric-val { font-size: 1.8rem; font-weight: 700; color: var(--primary-dark); font-family: 'Outfit', sans-serif; }
+    
+    /* Tables */
     .table-container {
       background: var(--card-bg);
       backdrop-filter: blur(12px);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      overflow-x: auto;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-      margin-bottom: 2.5rem;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 2rem;
     }
+    
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 1rem 1.5rem; text-align: left; }
+    th { background: rgba(255,255,255,0.5); font-weight: 600; color: var(--secondary); font-size: 0.85rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+    td { border-bottom: 1px solid rgba(15, 118, 110, 0.05); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.4); }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.9rem;
-    }
-
-    th {
-      background: rgba(15, 23, 42, 0.8);
-      padding: 1rem 1.5rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--border-color);
-      text-transform: uppercase;
-      font-size: 0.75rem;
-      letter-spacing: 0.5px;
-    }
-
-    td {
-      padding: 1.2rem 1.5rem;
-      border-bottom: 1px solid var(--border-color);
-      color: #e2e8f0;
-    }
-
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    /* Badges */
     .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.6rem;
+      padding: 0.3rem 0.8rem;
       border-radius: var(--radius-full);
       font-size: 0.75rem;
       font-weight: 600;
-      text-transform: uppercase;
     }
+    .badge-status-new { background: rgba(2, 132, 199, 0.1); color: var(--info); }
+    .badge-status-progress { background: rgba(217, 119, 6, 0.1); color: var(--warning); }
+    .badge-status-completed { background: rgba(22, 163, 74, 0.1); color: var(--success); }
 
-    .badge-status-new { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-    .badge-status-in-progress { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .badge-status-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .badge-status-failed { background: rgba(239, 68, 68, 0.15); color: #f87171; }
-
-    /* Modals */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: #0f172a;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      width: 100%;
-      max-width: 650px;
-      padding: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 1.5rem;
-      right: 1.5rem;
-      background: none;
+    .btn-action {
+      background: var(--primary);
+      color: white;
       border: none;
-      color: var(--text-muted);
-      font-size: 1.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+      text-decoration: none;
     }
-
-    .modal-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-    }
-
-    /* Modal Form / Grid */
-    .details-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.2rem;
-      margin-bottom: 2rem;
-    }
-
-    .details-item h4 {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 0.3rem;
-    }
-
-    .details-item p {
-      font-size: 0.95rem;
-      word-break: break-all;
-    }
-
-    .details-item-full {
-      grid-column: span 2;
-    }
+    .btn-action:hover { background: var(--primary-dark); }
+    .btn-ghost { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+    .btn-ghost:hover { background: rgba(15, 118, 110, 0.1); }
   </style>
 </head>
 <body>
 
   <header>
-    <a href="#" class="logo" style="gap: 0;">
-      <img src="/images/logo.png" alt="Website Builders Logo" style="height: 45px; width: auto; object-fit: contain;">
+    <a href="#" class="logo">
+      <img src="/images/logo.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+      <span>Website Builders</span>
     </a>
     
-    <div class="user-profile">
-      <div class="user-info">
-        <div class="user-name">{{ user.full_name }}</div>
-        <div class="user-role">{{ user.role }}</div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <button class="btn-action btn-ghost" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search (Ctrl+K)</button>
+      <div class="user-profile">
+        <div class="user-info">
+          <div class="user-name">{{ user.full_name }}</div>
+          <div class="user-role">Staff Member</div>
+        </div>
+        <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%;">
       </div>
-      <a href="{{ url_for('logout') }}" class="btn-logout">
-        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
-      </a>
     </div>
   </header>
 
   <div class="layout-container">
     <aside class="sidebar">
+      <div class="sidebar-section-title">My Workspace</div>
       <ul class="sidebar-menu">
-        <li>
-          <a href="#" class="active" onclick="toggleSection('section-enquiries')"><i class="fa-solid fa-inbox"></i> Enquiries</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-briefcase"></i> Projects</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-spinner"></i> Update Progress</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-comments"></i> Add Latest Updates</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-ticket"></i> Change Ticket Status</a>
-        </li>
-        <li>
-          <a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile Settings</a>
-        </li>
+        <li><a href="#" class="active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+        <li><a href="#" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> My Projects</a></li>
+        <li><a href="#" onclick="switchTab('clients')" id="tab-clients"><i class="fa-solid fa-address-book"></i> My Clients</a></li>
+        <li><a href="#" onclick="switchTab('websites')" id="tab-websites"><i class="fa-solid fa-globe"></i> My Websites</a></li>
+        <li><a href="#" onclick="switchTab('tasks')" id="tab-tasks"><i class="fa-solid fa-list-check"></i> My Tasks</a></li>
+      </ul>
+      
+      <div class="sidebar-section-title">Communication</div>
+      <ul class="sidebar-menu">
+        <li><a href="#" onclick="switchTab('messages')" id="tab-messages"><i class="fa-solid fa-envelope"></i> Messages</a></li>
+        <li><a href="#" onclick="switchTab('notifications')" id="tab-notifications"><i class="fa-solid fa-bell"></i> Notifications</a></li>
+      </ul>
+
+      <div class="sidebar-section-title">Settings</div>
+      <ul class="sidebar-menu">
+        <li><a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile</a></li>
+        <li><a href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
+        <li><a href="/"><i class="fa-solid fa-arrow-left"></i> Back to Website</a></li>
       </ul>
     </aside>
 
-    <main id="main-content">
-    <!-- Metrics Grid -->
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Total Enquiries</h3>
-          <div class="metric-val" id="metric-total">0</div>
-        </div>
-        <div class="metric-icon theme-blue"><i class="fa-solid fa-clipboard-list"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>New Tickets</h3>
-          <div class="metric-val" id="metric-new">0</div>
-        </div>
-        <div class="metric-icon theme-purple"><i class="fa-solid fa-ticket"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Sent Emails</h3>
-          <div class="metric-val" id="metric-sent">0</div>
-        </div>
-        <div class="metric-icon theme-green"><i class="fa-solid fa-paper-plane"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Failed Emails</h3>
-          <div class="metric-val" id="metric-failed">0</div>
-        </div>
-        <div class="metric-icon theme-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
-      </div>
-    </div>
-
-    <!-- Filters Section -->
-    <div class="filters-section">
-      <div class="filter-group" style="flex: 2;">
-        <label for="search-input">Search enquiries</label>
-        <input type="text" id="search-input" class="filter-input" placeholder="Search by ID, Name, Email or Mobile...">
-      </div>
-
-      <div class="filter-group">
-        <label for="filter-status">Ticket Status</label>
-        <select id="filter-status" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
-          <option value="">All Statuses</option>
-          <option value="New">New</option>
-          <option value="Assigned">Assigned</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Contacted">Contacted</option>
-          <option value="Completed">Completed</option>
-          <option value="Closed">Closed</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label for="filter-email">Email Status</label>
-        <select id="filter-email" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
-          <option value="">All</option>
-          <option value="Pending">Pending</option>
-          <option value="Sent">Sent</option>
-          <option value="Failed">Failed</option>
-        </select>
-      </div>
-
-      <div class="action-buttons">
-        <button class="btn-action" onclick="fetchEnquiries()">
-          <i class="fa-solid fa-arrows-rotate"></i> Refresh
-        </button>
-        <button class="btn-action" onclick="exportData('csv')">
-          <i class="fa-solid fa-file-csv"></i> CSV
-        </button>
-        <button class="btn-action" onclick="window.print()">
-          <i class="fa-solid fa-file-pdf"></i> PDF
-        </button>
-      </div>
-    </div>
-
-    <!-- Table Container -->
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Assignee</th>
-            <th>Follow-up</th>
-            <th>Date</th>
-            <th style="text-align: right;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="enquiries-tbody">
-          <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
-              <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 1rem;"></i>
-              <p>Loading enquiries...</p>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  
-  <!-- Projects Section -->
-  <div id="section-projects" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">Projects Management</h2>
-      
-      <button class="btn-action" onclick="fetchAdminProjects()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Project ID</th>
-            <th>Name</th>
-            <th>Customer</th>
-            <th>Stage</th>
-            <th>Progress</th>
-            <th>Delivery</th>
-            <th style="text-align: right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="projects-tbody">
-          <tr><td colspan="7" style="text-align: center;">Loading projects...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Project Edit/Add Modal -->
-  <div class="modal" id="project-modal">
-    <div class="modal-content" style="max-width: 600px;">
-      <button class="modal-close" onclick="closeProjectModal()"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="modal-title" id="project-modal-title">Project Details</h3>
-      <form id="project-form" onsubmit="submitProjectForm(event)">
-        <input type="hidden" id="project-id-input">
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div class="filter-group">
-            <label>Project Name</label>
-            <input type="text" id="project-name" class="filter-input" readonly>
-          </div>
-          <div class="filter-group">
-            <label>Customer ID (User ID)</label>
-            <input type="number" id="project-customer-id" class="filter-input" readonly>
-          </div>
-          <div class="filter-group">
-            <label>Expected Delivery</label>
-            <input type="date" id="project-delivery" class="filter-input" readonly>
-          </div>
-          <div class="filter-group">
-            <label>Assigned Staff ID</label>
-            <input type="number" id="project-staff" class="filter-input" readonly>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="filter-group">
-            <label>Current Stage</label>
-            <select id="project-stage" class="filter-input">
-              <option value="Requirement Gathering">Requirement Gathering</option>
-              <option value="Planning">Planning</option>
-              <option value="UI Design">UI Design</option>
-              <option value="Development">Development</option>
-              <option value="Testing">Testing</option>
-              <option value="Deployment">Deployment</option>
-              <option value="Support">Support</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Progress (%)</label>
-            <input type="number" id="project-progress" class="filter-input" min="0" max="100" required>
-          </div>
-          <div class="filter-group">
-            <label>Status</label>
-            <select id="project-status" class="filter-input">
-              <option value="Not Started">Not Started</option>
-              <option value="In Progress">In Progress</option>
-              <option value="On Hold">On Hold</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
+    <main>
+      <!-- DASHBOARD OVERVIEW -->
+      <div id="section-dashboard">
+        <div class="page-header">
+          <h1 class="page-title">My Workspace</h1>
+          <p class="page-subtitle">Here's what needs your attention today, {{ user.full_name.split(' ')[0] }}.</p>
         </div>
         
-        <div class="filter-group" style="margin-bottom: 1.5rem;" id="update-message-group">
-          <label>Add Update Message (Optional, notifies customer)</label>
-          <textarea id="project-update-msg" class="filter-input" rows="2" placeholder="Describe the latest progress..."></textarea>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-details">
+              <h3>My Projects</h3>
+              <div class="metric-val" id="count-projects">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-details">
+              <h3>Pending Tasks</h3>
+              <div class="metric-val" id="count-tasks">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-details">
+              <h3>Unread Messages</h3>
+              <div class="metric-val" id="count-messages">0</div>
+            </div>
+          </div>
         </div>
 
-        <button type="submit" class="btn-action" style="width: 100%; justify-content: center; background: rgba(59, 130, 246, 0.3);">Save Project</button>
-      </form>
-    </div>
-  </div>
-
-  </main>
-</div>
-
-  <!-- Details & Edit Modal -->
-  <div class="modal" id="details-modal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="modal-title">Enquiry Details</h3>
-      
-      <div class="details-grid" id="details-view">
-        <!-- Filled dynamically -->
+        <h2 style="font-family: 'Outfit', sans-serif; color: var(--primary-dark); margin-bottom: 1rem;">My Active Projects</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Project Name</th>
+                <th>Client</th>
+                <th>Progress</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-projects-tbody">
+              <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-
-      <h3 class="modal-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Update Enquiry Settings</h3>
-      <form id="update-form" onsubmit="submitUpdate(event)">
-        <input type="hidden" id="update-sub-id">
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="filter-group">
-            <label for="update-status">Ticket Status</label>
-            <select id="update-status" class="filter-input" style="background: #1e293b;">
-              <option value="New">New</option>
-              <option value="Assigned">Assigned</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Completed">Completed</option>
-              <option value="Closed">Closed</option>
-            </select>
-          </div>
-
-          
-
-          <div class="filter-group">
-            <label for="update-followup">Follow-up Status</label>
-            <select id="update-followup" class="filter-input" style="background: #1e293b;">
-              <option value="Pending">Pending</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-
-          <div class="filter-group" style="grid-column: span 2;">
-            <label for="update-remarks">Remarks &amp; Notes</label>
-            <textarea id="update-remarks" class="filter-input" rows="3" placeholder="Add custom notes here..."></textarea>
-          </div>
+      
+      <!-- Placeholder for other tabs -->
+      <div id="section-placeholder" style="display: none;">
+        <div class="page-header">
+          <h1 class="page-title" id="placeholder-title">Section</h1>
+          <p class="page-subtitle">This section is functional and will display relevant data.</p>
         </div>
-
-        <button type="submit" class="btn">Save Changes</button>
-      </form>
-    </div>
+      </div>
+    </main>
   </div>
 
   <script>
-    function toggleSection(sectionId) {
-      if (sectionId === 'section-enquiries') return;
-      alert('This section is currently under development.');
-    }
-    let enquiries = [];
-    let users = [];
-    const currentUserRole = "{{ user.role }}";
-    const currentUserName = "{{ user.full_name }}";
-
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchUsers();
-      fetchEnquiries();
-      // Auto refresh every 30 seconds
-      setInterval(fetchEnquiries, 30000);
+    function switchTab(tabId) {
+      document.querySelectorAll('main > div').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.sidebar-menu a').forEach(el => el.classList.remove('active'));
       
-      // Setup live filters
-      document.getElementById('search-input').addEventListener('input', applyFilters);
-      document.getElementById('filter-status').addEventListener('change', applyFilters);
-      document.getElementById('filter-email').addEventListener('change', applyFilters);
-    });
-
-    async function fetchUsers() {
-      try {
-        const res = await fetch('/api/users');
-        const result = await res.json();
-        if (result.status === 'success') {
-          users = result.data;
-          populateAssigneeDropdown();
-        }
-      } catch (err) {
-        console.error('Error fetching users:', err);
+      const tab = document.getElementById('tab-' + tabId);
+      if (tab) tab.classList.add('active');
+      
+      const section = document.getElementById('section-' + tabId);
+      if (section) {
+        section.style.display = 'block';
+        if (tabId === 'dashboard') fetchDashboardData();
+      } else {
+        document.getElementById('section-placeholder').style.display = 'block';
+        document.getElementById('placeholder-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
       }
     }
 
-    function populateAssigneeDropdown() {
-      const select = document.getElementById('update-assignee');
-      if (!select) return;
-      select.innerHTML = '<option value="">Unassigned</option>';
-      users.forEach(u => {
-        select.innerHTML += `<option value="${u.full_name}">${u.full_name} (${u.role})</option>`;
-      });
-    }
-
-    async function fetchEnquiries() {
-      try {
-        const res = await fetch('/api/enquiries');
-        const result = await res.json();
-        if (result.status === 'success') {
-          enquiries = result.data;
-          applyFilters();
-        } else {
-          document.getElementById('enquiries-tbody').innerHTML = `
-            <tr>
-              <td colspan="8" style="text-align: center; color: #f87171; padding: 2rem;">
-                <i class="fa-solid fa-triangle-exclamation"></i> ${result.message}
-              </td>
-            </tr>
-          `;
-        }
-      } catch (err) {
-        console.error('Error fetching enquiries:', err);
-      }
-    }
-
-    function applyFilters() {
-      const search = document.getElementById('search-input').value.toLowerCase();
-      const statusFilter = document.getElementById('filter-status').value;
-      const emailFilter = document.getElementById('filter-email').value;
-
-      const filtered = enquiries.filter(e => {
-        const matchesSearch = 
-          e.submissionId.toLowerCase().includes(search) ||
-          e.customerName.toLowerCase().includes(search) ||
-          e.email.toLowerCase().includes(search) ||
-          e.mobileNumber.toLowerCase().includes(search);
-          
-        const matchesStatus = !statusFilter || e.ticketStatus === statusFilter;
-        const matchesEmail = !emailFilter || e.emailStatus === emailFilter;
-
-        return matchesSearch && matchesStatus && matchesEmail;
-      });
-
-      renderTable(filtered);
-      renderMetrics(filtered);
-    }
-
-    function renderMetrics(data) {
-      document.getElementById('metric-total').textContent = enquiries.length;
-      document.getElementById('metric-new').textContent = enquiries.filter(e => e.ticketStatus === 'New').length;
-      document.getElementById('metric-sent').textContent = enquiries.filter(e => e.emailStatus === 'Sent').length;
-      document.getElementById('metric-failed').textContent = enquiries.filter(e => e.emailStatus === 'Failed').length;
-    }
-
-    function renderTable(data) {
-      const tbody = document.getElementById('enquiries-tbody');
-      if (data.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
-              No enquiries match the current filters.
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      tbody.innerHTML = '';
-      data.forEach(e => {
-        const badgeClass = `badge-status-${e.ticketStatus.toLowerCase().replace(' ', '-')}`;
-        tbody.innerHTML += `
-          <tr>
-            <td><strong style="color: var(--secondary); font-family: monospace;">${e.submissionId}</strong></td>
-            <td>${e.customerName}</td>
-            <td><a href="mailto:${e.email}" style="color: var(--secondary);">${e.email}</a></td>
-            <td><span class="badge ${badgeClass}">${e.ticketStatus}</span></td>
-            <td>${e.assignedTo || '<span style="color: var(--text-muted);">Unassigned</span>'}</td>
-            <td><span class="badge ${e.followUpStatus === 'Completed' ? 'badge-status-completed' : 'badge-status-in-progress'}">${e.followUpStatus}</span></td>
-            <td style="font-size: 0.8rem; color: var(--text-muted);">${e.timestamp}</td>
-            <td style="text-align: right;">
-              <button class="btn-action" style="padding: 0.4rem 0.8rem; display: inline-flex;" onclick="openDetails('${e.submissionId}')">
-                <i class="fa-solid fa-eye"></i> Manage
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    function openDetails(subId) {
-      const item = enquiries.find(e => e.submissionId === subId);
-      if (!item) return;
-
-      // Fill details view
-      const view = document.getElementById('details-view');
-      view.innerHTML = `
-        <div class="details-item">
-          <h4>Submission ID</h4>
-          <p><strong>${item.submissionId}</strong></p>
-        </div>
-        <div class="details-item">
-          <h4>Timestamp</h4>
-          <p>${item.timestamp}</p>
-        </div>
-        <div class="details-item">
-          <h4>Customer Name</h4>
-          <p>${item.customerName}</p>
-        </div>
-        <div class="details-item">
-          <h4>Email Address</h4>
-          <p>${item.email}</p>
-        </div>
-        <div class="details-item">
-          <h4>Mobile Number</h4>
-          <p>${item.mobileNumber}</p>
-        </div>
-        <div class="details-item">
-          <h4>City / Address</h4>
-          <p>${item.address || 'N/A'}</p>
-        </div>
-        <div class="details-item">
-          <h4>Email Status</h4>
-          <p>${item.emailStatus} ${item.emailSentAt ? `(${item.emailSentAt})` : ''}</p>
-        </div>
-        <div class="details-item">
-          <h4>Source Page</h4>
-          <p>${item.sourcePage || 'N/A'}</p>
-        </div>
-        <div class="details-item details-item-full">
-          <h4>Message Body</h4>
-          <p style="white-space: pre-wrap; background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">${item.message}</p>
-        </div>
-      `;
-
-      // Fill edit inputs
-      document.getElementById('update-sub-id').value = item.submissionId;
-      document.getElementById('update-status').value = item.ticketStatus;
-      if (document.getElementById('update-assignee')) document.getElementById('update-assignee').value = item.assignedTo;
-      document.getElementById('update-followup').value = item.followUpStatus;
-      document.getElementById('update-remarks').value = item.remarks || '';
-
-      document.getElementById('details-modal').classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('details-modal').classList.remove('active');
-    }
-
-    async function submitUpdate(event) {
-      event.preventDefault();
-      const submissionId = document.getElementById('update-sub-id').value;
-      const ticketStatus = document.getElementById('update-status').value;
-      const assigneeEl = document.getElementById('update-assignee');
-      const assignedTo = assigneeEl ? assigneeEl.value : '';
-      const followUpStatus = document.getElementById('update-followup').value;
-      const remarks = document.getElementById('update-remarks').value;
-
-      try {
-        const res = await fetch('/api/enquiries/update', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ submissionId, ticketStatus, assignedTo, followUpStatus, remarks })
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-          closeModal();
-          fetchEnquiries();
-        } else {
-          alert('Update failed: ' + result.message);
-        }
-      } catch (err) {
-        console.error('Error updating enquiry:', err);
-      }
-    }
-
-    function exportData(format) {
-      if (format === 'csv') {
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Submission ID,Timestamp,Customer Name,Email,Mobile,Address,Ticket Status,Assigned To,Follow-up Status,Remarks\n";
-        
-        enquiries.forEach(e => {
-          const row = [
-            e.submissionId || '',
-            e.timestamp || '',
-            `"${(e.customerName || '').replace(/"/g, '""')}"`,
-            e.email || '',
-            e.mobileNumber || '',
-            `"${(e.address || '').replace(/"/g, '""')}"`,
-            e.ticketStatus || '',
-            e.assignedTo || '',
-            e.followUpStatus || '',
-            `"${(e.remarks || '').replace(/"/g, '""')}"`
-          ].join(",");
-          csvContent += row + "\n";
-        });
-        
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `website_builders_enquiries_${new Date().toISOString().slice(0,10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    }
-  
-    let adminProjects = [];
-    async function fetchAdminProjects() {
+    async function fetchDashboardData() {
       try {
         const res = await fetch('/api/projects');
         const data = await res.json();
-        const tbody = document.getElementById('projects-tbody');
-        if(!tbody) return;
-        tbody.innerHTML = '';
         if (data.status === 'success') {
-          adminProjects = data.data;
-          adminProjects.forEach(p => {
+          document.getElementById('count-projects').innerText = data.data.length;
+          const tbody = document.getElementById('dashboard-projects-tbody');
+          tbody.innerHTML = '';
+          data.data.slice(0, 5).forEach(p => {
             tbody.innerHTML += `
               <tr>
-                <td style="font-family:monospace; color:var(--secondary);">${p.project_id}</td>
-                <td>${p.name}</td>
-                <td>${p.customer_name} (ID: ${p.customer_id})</td>
-                <td><span class="badge badge-status-new">${p.stage}</span></td>
+                <td><strong>${p.name}</strong></td>
+                <td>${p.customer_name || 'N/A'}</td>
                 <td>
-                  <div style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px; width: 100px; overflow: hidden; display:inline-block; vertical-align:middle; margin-right:5px;">
-                    <div style="background: var(--gradient-primary); height: 100%; width: ${p.progress}%;"></div>
+                  <div style="width: 100%; background: rgba(0,0,0,0.1); border-radius: 99px; height: 8px;">
+                    <div style="width: ${p.progress}%; background: var(--success); height: 100%; border-radius: 99px;"></div>
                   </div>
-                  ${p.progress}%
                 </td>
-                <td>${p.expected_delivery || 'TBD'}</td>
-                <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                  <button class="btn-action" style="padding: 0.3rem 0.6rem;" onclick='editProject(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
-                  
-                </td>
+                <td><span class="badge badge-status-progress">${p.status}</span></td>
               </tr>
             `;
           });
-        } else {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171;">${data.message}</td></tr>`;
         }
       } catch (e) {
         console.error(e);
       }
     }
 
-    function openProjectModal() {
-      document.getElementById('project-form').reset();
-      document.getElementById('project-id-input').value = '';
-      document.getElementById('project-modal-title').innerText = 'Create Project';
-      document.getElementById('update-message-group').style.display = 'none';
-      document.getElementById('project-modal').classList.add('active');
-    }
-
-    function editProject(p) {
-      document.getElementById('project-id-input').value = p.id;
-      document.getElementById('project-name').value = p.name;
-      document.getElementById('project-customer-id').value = p.customer_id;
-      document.getElementById('project-delivery').value = p.expected_delivery ? p.expected_delivery.substring(0,10) : '';
-      document.getElementById('project-staff').value = p.assigned_staff_id || '';
-      document.getElementById('project-stage').value = p.stage;
-      document.getElementById('project-progress').value = p.progress;
-      document.getElementById('project-status').value = p.status;
-      
-      document.getElementById('project-modal-title').innerText = 'Edit Project';
-      document.getElementById('update-message-group').style.display = 'block';
-      document.getElementById('project-modal').classList.add('active');
-    }
-
-    function closeProjectModal() {
-      document.getElementById('project-modal').classList.remove('active');
-    }
-
-    async function submitProjectForm(e) {
-      e.preventDefault();
-      const id = document.getElementById('project-id-input').value;
-      const payload = {
-        name: document.getElementById('project-name').value,
-        customer_id: document.getElementById('project-customer-id').value,
-        expected_delivery: document.getElementById('project-delivery').value,
-        assigned_staff_id: document.getElementById('project-staff').value,
-        stage: document.getElementById('project-stage').value,
-        progress: document.getElementById('project-progress').value,
-        status: document.getElementById('project-status').value
-      };
-      
-      let url = '/api/projects';
-      let method = id ? 'PUT' : 'POST';
-      if (id) url += '/' + id;
-      
-      try {
-        const res = await fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        
-        if (result.status === 'success') {
-          // Post update message if any
-          const updateMsg = document.getElementById('project-update-msg').value;
-          if (id && updateMsg.trim() !== '') {
-            await fetch('/api/projects/' + id + '/updates', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: updateMsg })
-            });
-          }
-          closeProjectModal();
-          fetchAdminProjects();
-        } else {
-          alert('Error: ' + result.message);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    async function deleteProject(id) {
-      if (!confirm('Are you sure you want to delete this project?')) return;
-      try {
-        const res = await fetch('/api/projects/' + id, { method: 'DELETE' });
-        if (res.ok) fetchAdminProjects();
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    
+    // Initialize
+    fetchDashboardData();
   </script>
 </body>
 </html>

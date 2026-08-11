@@ -129,3 +129,149 @@ class ProjectUpdate(db.Model):
             'message': self.message,
             'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    subject = db.Column(db.String(255), nullable=True)
+    body = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', lazy='dynamic', cascade='all, delete-orphan'))
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref=db.backref('received_messages', lazy='dynamic', cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'sender_id': self.sender_id,
+            'sender_name': self.sender.full_name if self.sender else 'System',
+            'sender_role': self.sender.role if self.sender else '',
+            'receiver_id': self.receiver_id,
+            'receiver_name': self.receiver.full_name if self.receiver else 'Unknown',
+            'subject': self.subject,
+            'body': self.body,
+            'is_read': self.is_read,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
+        }
+
+class Website(db.Model):
+    __tablename__ = 'websites'
+
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    domain = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(50), default='Draft') # Draft, Building, Review, Published, Paused, Archived
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    client = db.relationship('User', foreign_keys=[client_id])
+    project = db.relationship('Project', foreign_keys=[project_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'client_id': self.client_id,
+            'project_id': self.project_id,
+            'name': self.name,
+            'domain': self.domain,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class Task(db.Model):
+    __tablename__ = 'tasks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
+    assigned_staff_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    priority = db.Column(db.String(50), default='Normal') # Low, Normal, High, Urgent
+    status = db.Column(db.String(50), default='Todo') # Todo, In Progress, Review, Completed, Overdue
+    due_date = db.Column(db.Date, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    project = db.relationship('Project', backref=db.backref('tasks', cascade='all, delete-orphan'))
+    assigned_staff = db.relationship('User', foreign_keys=[assigned_staff_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'assigned_staff_id': self.assigned_staff_id,
+            'assigned_staff_name': self.assigned_staff.full_name if self.assigned_staff else None,
+            'title': self.title,
+            'description': self.description,
+            'priority': self.priority,
+            'status': self.status,
+            'due_date': self.due_date.isoformat() if self.due_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+        }
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    type = db.Column(db.String(50), nullable=False) # e.g. project_update, message, task_assigned
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'type': self.type,
+            'title': self.title,
+            'message': self.message,
+            'is_read': self.is_read,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class StaffAssignment(db.Model):
+    __tablename__ = 'staff_assignments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    staff_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=True)
+    website_id = db.Column(db.Integer, db.ForeignKey('websites.id', ondelete='CASCADE'), nullable=True)
+    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    staff = db.relationship('User', foreign_keys=[staff_id])
+
+class ProjectFile(db.Model):
+    __tablename__ = 'project_files'
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
+    uploaded_by_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    filename = db.Column(db.String(255), nullable=False)
+    filepath = db.Column(db.String(500), nullable=False)
+    category = db.Column(db.String(50), default='Other') # Documents, Designs, Reports, Client Files, Other
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    uploaded_by = db.relationship('User', foreign_keys=[uploaded_by_id])
+    project = db.relationship('Project', backref=db.backref('files', cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'project_id': self.project_id,
+            'uploaded_by_name': self.uploaded_by.full_name if self.uploaded_by else 'System',
+            'filename': self.filename,
+            'filepath': self.filepath,
+            'category': self.category,
+            'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None
+        }

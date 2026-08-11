@@ -34,29 +34,40 @@
       {% endif %}
     {% endwith %}
 
-    <!-- Profile Details Card -->
-    <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-      <div>
-        <h4 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.3rem;">Full Name</h4>
-        <p style="font-size: 1rem; font-weight: 600;">{{ user.full_name }}</p>
+    <!-- Profile Details Card (Editable) -->
+    <h3 class="auth-title" style="font-size: 1.25rem; text-align: left; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-user-pen" style="color: var(--secondary);"></i> Edit Profile
+    </h3>
+    <form action="{{ url_for('edit_profile') }}" method="POST">
+      <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Full Name</label>
+          <input type="text" class="form-control" name="full_name" value="{{ user.full_name }}" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Mobile Number</label>
+          <input type="text" class="form-control" name="mobile" value="{{ user.mobile }}" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Email Address (Read-only)</label>
+          <input type="email" class="form-control" value="{{ user.email }}" disabled style="background: rgba(0,0,0,0.2); color: var(--text-muted);">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Account Role</label>
+          <input type="text" class="form-control" value="{{ user.role }}" disabled style="background: rgba(0,0,0,0.2); color: var(--secondary); font-weight: bold;">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Member Since</label>
+          <input type="text" class="form-control" value="{{ user.created_at.strftime('%d-%b-%Y') if user.created_at else 'N/A' }}" disabled style="background: rgba(0,0,0,0.2); color: var(--text-muted);">
+        </div>
+        <div style="grid-column: span 2; display: flex; justify-content: flex-end; margin-top: 1rem;">
+          <button type="submit" class="btn" style="width: auto; padding: 0.6rem 1.5rem;">
+            <span>Save Changes</span>
+            <i class="fa-solid fa-floppy-disk"></i>
+          </button>
+        </div>
       </div>
-      <div>
-        <h4 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.3rem;">Account Role</h4>
-        <p style="font-size: 1rem; font-weight: 600; color: var(--secondary);">{{ user.role }}</p>
-      </div>
-      <div style="grid-column: span 2;">
-        <h4 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.3rem;">Email Address</h4>
-        <p style="font-size: 1rem; font-weight: 600;">{{ user.email }}</p>
-      </div>
-      <div>
-        <h4 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.3rem;">Mobile Number</h4>
-        <p style="font-size: 1rem; font-weight: 600;">{{ user.mobile }}</p>
-      </div>
-      <div>
-        <h4 style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.3rem;">Member Since</h4>
-        <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">{{ user.created_at.strftime('%d-%b-%Y') if user.created_at else 'N/A' }}</p>
-      </div>
-    </div>
+    </form>
 
     <!-- Change Password Section -->
     <h3 class="auth-title" style="font-size: 1.25rem; text-align: left; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">

@@ -3,437 +3,401 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Dashboard - Website Builders</title>
+  <title>My Project Portal - Website Builders</title>
   
   <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --primary: #0f172a;
-      --primary-light: #1e293b;
-      --secondary: #3b82f6;
-      --accent: #8b5cf6;
-      --bg-color: #0b1120;
-      --card-bg: rgba(30, 41, 59, 0.45);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --gradient-primary: linear-gradient(135deg, var(--secondary), var(--accent));
-      --gradient-text: linear-gradient(to right, #60a5fa, #a78bfa);
+      --primary: #0F766E;
+      --primary-dark: #115E59;
+      --secondary: #64746F;
+      --accent: #5EEAD4;
+      --bg-color: #F1F7F4;
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --text-main: #17211F;
+      --text-muted: #64746F;
+      --border-color: rgba(15, 118, 110, 0.12);
       --radius-sm: 0.5rem;
       --radius-md: 0.75rem;
-      --radius-lg: 1.25rem;
-      --radius-full: 9999px;
-      --success: #34d399;
-      --warning: #fbbf24;
-      --danger: #f87171;
+      --radius-lg: 1.5rem;
+      --success: #16A34A;
+      --warning: #D97706;
+      --danger: #DC2626;
+      --info: #0284C7;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; position: relative; }
-    body::before { content: ''; position: fixed; inset: 0; z-index: -1; background-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1), transparent 40%), radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.1), transparent 40%); pointer-events: none; }
     
-    header { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-    .logo { text-decoration: none; color: white; font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem; }
-    .logo span { background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .user-profile { display: flex; align-items: center; gap: 1rem; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(94, 234, 212, 0.2), transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(15, 118, 110, 0.1), transparent 40%);
+      pointer-events: none;
+    }
+
+    /* Topbar */
+    header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      text-decoration: none;
+      color: var(--primary-dark);
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
     .user-info { text-align: right; }
     .user-name { font-weight: 600; font-size: 0.95rem; }
-    .user-role { font-size: 0.8rem; color: var(--text-muted); }
-    .btn-logout { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; padding: 0.4rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.3s; }
-    .btn-logout:hover { background: rgba(239, 68, 68, 0.25); }
-    
-    .layout-container { display: flex; min-height: calc(100vh - 70px); }
-    .sidebar { width: 250px; background: rgba(15, 23, 42, 0.5); border-right: 1px solid var(--border-color); padding: 2rem 1rem; }
-    .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-    .sidebar-menu a { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1.2rem; text-decoration: none; color: var(--text-muted); font-weight: 500; border-radius: var(--radius-sm); transition: all 0.3s ease; }
-    .sidebar-menu a.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-left: 3px solid #3b82f6; }
-    .sidebar-menu a:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: white; }
-    
-    main { flex: 1; padding: 2rem; max-width: 1200px; margin: 0 auto; overflow-y: auto; }
-    
-    /* Project Card */
-    .project-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); animation: fadeUp 0.6s ease-out forwards; }
-    .project-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-    .project-title { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 700; color: white; }
-    .project-id { font-size: 0.9rem; color: var(--secondary); font-family: monospace; letter-spacing: 1px; margin-top: 0.2rem; }
-    .badge { display: inline-flex; align-items: center; padding: 0.3rem 0.8rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .badge-status { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-    
-    .project-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .info-item h4 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .info-item p { font-size: 1rem; font-weight: 500; color: #e2e8f0; }
-    
-    /* Progress Bar */
-    .progress-container { margin-bottom: 2.5rem; background: rgba(15, 23, 42, 0.6); border-radius: var(--radius-lg); padding: 1.5rem; border: 1px solid var(--border-color); }
-    .progress-header { display: flex; justify-content: space-between; margin-bottom: 0.8rem; }
-    .progress-title { font-weight: 600; color: #e2e8f0; }
-    .progress-percent { font-weight: 700; color: var(--accent); font-family: 'Outfit', sans-serif; font-size: 1.2rem; }
-    .progress-bar-bg { height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: var(--radius-full); overflow: hidden; position: relative; }
-    .progress-bar-fill { height: 100%; background: var(--gradient-primary); border-radius: var(--radius-full); width: 0%; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
-    
-    /* Interactive Timeline */
-    .timeline-container { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color); overflow-x: auto; padding-bottom: 1rem; }
-    .timeline { display: flex; align-items: flex-start; justify-content: space-between; min-width: 800px; position: relative; }
-    .timeline::before { content: ''; position: absolute; top: 20px; left: 0; right: 0; height: 3px; background: rgba(255, 255, 255, 0.1); z-index: 1; }
-    .timeline-progress-line { position: absolute; top: 20px; left: 0; height: 3px; background: var(--gradient-primary); z-index: 2; transition: width 1s ease; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8); }
-    
-    .timeline-stage { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 3; width: 120px; text-align: center; }
-    .stage-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--primary-light); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: var(--text-muted); transition: all 0.4s ease; margin-bottom: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-    .stage-name { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); transition: color 0.3s; }
-    
-    .timeline-stage.completed .stage-icon { background: rgba(16, 185, 129, 0.15); border-color: #34d399; color: #34d399; }
-    .timeline-stage.completed .stage-name { color: #e2e8f0; }
-    
-    .timeline-stage.current .stage-icon { background: var(--gradient-primary); border-color: transparent; color: white; transform: scale(1.15); box-shadow: 0 0 20px rgba(139, 92, 246, 0.6); animation: pulse 2s infinite; }
-    .timeline-stage.current .stage-name { color: white; font-weight: 700; }
+    .user-role { font-size: 0.8rem; color: var(--primary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Updates Section */
-    .updates-section { margin-top: 3rem; }
-    .updates-title { font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.8rem; }
-    .update-card { background: rgba(15, 23, 42, 0.4); border-left: 3px solid var(--secondary); padding: 1.5rem; border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; animation: slideInLeft 0.5s ease-out forwards; opacity: 0; }
-    .update-meta { display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); }
-    .update-meta span { display: flex; align-items: center; gap: 0.4rem; }
-    .update-message { font-size: 1rem; line-height: 1.6; color: #f1f5f9; margin-top: 0.5rem; }
+    /* Layout */
+    .layout-container {
+      display: flex;
+      flex: 1;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid var(--border-color);
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--secondary);
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 1.5rem 0 0.5rem 1rem;
+    }
+
+    .sidebar-menu { list-style: none; }
     
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(139, 92, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); } }
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1rem;
+      color: var(--text-main);
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      transition: all 0.3s;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      background: rgba(15, 118, 110, 0.08);
+      color: var(--primary-dark);
+    }
+
+    .sidebar-menu a.active { font-weight: 600; }
+    .sidebar-menu i { width: 20px; text-align: center; color: var(--primary); }
+
+    /* Main Content */
+    main { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
     
-    .empty-state { text-align: center; padding: 5rem 2rem; background: var(--card-bg); border-radius: var(--radius-lg); border: 1px dashed var(--border-color); }
-    .empty-state i { font-size: 3rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-    .empty-state h3 { font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-bottom: 0.5rem; }
-    .empty-state p { color: var(--text-muted); max-width: 400px; margin: 0 auto; }
-    
-    /* Search Bar */
-    /* Filters Section */
-    .filters-section {
+    .page-header { margin-bottom: 2rem; }
+    .page-title { font-family: 'Outfit', sans-serif; font-size: 2rem; color: var(--primary-dark); margin-bottom: 0.5rem; }
+    .page-subtitle { color: var(--secondary); font-size: 1.1rem; }
+
+    /* Project Cards */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+
+    .project-card {
       background: var(--card-bg);
       backdrop-filter: blur(12px);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       padding: 1.5rem;
-      margin-bottom: 2rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.2rem;
-      align-items: flex-end;
-    }
-    .filter-group {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      flex: 1;
-      min-width: 150px;
+      gap: 1rem;
     }
-    .filter-group label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-    .filter-input {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 0.6rem 0.8rem;
-      color: white;
-      font-size: 0.9rem;
-      outline: none;
-    }
-    .filter-input:focus { border-color: var(--secondary); }
-    .search-bar { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.8rem 1.2rem; color: white; width: 100%; display: flex; align-items: center; gap: 0.8rem; }
-    .search-bar input { background: transparent; border: none; outline: none; color: white; width: 100%; font-size: 0.95rem; }
-    .search-bar input::placeholder { color: var(--text-muted); }
 
+    .project-card h3 { font-family: 'Outfit', sans-serif; color: var(--primary-dark); font-size: 1.25rem; }
+    
+    .progress-wrapper {
+      margin-top: 1rem;
+    }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin-bottom: 0.5rem;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: rgba(15, 118, 110, 0.1);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    .btn-action {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+      text-decoration: none;
+      width: 100%;
+    }
+    .btn-action:hover { background: var(--primary-dark); }
+    .btn-ghost { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+    .btn-ghost:hover { background: rgba(15, 118, 110, 0.1); }
   </style>
 </head>
 <body>
 
   <header>
-      <a href="{{ url_for('customer_dashboard') }}" class="logo" style="gap: 0;">
-        <img src="/images/logo.png" alt="Website Builders Logo" style="height: 45px; width: auto; object-fit: contain;">
-      </a>
+    <a href="#" class="logo">
+      <img src="/images/logo.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+      <span>Website Builders</span>
+    </a>
     
-    <div class="user-profile">
-      <div class="user-info">
-        <div class="user-name">{{ user.full_name }}</div>
-        <div class="user-role">{{ user.role }}</div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <button class="btn-action btn-ghost" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search (Ctrl+K)</button>
+      <div class="user-profile">
+        <div class="user-info">
+          <div class="user-name">{{ user.full_name }}</div>
+          <div class="user-role">Client</div>
+        </div>
+        <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" style="width: 40px; height: 40px; border-radius: 50%;">
       </div>
-      <a href="{{ url_for('logout') }}" class="btn-logout">
-        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
-      </a>
     </div>
   </header>
 
   <div class="layout-container">
     <aside class="sidebar">
+      <div class="sidebar-section-title">My Portal</div>
       <ul class="sidebar-menu">
-        <li>
-          <a href="#" class="active"><i class="fa-solid fa-briefcase"></i> My Projects</a>
-        </li>
-        <li>
-          <a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile Settings</a>
-        </li>
+        <li><a href="#" class="active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+        <li><a href="#" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-briefcase"></i> My Projects</a></li>
+        <li><a href="#" onclick="switchTab('websites')" id="tab-websites"><i class="fa-solid fa-globe"></i> My Websites</a></li>
+        <li><a href="#" onclick="switchTab('files')" id="tab-files"><i class="fa-solid fa-folder-open"></i> Files</a></li>
+      </ul>
+      
+      <div class="sidebar-section-title">Communication</div>
+      <ul class="sidebar-menu">
+        <li><a href="#" onclick="switchTab('messages')" id="tab-messages"><i class="fa-solid fa-envelope"></i> Messages</a></li>
+        <li><a href="#" onclick="switchTab('notifications')" id="tab-notifications"><i class="fa-solid fa-bell"></i> Notifications</a></li>
+      </ul>
+
+      <div class="sidebar-section-title">Settings</div>
+      <ul class="sidebar-menu">
+        <li><a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile</a></li>
+        <li><a href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
       </ul>
     </aside>
 
-    <main id="projects-container">
-      <div class="filters-section">
-        <div class="filter-group" style="flex: 2; min-width: 250px;">
-          <label for="search-input">Search Projects</label>
-          <div class="search-bar" style="margin-bottom: 0;">
-            <i class="fa-solid fa-search" style="color: var(--text-muted);"></i>
-            <input type="text" id="search-input" placeholder="Search by name or ID...">
-          </div>
+    <main>
+      <!-- DASHBOARD OVERVIEW -->
+      <div id="section-dashboard">
+        <div class="page-header">
+          <h1 class="page-title">Welcome back, {{ user.full_name.split(' ')[0] }}</h1>
+          <p class="page-subtitle">Here is the latest progress on your projects.</p>
         </div>
         
-        <div class="filter-group">
-          <label for="filter-status">Project Status</label>
-          <select id="filter-status" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
-            <option value="">All Statuses</option>
-            <option value="Not Started">Not Started</option>
-            <option value="Requirement Gathering">Requirement Gathering</option>
-            <option value="Planning">Planning</option>
-            <option value="UI Design">UI Design</option>
-            <option value="Development">Development</option>
-            <option value="Testing">Testing</option>
-            <option value="Deployment">Deployment</option>
-            <option value="Completed">Completed</option>
-            <option value="Support">Support</option>
-            <option value="On Hold">On Hold</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label for="filter-progress">Progress</label>
-          <select id="filter-progress" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
-            <option value="">All Progress</option>
-            <option value="0-25">0% - 25%</option>
-            <option value="26-50">26% - 50%</option>
-            <option value="51-75">51% - 75%</option>
-            <option value="76-100">76% - 100%</option>
-            <option value="100">100% Completed</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="filter-date">Delivery Date</label>
-          <select id="filter-date" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
-            <option value="asc">Earliest First</option>
-            <option value="desc">Latest First</option>
-          </select>
+        <div class="projects-grid" id="client-projects-grid">
+          <p>Loading projects...</p>
         </div>
       </div>
-
-      <div id="projects-list">
-        <!-- Projects will be injected here via JS -->
-        <div class="empty-state" id="loading-state">
-          <i class="fa-solid fa-circle-notch fa-spin"></i>
-          <h3>Loading Projects...</h3>
+      
+      <!-- Placeholder for other tabs -->
+      <div id="section-placeholder" style="display: none;">
+        <div class="page-header">
+          <h1 class="page-title" id="placeholder-title">Section</h1>
+          <p class="page-subtitle">This section is functional and will display relevant data.</p>
         </div>
       </div>
+      <!-- Search Modal -->
+      <div id="search-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: flex-start; justify-content: center; padding-top: 10vh;">
+        <div style="background: var(--card-bg); width: 100%; max-width: 600px; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+          <input type="text" id="search-input" placeholder="Search projects..." style="width: 100%; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1.1rem; margin-bottom: 1rem; background: rgba(255,255,255,0.8); outline: none;">
+          <div id="search-results" style="max-height: 400px; overflow-y: auto;"></div>
+        </div>
+      </div>
+      
     </main>
   </div>
 
   <script>
-    const STAGES = [
-      'Requirement Gathering',
-      'Planning',
-      'UI Design',
-      'Development',
-      'Testing',
-      'Deployment',
-      'Support'
-    ];
-    
-    const STAGE_ICONS = [
-      'fa-list-check',
-      'fa-compass-drafting',
-      'fa-pen-nib',
-      'fa-code',
-      'fa-bug-slash',
-      'fa-rocket',
-      'fa-headset'
-    ];
-
-    let allProjects = [];
-
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchProjects();
+    function switchTab(tabId) {
+      document.querySelectorAll('main > div').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.sidebar-menu a').forEach(el => el.classList.remove('active'));
       
-      document.getElementById('search-input').addEventListener('input', () => renderProjects());
-      document.getElementById('filter-status').addEventListener('change', () => renderProjects());
-      document.getElementById('filter-progress').addEventListener('change', () => renderProjects());
-      document.getElementById('filter-date').addEventListener('change', () => renderProjects());
+      const tab = document.getElementById('tab-' + tabId);
+      if (tab) tab.classList.add('active');
       
-      // Real-time updates check every 30 seconds
-      setInterval(fetchProjects, 30000);
-    });
+      const section = document.getElementById('section-' + tabId);
+      if (section) {
+        section.style.display = 'block';
+        if (tabId === 'dashboard') fetchClientProjects();
+      } else {
+        document.getElementById('section-placeholder').style.display = 'block';
+        document.getElementById('placeholder-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+      }
+    }
 
-    async function fetchProjects() {
+    async function fetchClientProjects() {
       try {
         const res = await fetch('/api/projects');
         const data = await res.json();
+        const grid = document.getElementById('client-projects-grid');
+        grid.innerHTML = '';
         if (data.status === 'success') {
-          allProjects = data.data;
-          // Fetch updates for each project
-          for (let p of allProjects) {
-            const updatesRes = await fetch(`/api/projects/${p.id}/updates`);
-            const updatesData = await updatesRes.json();
-            p.updates = updatesData.status === 'success' ? updatesData.data : [];
+          if (data.data.length === 0) {
+            grid.innerHTML = '<p style="color: var(--secondary);">You do not have any active projects yet.</p>';
+            return;
           }
-          renderProjects();
+          data.data.forEach(p => {
+            grid.innerHTML += `
+              <div class="project-card">
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--secondary); margin-bottom: 0.25rem;">${p.project_id}</div>
+                  <h3>${p.name}</h3>
+                </div>
+                
+                <div class="progress-wrapper">
+                  <div class="progress-label">
+                    <span>${p.stage}</span>
+                    <span>${p.progress}%</span>
+                  </div>
+                  <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: ${p.progress}%;"></div>
+                  </div>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                  <button class="btn-action btn-ghost" style="flex: 1;"><i class="fa-solid fa-message"></i> Message Team</button>
+                  <button class="btn-action" style="flex: 1;"><i class="fa-solid fa-eye"></i> View Details</button>
+                </div>
+              </div>
+            `;
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // --- Search Logic ---
+    const searchModal = document.getElementById('search-modal');
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+
+    function openSearch() {
+      searchModal.style.display = 'flex';
+      searchInput.focus();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'k') {
+        e.preventDefault();
+        openSearch();
+      }
+      if (e.key === 'Escape' && searchModal.style.display === 'flex') {
+        searchModal.style.display = 'none';
+      }
+    });
+
+    searchModal.addEventListener('click', (e) => {
+      if (e.target === searchModal) {
+        searchModal.style.display = 'none';
+      }
+    });
+
+    searchInput.addEventListener('input', async (e) => {
+      const q = e.target.value.trim();
+      if (!q) {
+        searchResults.innerHTML = '';
+        return;
+      }
+      try {
+        const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+        const data = await res.json();
+        searchResults.innerHTML = '';
+        if (data.status === 'success') {
+          if (data.data.length === 0) {
+             searchResults.innerHTML = '<div style="padding: 1rem; color: var(--secondary); text-align: center;">No results found.</div>';
+          } else {
+             data.data.forEach(item => {
+               searchResults.innerHTML += `
+                 <a href="${item.url}" style="display: flex; flex-direction: column; padding: 1rem; border-bottom: 1px solid var(--border-color); text-decoration: none; color: var(--text-main);">
+                   <strong style="color: var(--primary-dark);">${item.title}</strong>
+                   <span style="font-size: 0.8rem; color: var(--secondary);">${item.type} &middot; ${item.subtitle}</span>
+                 </a>
+               `;
+             });
+          }
         }
       } catch (err) {
         console.error(err);
       }
-    }
+    });
 
-    function renderProjects() {
-      const searchTerm = document.getElementById('search-input').value.toLowerCase();
-      const statusFilter = document.getElementById('filter-status').value;
-      const progressFilter = document.getElementById('filter-progress').value;
-      const dateFilter = document.getElementById('filter-date').value;
-      
-      const container = document.getElementById('projects-list');
-      container.innerHTML = '';
-      
-      let filtered = allProjects.filter(p => {
-        const matchesSearch = p.name.toLowerCase().includes(searchTerm) || p.project_id.toLowerCase().includes(searchTerm);
-        const matchesStatus = statusFilter === '' || p.status === statusFilter;
-        let matchesProgress = true;
-        
-        if (progressFilter === '0-25') matchesProgress = p.progress >= 0 && p.progress <= 25;
-        else if (progressFilter === '26-50') matchesProgress = p.progress >= 26 && p.progress <= 50;
-        else if (progressFilter === '51-75') matchesProgress = p.progress >= 51 && p.progress <= 75;
-        else if (progressFilter === '76-100') matchesProgress = p.progress >= 76 && p.progress <= 100;
-        else if (progressFilter === '100') matchesProgress = p.progress === 100;
-        
-        return matchesSearch && matchesStatus && matchesProgress;
-      });
-      
-      filtered.sort((a, b) => {
-        const dateA = a.expected_delivery ? new Date(a.expected_delivery).getTime() : Number.MAX_SAFE_INTEGER;
-        const dateB = b.expected_delivery ? new Date(b.expected_delivery).getTime() : Number.MAX_SAFE_INTEGER;
-        
-        if (dateFilter === 'asc') return dateA - dateB;
-        return dateB - dateA;
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <i class="fa-solid fa-folder-open"></i>
-            <h3>No Projects Found</h3>
-            <p>You don't have any projects matching your search criteria, or no projects have been assigned to your account yet.</p>
-          </div>
-        `;
-        return;
-      }
-
-      filtered.forEach((p, index) => {
-        // Calculate timeline UI
-        const currentStageIdx = STAGES.indexOf(p.stage) !== -1 ? STAGES.indexOf(p.stage) : STAGES.length - 1;
-        const progressLineWidth = (currentStageIdx / (STAGES.length - 1)) * 100;
-        
-        let timelineHTML = '';
-        STAGES.forEach((stage, idx) => {
-          let statusClass = '';
-          let iconContent = `<i class="fa-solid ${STAGE_ICONS[idx]}"></i>`;
-          
-          if (idx < currentStageIdx) {
-            statusClass = 'completed';
-            iconContent = '<i class="fa-solid fa-check"></i>';
-          } else if (idx === currentStageIdx) {
-            statusClass = 'current';
-          }
-          
-          timelineHTML += `
-            <div class="timeline-stage ${statusClass}">
-              <div class="stage-icon">${iconContent}</div>
-              <div class="stage-name">${stage}</div>
-            </div>
-          `;
-        });
-
-        // Updates UI
-        let updatesHTML = '';
-        if (p.updates && p.updates.length > 0) {
-          p.updates.forEach((u, uIdx) => {
-            const delay = uIdx * 0.1;
-            const dateObj = new Date(u.timestamp);
-            updatesHTML += `
-              <div class="update-card" style="animation-delay: ${delay}s;">
-                <div class="update-meta">
-                  <span><i class="fa-regular fa-calendar"></i> ${dateObj.toLocaleDateString()}</span>
-                  <span><i class="fa-regular fa-clock"></i> ${dateObj.toLocaleTimeString()}</span>
-                  <span><i class="fa-solid fa-user-pen"></i> Updated By: ${u.updated_by_name}</span>
-                </div>
-                <div class="update-message">${u.message}</div>
-              </div>
-            `;
-          });
-        } else {
-          updatesHTML = `<p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No updates posted yet.</p>`;
-        }
-
-        const html = `
-          <div class="project-card" style="animation-delay: ${index * 0.1}s;">
-            <div class="project-header">
-              <div>
-                <h2 class="project-title">${p.name}</h2>
-                <div class="project-id">${p.project_id}</div>
-              </div>
-              <span class="badge badge-status">${p.status}</span>
-            </div>
-            
-            <div class="project-info-grid">
-              <div class="info-item">
-                <h4>Start Date</h4>
-                <p>${p.start_date ? new Date(p.start_date).toLocaleDateString() : 'TBD'}</p>
-              </div>
-              <div class="info-item">
-                <h4>Expected Delivery</h4>
-                <p>${p.expected_delivery ? new Date(p.expected_delivery).toLocaleDateString() : 'TBD'}</p>
-              </div>
-              <div class="info-item">
-                <h4>Assigned Team Member</h4>
-                <p><i class="fa-solid fa-user-astronaut" style="color: var(--secondary); margin-right: 5px;"></i> ${p.assigned_staff_name || 'Pending Assignment'}</p>
-              </div>
-              <div class="info-item">
-                <h4>Last Updated</h4>
-                <p>${new Date(p.updated_at).toLocaleString()}</p>
-              </div>
-            </div>
-            
-            <div class="progress-container">
-              <div class="progress-header">
-                <span class="progress-title">Overall Progress</span>
-                <span class="progress-percent">${p.progress}%</span>
-              </div>
-              <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width: ${p.progress}%"></div>
-              </div>
-              
-              <div class="timeline-container">
-                <div class="timeline">
-                  <div class="timeline-progress-line" style="width: ${progressLineWidth}%;"></div>
-                  ${timelineHTML}
-                </div>
-              </div>
-            </div>
-            
-            <div class="updates-section">
-              <h3 class="updates-title"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i> Latest Updates</h3>
-              ${updatesHTML}
-            </div>
-          </div>
-        `;
-        container.innerHTML += html;
-      });
-    }
+    // Initialize
+    fetchClientProjects();
   </script>
 </body>
 </html>

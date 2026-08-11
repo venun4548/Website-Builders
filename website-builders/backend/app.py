@@ -3,14 +3,15 @@ import uuid
 import requests
 import logging
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.utils import secure_filename
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 
 from functools import wraps
 from config import Config
-from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate
+from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate, Notification, ProjectFile, Website, Task
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -73,6 +74,52 @@ def role_required(*roles):
                 flash(f'Access denied. Required role: {", ".join(roles)}', 'error')
                 return redirect(url_for('dashboard'))
             return fn(*args, **kwargs)
+        return decorated_view
+    return wrapper
+
+PERMISSION_MATRIX = {
+    'Super Admin': ['all'],
+    'Admin': [
+        'users.limited', 'staff.view', 'staff.create', 'staff.edit',
+        'clients.view', 'clients.create', 'clients.edit', 'clients.delete',
+        'projects.view', 'projects.create', 'projects.edit', 'projects.delete',
+        'websites.view', 'websites.create', 'websites.edit', 'websites.delete',
+        'analytics.view', 'messages.view', 'messages.send', 'activity.view',
+        'system.limited', 'settings.limited'
+    ],
+    'Staff': [
+        'clients.assigned', 'projects.assigned', 'websites.assigned',
+        'messages.view', 'messages.send', 'analytics.assigned', 'settings.self'
+    ],
+    'User': [ # Client
+        'clients.own', 'projects.own', 'websites.own', 'messages.view', 'messages.send'
+    ]
+}
+
+def requires_permission(perm):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorated_view(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return login_manager.unauthorized()
+            
+            role = current_user.role
+            perms = PERMISSION_MATRIX.get(role, [])
+            
+            if 'all' in perms or perm in perms:
+                return fn(*args, **kwargs)
+            
+            # Additional check for generic assigned/own permissions
+            prefix = perm.split('.')[0]
+            if f"{prefix}.assigned" in perms or f"{prefix}.own" in perms:
+                # The route handler MUST do the actual granular check (e.g. is this ID assigned to me?)
+                return fn(*args, **kwargs)
+
+            if request.path.startswith('/api/'):
+                return jsonify({'status': 'error', 'message': 'Access Restricted: You lack permission for ' + perm}), 403
+                
+            flash(f'Access Restricted: You lack permission for {perm}', 'error')
+            return redirect(url_for('dashboard'))
         return decorated_view
     return wrapper
 
@@ -159,24 +206,18 @@ def init_db():
 
 @app.route('/')
 def index():
-    return redirect(url_for('user_login'))
+    return app.send_static_file('index.html')
 
 @app.route('/index.html')
 def home():
-    if not current_user.is_authenticated:
-        return redirect(url_for('user_login'))
     return app.send_static_file('index.html')
 
 @app.route('/services.html')
 def services_page():
-    if not current_user.is_authenticated:
-        return redirect(url_for('user_login'))
     return app.send_static_file('services.html')
 
 @app.route('/contact.html')
 def contact_page():
-    if not current_user.is_authenticated:
-        return redirect(url_for('user_login'))
     return app.send_static_file('contact.html')
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -414,6 +455,24 @@ def dashboard():
 def profile():
     return render_template('profile.html', user=current_user)
 
+@app.route('/edit-profile', methods=['POST'])
+@login_required
+def edit_profile():
+    full_name = request.form.get('full_name')
+    mobile = request.form.get('mobile')
+    
+    if not full_name or not mobile:
+        flash('Full Name and Mobile Number are required.', 'error')
+        return redirect(url_for('profile'))
+        
+    current_user.full_name = full_name
+    current_user.mobile = mobile
+    db.session.commit()
+    
+    log_audit('Updated Profile', current_user.email)
+    flash('Profile updated successfully!', 'success')
+    return redirect(url_for('profile'))
+
 @app.route('/change-password', methods=['POST'])
 @login_required
 def change_password():
@@ -535,7 +594,7 @@ def get_users():
 # --- User Management API (Super Admin) ---
 
 @app.route('/api/super-admin/users', methods=['GET', 'POST'])
-@role_required('Super Admin')
+@requires_permission('users.limited')
 def manage_users():
     if request.method == 'GET':
         users = User.query.all()
@@ -562,7 +621,7 @@ def manage_users():
         return jsonify({'status': 'success', 'message': 'User created successfully'})
 
 @app.route('/api/super-admin/users/<int:user_id>', methods=['PUT', 'DELETE'])
-@role_required('Super Admin')
+@requires_permission('users.limited')
 def modify_user(user_id):
     user = User.query.get_or_404(user_id)
     
@@ -590,7 +649,7 @@ def modify_user(user_id):
             return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/super-admin/users/<int:user_id>/reset-password', methods=['POST'])
-@role_required('Super Admin')
+@requires_permission('users.limited')
 def reset_user_password(user_id):
     user = User.query.get_or_404(user_id)
     new_password = request.json.get('password')
@@ -606,7 +665,7 @@ def reset_user_password(user_id):
 # --- Project Management API ---
 
 @app.route('/api/projects', methods=['GET'])
-@login_required
+@requires_permission('projects.view')
 def get_projects():
     try:
         if current_user.role in ['Super Admin', 'Admin']:
@@ -622,7 +681,7 @@ def get_projects():
         return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/projects', methods=['POST'])
-@role_required('Super Admin', 'Admin')
+@requires_permission('projects.create')
 def create_project():
     data = request.json
     try:
@@ -663,7 +722,7 @@ def create_project():
         return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/projects/<int:project_id>', methods=['PUT', 'DELETE'])
-@login_required
+@requires_permission('projects.edit')
 def manage_project(project_id):
     project = Project.query.get_or_404(project_id)
     
@@ -708,7 +767,7 @@ def manage_project(project_id):
         return jsonify({'status': 'success', 'message': 'Project updated successfully'})
 
 @app.route('/api/projects/<int:project_id>/updates', methods=['GET', 'POST'])
-@login_required
+@requires_permission('projects.view')
 def project_updates(project_id):
     project = Project.query.get_or_404(project_id)
     
@@ -749,10 +808,177 @@ def project_updates(project_id):
         return jsonify({'status': 'success', 'message': 'Update added successfully'})
 
 @app.route('/api/super-admin/audit-logs', methods=['GET'])
-@role_required('Super Admin')
+@requires_permission('system.limited')
 def get_audit_logs():
     logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).all()
     return jsonify({'status': 'success', 'data': [log.to_dict() for log in logs]})
+
+# --- Messaging API ---
+
+@app.route('/api/messages', methods=['GET'])
+@requires_permission('messages.view')
+def get_messages():
+    try:
+        messages = Message.query.filter_by(receiver_id=current_user.id).order_by(Message.timestamp.desc()).all()
+        return jsonify({'status': 'success', 'data': [m.to_dict() for m in messages]})
+    except Exception as e:
+        logger.error(f"Error fetching messages: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/messages/sent', methods=['GET'])
+@requires_permission('messages.view')
+def get_sent_messages():
+    try:
+        messages = Message.query.filter_by(sender_id=current_user.id).order_by(Message.timestamp.desc()).all()
+        return jsonify({'status': 'success', 'data': [m.to_dict() for m in messages]})
+    except Exception as e:
+        logger.error(f"Error fetching sent messages: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/messages', methods=['POST'])
+@requires_permission('messages.send')
+def send_message():
+    data = request.json
+    receiver_id = data.get('receiver_id')
+    subject = data.get('subject')
+    body = data.get('body')
+    
+    if not receiver_id or not body:
+        return jsonify({'status': 'error', 'message': 'Receiver and body are required.'}), 400
+        
+    try:
+        new_msg = Message(
+            sender_id=current_user.id,
+            receiver_id=receiver_id,
+            subject=subject,
+            body=body
+        )
+        db.session.add(new_msg)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Message sent successfully.'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error sending message: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/messages/<int:msg_id>/read', methods=['PUT'])
+@login_required
+def mark_message_read(msg_id):
+    msg = Message.query.get_or_404(msg_id)
+    if msg.receiver_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        
+    msg.is_read = True
+    db.session.commit()
+    return jsonify({'status': 'success'})
+
+# --- Universal Systems ---
+
+@app.route('/api/search', methods=['GET'])
+@login_required
+def global_search():
+    query = request.args.get('q', '').lower()
+    if not query:
+        return jsonify({'status': 'success', 'data': []})
+        
+    results = []
+    
+    # Example minimal search logic
+    if current_user.role in ['Super Admin', 'Admin']:
+        users = User.query.filter(User.full_name.ilike(f"%{query}%")).limit(5).all()
+        for u in users:
+            results.append({'type': 'User', 'title': u.full_name, 'subtitle': u.email, 'url': '#'})
+            
+        projects = Project.query.filter(Project.name.ilike(f"%{query}%")).limit(5).all()
+        for p in projects:
+            results.append({'type': 'Project', 'title': p.name, 'subtitle': p.project_id, 'url': '#'})
+            
+    elif current_user.role == 'Staff':
+        projects = Project.query.filter(Project.assigned_staff_id == current_user.id, Project.name.ilike(f"%{query}%")).limit(5).all()
+        for p in projects:
+            results.append({'type': 'Project', 'title': p.name, 'subtitle': p.project_id, 'url': '#'})
+            
+    elif current_user.role == 'User':
+        projects = Project.query.filter(Project.customer_id == current_user.id, Project.name.ilike(f"%{query}%")).limit(5).all()
+        for p in projects:
+            results.append({'type': 'Project', 'title': p.name, 'subtitle': p.project_id, 'url': '#'})
+            
+    return jsonify({'status': 'success', 'data': results})
+
+
+@app.route('/api/notifications', methods=['GET'])
+@login_required
+def get_notifications():
+    notifs = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(20).all()
+    return jsonify({'status': 'success', 'data': [n.to_dict() for n in notifs]})
+
+@app.route('/api/notifications/<int:notif_id>/read', methods=['PUT'])
+@login_required
+def mark_notification_read(notif_id):
+    notif = Notification.query.get_or_404(notif_id)
+    if notif.user_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Denied'}), 403
+    notif.is_read = True
+    db.session.commit()
+    return jsonify({'status': 'success'})
+
+# --- File Management API ---
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route('/api/projects/<int:project_id>/files', methods=['GET', 'POST'])
+@login_required
+def project_files(project_id):
+    project = Project.query.get_or_404(project_id)
+    
+    # Permission logic
+    if current_user.role == 'User' and project.customer_id != current_user.id:
+         return jsonify({'status': 'error', 'message': 'Denied'}), 403
+    if current_user.role == 'Staff' and project.assigned_staff_id != current_user.id:
+         return jsonify({'status': 'error', 'message': 'Denied'}), 403
+
+    if request.method == 'GET':
+        files = ProjectFile.query.filter_by(project_id=project.id).order_by(ProjectFile.uploaded_at.desc()).all()
+        return jsonify({'status': 'success', 'data': [f.to_dict() for f in files]})
+        
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return jsonify({'status': 'error', 'message': 'No file part'}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'No selected file'}), 400
+            
+        if file:
+            filename = secure_filename(file.filename)
+            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            file.save(filepath)
+            
+            new_file = ProjectFile(
+                project_id=project.id,
+                uploaded_by_id=current_user.id,
+                filename=filename,
+                filepath=unique_filename,
+                category=request.form.get('category', 'Other')
+            )
+            db.session.add(new_file)
+            db.session.commit()
+            
+            # Trigger notification
+            if current_user.role == 'User' and project.assigned_staff_id:
+                notif = Notification(user_id=project.assigned_staff_id, type='file_uploaded', title='New Client File', message=f'{current_user.full_name} uploaded {filename} to {project.name}')
+                db.session.add(notif)
+                db.session.commit()
+                
+            return jsonify({'status': 'success', 'message': 'File uploaded', 'data': new_file.to_dict()})
+
+@app.route('/uploads/<filename>')
+@login_required
+def download_file(filename):
+    # Ideally check permissions here based on file ownership
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     init_db()

@@ -11,21 +11,28 @@
   
   <style>
     :root {
-      --primary: #0f172a;
-      --primary-light: #1e293b;
-      --secondary: #3b82f6;
-      --accent: #8b5cf6;
-      --bg-color: #0b1120;
-      --card-bg: rgba(30, 41, 59, 0.45);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --gradient-primary: linear-gradient(135deg, var(--secondary), var(--accent));
-      --gradient-text: linear-gradient(to right, #60a5fa, #a78bfa);
-      --radius-sm: 0.5rem;
-      --radius-md: 0.75rem;
-      --radius-lg: 1.25rem;
+      --bg-color: #F1F7F4;
+      --primary: #0F766E;
+      --primary-dark: #115E59;
+      --accent: #5EEAD4;
+      --soft-mint: #CCFBF1;
+      --white: #FFFFFF;
+      --text-main: #17211F;
+      --text-muted: #64746F;
+      --border-color: rgba(15, 118, 110, 0.12);
+      --glass: rgba(255, 255, 255, 0.72);
+      --success: #16A34A;
+      --warning: #D97706;
+      --danger: #DC2626;
+      --info: #0284C7;
+      
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
       --radius-full: 9999px;
+      
+      --shadow-sm: 0 4px 6px -1px rgba(15, 118, 110, 0.05);
+      --shadow-md: 0 10px 15px -3px rgba(15, 118, 110, 0.1);
     }
 
     * {
@@ -49,15 +56,16 @@
       inset: 0;
       z-index: -1;
       background-image: 
-        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.1), transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.1), transparent 40%);
+        radial-gradient(circle at 90% 10%, var(--soft-mint), transparent 40%),
+        radial-gradient(circle at 10% 90%, rgba(15, 118, 110, 0.08), transparent 40%);
       pointer-events: none;
+      filter: blur(60px);
     }
 
     /* Navigation Header */
     header {
-      background: rgba(15, 23, 42, 0.8);
-      backdrop-filter: blur(12px);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-color);
       padding: 1rem 2rem;
       display: flex;
@@ -66,11 +74,12 @@
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: var(--shadow-sm);
     }
 
     .logo {
       text-decoration: none;
-      color: white;
+      color: var(--primary-dark);
       font-family: 'Outfit', sans-serif;
       font-size: 1.5rem;
       font-weight: 800;
@@ -106,28 +115,29 @@
     }
 
     .btn-logout {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      color: #f87171;
-      padding: 0.4rem 1rem;
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      color: var(--danger);
+      padding: 0.5rem 1.25rem;
       border-radius: var(--radius-sm);
-      font-size: 0.85rem;
+      font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.3s;
+      transition: all 0.3s ease;
     }
 
     .btn-logout:hover {
-      background: rgba(239, 68, 68, 0.25);
+      background: rgba(220, 38, 38, 0.15);
+      transform: translateY(-1px);
     }
 
     .layout-container { display: flex; min-height: calc(100vh - 70px); }
-    .sidebar { width: 250px; background: rgba(15, 23, 42, 0.5); border-right: 1px solid var(--border-color); padding: 2rem 1rem; }
+    .sidebar { width: 260px; background: var(--glass); backdrop-filter: blur(12px); border-right: 1px solid var(--border-color); padding: 2rem 1.5rem; }
     .sidebar-menu { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
     .sidebar-menu a { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1.2rem; text-decoration: none; color: var(--text-muted); font-weight: 500; border-radius: var(--radius-sm); transition: all 0.3s ease; }
-    .sidebar-menu a.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-left: 3px solid #3b82f6; }
-    .sidebar-menu a:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: white; }
+    .sidebar-menu a.active { background: var(--soft-mint); color: var(--primary-dark); border-left: 4px solid var(--primary); }
+    .sidebar-menu a:hover:not(.active) { background: rgba(15, 118, 110, 0.05); color: var(--primary); }
     
     /* Main Dashboard Grid */
     main {
@@ -146,15 +156,22 @@
     }
 
     .metric-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(15, 118, 110, 0.2);
     }
 
     .metric-details h3 {
@@ -163,43 +180,46 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 0.5rem;
+      font-weight: 600;
     }
 
     .metric-val {
-      font-size: 2rem;
-      font-weight: 800;
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--primary-dark);
       font-family: 'Outfit', sans-serif;
     }
 
     .metric-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-sm);
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 1.5rem;
     }
 
-    /* Metric Icon Color Themes */
-    .theme-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-    .theme-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-    .theme-yellow { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .theme-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .theme-red { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    /* Metric Icon Color Themes - Frosted Mint Variants */
+    .theme-blue { background: rgba(15, 118, 110, 0.1); color: var(--primary); }
+    .theme-purple { background: rgba(94, 234, 212, 0.2); color: var(--primary-dark); }
+    .theme-yellow { background: rgba(217, 119, 6, 0.1); color: var(--warning); }
+    .theme-green { background: rgba(22, 163, 74, 0.1); color: var(--success); }
+    .theme-red { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
 
     /* Filters Section */
     .filters-section {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem;
       margin-bottom: 2rem;
       display: flex;
       flex-wrap: wrap;
-      gap: 1.2rem;
+      gap: 1.5rem;
       align-items: flex-end;
+      box-shadow: var(--shadow-sm);
     }
 
     .filter-group {
@@ -207,7 +227,7 @@
       flex-direction: column;
       gap: 0.5rem;
       flex: 1;
-      min-width: 180px;
+      min-width: 200px;
     }
 
     .filter-group label {
@@ -218,17 +238,20 @@
     }
 
     .filter-input {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(255, 255, 255, 0.5);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 0.6rem 0.8rem;
-      color: white;
-      font-size: 0.9rem;
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-size: 0.95rem;
       outline: none;
+      transition: all 0.3s ease;
     }
 
     .filter-input:focus {
-      border-color: var(--secondary);
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
     }
 
     .action-buttons {
@@ -237,10 +260,10 @@
     }
 
     .btn-action {
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      padding: 0.6rem 1.2rem;
+      background: var(--primary);
+      border: 1px solid var(--primary-dark);
+      color: var(--white);
+      padding: 0.6rem 1.25rem;
       border-radius: var(--radius-sm);
       font-size: 0.9rem;
       font-weight: 600;
@@ -248,21 +271,24 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      transition: background 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-action:hover {
-      background: rgba(59, 130, 246, 0.3);
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
 
     /* Table Container */
     .table-container {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-lg);
       overflow-x: auto;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      box-shadow: var(--shadow-sm);
       margin-bottom: 2.5rem;
     }
 
@@ -274,8 +300,8 @@
     }
 
     th {
-      background: rgba(15, 23, 42, 0.8);
-      padding: 1rem 1.5rem;
+      background: rgba(15, 118, 110, 0.05);
+      padding: 1.25rem 1.5rem;
       font-weight: 600;
       color: var(--text-muted);
       border-bottom: 1px solid var(--border-color);
@@ -285,56 +311,62 @@
     }
 
     td {
-      padding: 1.2rem 1.5rem;
+      padding: 1.25rem 1.5rem;
       border-bottom: 1px solid var(--border-color);
-      color: #e2e8f0;
+      color: var(--text-main);
+      font-weight: 500;
     }
 
     tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(15, 118, 110, 0.02);
     }
 
     /* Badges */
     .badge {
       display: inline-flex;
       align-items: center;
-      padding: 0.25rem 0.6rem;
+      padding: 0.35rem 0.75rem;
       border-radius: var(--radius-full);
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .badge-status-new { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-    .badge-status-in-progress { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-    .badge-status-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .badge-status-failed { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .badge-status-new { background: rgba(15, 118, 110, 0.1); color: var(--primary); }
+    .badge-status-in-progress { background: rgba(217, 119, 6, 0.1); color: var(--warning); }
+    .badge-status-completed { background: rgba(22, 163, 74, 0.1); color: var(--success); }
+    .badge-status-failed { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
 
     /* Modals */
     .modal {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(23, 33, 31, 0.4);
       backdrop-filter: blur(8px);
       align-items: center;
       justify-content: center;
       z-index: 1000;
       padding: 1rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
 
     .modal.active {
       display: flex;
+      opacity: 1;
     }
 
     .modal-content {
-      background: #0f172a;
+      background: var(--glass);
+      backdrop-filter: blur(24px);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       width: 100%;
       max-width: 650px;
       padding: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--shadow-md);
       position: relative;
     }
 
@@ -410,43 +442,42 @@
     <aside class="sidebar">
       <ul class="sidebar-menu">
         <li>
-          <a href="#" class="active" onclick="toggleSection('section-enquiries')"><i class="fa-solid fa-inbox"></i> Enquiries</a>
+          <a href="#" class="active" id="nav-enquiries" onclick="switchTab('section-enquiries')"><i class="fa-solid fa-inbox"></i> Enquiries</a>
         </li>
         <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-briefcase"></i> Projects</a>
+          <a href="#" id="nav-projects" onclick="switchTab('section-projects')"><i class="fa-solid fa-briefcase"></i> Projects</a>
         </li>
         <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-list-check"></i> All Projects</a>
+          <a href="#" id="nav-users" onclick="switchTab('section-users')"><i class="fa-solid fa-users-cog"></i> User Management</a>
         </li>
         <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-plus-circle"></i> Create Project</a>
+          <a href="#" id="nav-audit" onclick="switchTab('section-audit')"><i class="fa-solid fa-list-check"></i> Audit Logs</a>
         </li>
         <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-spinner"></i> Update Progress</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-user-plus"></i> Assign Staff</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-clock-rotate-left"></i> Project Timeline</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-comments"></i> Project Updates</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-check-double"></i> Completed Projects</a>
-        </li>
-        <li>
-          <a href="#" onclick="toggleSection('section-projects')"><i class="fa-solid fa-calendar-days"></i> Delivery Schedule</a>
+          <a href="#" id="nav-messages" onclick="switchTab('section-messages')"><i class="fa-solid fa-envelope"></i> Messages</a>
         </li>
         <li>
           <a href="{{ url_for('profile') }}"><i class="fa-solid fa-user-circle"></i> Profile Settings</a>
+        </li>
+        <li>
+          <a href="/"><i class="fa-solid fa-globe"></i> Back to Website</a>
         </li>
       </ul>
     </aside>
 
     <main id="main-content">
   <div id="section-enquiries">
+    
+    <!-- Hero Section -->
+    <div style="margin-bottom: 2rem;">
+      <h1 style="font-size: 2.25rem; font-weight: 700; color: var(--primary-dark); font-family: 'Outfit', sans-serif;">
+        GOOD AFTERNOON, {{ user.full_name | upper }}
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.25rem;">
+        Here's what's happening across your platform today.
+      </p>
+    </div>
+
     <!-- Metrics Grid -->
     <div class="metrics-grid">
       <div class="metric-card">
@@ -572,7 +603,82 @@
           </tr>
         </thead>
         <tbody id="projects-tbody">
-          <tr><td colspan="7" style="text-align: center;">Loading projects...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- User Management Section -->
+  <div id="section-users" style="display: none;">
+    <div class="filters-section">
+      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">User Management</h2>
+      <button class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #34d399;" onclick="openUserModal()"><i class="fa-solid fa-user-plus"></i> Add User</button>
+      <button class="btn-action" onclick="fetchManageUsers()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="6" style="text-align: center;">Loading users...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Audit Logs Section -->
+  <div id="section-audit" style="display: none;">
+    <div class="filters-section">
+      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">System Audit Logs</h2>
+      <button class="btn-action" onclick="fetchAuditLogs()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Action</th>
+            <th>User Email</th>
+            <th>Target</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="audit-tbody">
+          <tr><td colspan="5" style="text-align: center;">Loading audit logs...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Messages Section -->
+  <div id="section-messages" style="display: none;">
+    <div class="filters-section">
+      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">Messages</h2>
+      <button class="btn-action" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;" onclick="openMessageModal()"><i class="fa-solid fa-paper-plane"></i> New Message</button>
+      <button class="btn-action" onclick="fetchMessages()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>From</th>
+            <th>Role</th>
+            <th>Subject</th>
+            <th>Body</th>
+            <th style="text-align: right;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="messages-tbody">
+          <tr><td colspan="6" style="text-align: center;">Loading messages...</td></tr>
         </tbody>
       </table>
     </div>
@@ -642,60 +748,7 @@
       </form>
     </div>
   </div>
-
-  </main>
-</div>
-
-
-  </div> <!-- end section-enquiries -->
-
-  <!-- User Management Section -->
-  <div id="section-users" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">User Management</h2>
-      <button class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #34d399;" onclick="openUserModal()"><i class="fa-solid fa-plus"></i> Add User</button>
-    </div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Last Login</th>
-            <th style="text-align: right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="users-tbody">
-          <tr><td colspan="6" style="text-align: center;">Loading users...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Audit Logs Section -->
-  <div id="section-audit" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">Audit Logs</h2>
-      <button class="btn-action" onclick="fetchAuditLogs()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Action</th>
-            <th>Performed By</th>
-            <th>Target User</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="audit-tbody">
-          <tr><td colspan="5" style="text-align: center;">Loading logs...</td></tr>
-        </tbody>
-      </table>
-    </div>
+    </main>
   </div>
 
   <!-- Add/Edit User Modal -->
@@ -737,7 +790,7 @@
             <option value="false">Inactive</option>
           </select>
         </div>
-        <button type="submit" class="btn-action" style="width: 100%; justify-content: center; background: rgba(59, 130, 246, 0.3);">Save User</button>
+        <button type="submit" class="btn-action" style="width: 100%; justify-content: center;">Save User</button>
       </form>
     </div>
   </div>
@@ -797,13 +850,38 @@
     </div>
   </div>
 
+  <!-- Send Message Modal -->
+  <div class="modal" id="message-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <button class="modal-close" onclick="closeMessageModal()"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="modal-title">Send Message</h3>
+      <form id="message-form" onsubmit="submitMessageForm(event)">
+        <div class="filter-group" style="margin-bottom: 1rem;">
+          <label>Recipient</label>
+          <select id="message-recipient" class="filter-input" required>
+            <option value="">Select Recipient...</option>
+            <!-- Populated by fetchUsers -->
+          </select>
+        </div>
+        <div class="filter-group" style="margin-bottom: 1rem;">
+          <label>Subject</label>
+          <input type="text" id="message-subject" class="filter-input" required>
+        </div>
+        <div class="filter-group" style="margin-bottom: 1.5rem;">
+          <label>Message Body</label>
+          <textarea id="message-body" class="filter-input" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="btn-action" style="width: 100%; justify-content: center; background: rgba(59, 130, 246, 0.3);">Send Message</button>
+      </form>
+    </div>
+  </div>
+
   <script>
     function toggleSection(sectionId) {
        if (sectionId === 'section-enquiries') switchTab('enquiries');
        else if (sectionId === 'section-projects') switchTab('projects');
        else if (sectionId === 'section-users') switchTab('users');
        else if (sectionId === 'section-audit') switchTab('audit');
-       else alert('This section is under development.');
     }
 
     function switchTab(tab) {
@@ -981,6 +1059,51 @@
       document.getElementById('filter-email').addEventListener('change', applyFilters);
     });
 
+    function switchTab(tabId) {
+      document.getElementById('section-enquiries').style.display = 'none';
+      document.getElementById('section-projects').style.display = 'none';
+      document.getElementById('section-users').style.display = 'none';
+      document.getElementById('section-audit').style.display = 'none';
+      document.getElementById('section-messages').style.display = 'none';
+      
+      document.getElementById(tabId).style.display = 'block';
+
+      // Load data lazily based on tab
+      if (tabId === 'section-users') fetchManageUsers();
+      if (tabId === 'section-audit') fetchAuditLogs();
+      if (tabId === 'section-projects') fetchAdminProjects();
+      if (tabId === 'section-messages') fetchMessages();
+    }
+
+    async function fetchManageUsers() {
+      try {
+        const res = await fetch('/api/super-admin/users');
+        const data = await res.json();
+        const tbody = document.getElementById('users-tbody');
+        tbody.innerHTML = '';
+        if (data.status === 'success') {
+          data.data.forEach(u => {
+            const statusBadge = u.is_active ? '<span class="badge badge-status-completed">Active</span>' : '<span class="badge badge-status-failed">Inactive</span>';
+            tbody.innerHTML += `
+              <tr>
+                <td>${u.id}</td>
+                <td>${u.full_name}</td>
+                <td>${u.email}</td>
+                <td>${u.role}</td>
+                <td>${statusBadge}</td>
+                <td style="text-align: right;">
+                  <button class="btn-action" style="padding: 0.3rem 0.6rem; display:inline-flex;" onclick='editUser(${JSON.stringify(u)})'><i class="fa-solid fa-pen"></i></button>
+                  ${u.role !== 'Super Admin' ? `<button class="btn-action" style="padding: 0.3rem 0.6rem; display:inline-flex; color: var(--danger);" onclick="deleteUser(${u.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                </td>
+              </tr>
+            `;
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     async function fetchUsers() {
       try {
         const res = await fetch('/api/users');
@@ -996,10 +1119,91 @@
 
     function populateAssigneeDropdown() {
       const select = document.getElementById('update-assignee');
+      const recipientSelect = document.getElementById('message-recipient');
+      
       select.innerHTML = '<option value="">Unassigned</option>';
+      if (recipientSelect) recipientSelect.innerHTML = '<option value="">Select Recipient...</option>';
+      
       users.forEach(u => {
         select.innerHTML += `<option value="${u.full_name}">${u.full_name} (${u.role})</option>`;
+        if (recipientSelect) recipientSelect.innerHTML += `<option value="${u.id}">${u.full_name} (${u.role})</option>`;
       });
+    }
+
+    async function fetchMessages() {
+      try {
+        const res = await fetch('/api/messages');
+        const data = await res.json();
+        const tbody = document.getElementById('messages-tbody');
+        tbody.innerHTML = '';
+        if (data.status === 'success') {
+          if (data.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No messages found.</td></tr>';
+            return;
+          }
+          data.data.forEach(m => {
+            const statusHtml = m.is_read 
+              ? '<span style="color: var(--text-muted);"><i class="fa-solid fa-check-double"></i> Read</span>' 
+              : `<button class="btn-action" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="markMessageRead(${m.id})">Mark as Read</button>`;
+            
+            tbody.innerHTML += `
+              <tr style="${m.is_read ? 'opacity: 0.7;' : 'font-weight: 600;'}">
+                <td style="font-size: 0.8rem;">${m.timestamp}</td>
+                <td>${m.sender_name}</td>
+                <td><span class="badge badge-status-new">${m.sender_role}</span></td>
+                <td>${m.subject}</td>
+                <td>${m.body.length > 50 ? m.body.substring(0,50)+'...' : m.body}</td>
+                <td style="text-align: right;">${statusHtml}</td>
+              </tr>
+            `;
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function openMessageModal() {
+      document.getElementById('message-form').reset();
+      document.getElementById('message-modal').classList.add('active');
+    }
+
+    function closeMessageModal() {
+      document.getElementById('message-modal').classList.remove('active');
+    }
+
+    async function submitMessageForm(e) {
+      e.preventDefault();
+      const payload = {
+        receiver_id: document.getElementById('message-recipient').value,
+        subject: document.getElementById('message-subject').value,
+        body: document.getElementById('message-body').value
+      };
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+          closeMessageModal();
+          alert("Message sent successfully!");
+        } else {
+          alert('Error: ' + result.message);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function markMessageRead(id) {
+      try {
+        await fetch('/api/messages/' + id + '/read', { method: 'PUT' });
+        fetchMessages();
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     async function fetchEnquiries() {
