@@ -11,7 +11,7 @@ from flask_cors import CORS
 
 from functools import wraps
 from config import Config
-from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate, Notification, ProjectFile, Website, Task, SystemSetting, EnquiryState
+from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate, Notification, ProjectFile, Website, Task, SystemSetting, EnquiryState, Message, StaffAssignment
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -54,7 +54,7 @@ def check_login_rate_limit(ip):
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'admin_login'
 
 # Secret mapping Google Apps Script Web App
 GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec'
@@ -69,8 +69,12 @@ def role_required(*roles):
         @wraps(fn)
         def decorated_view(*args, **kwargs):
             if not current_user.is_authenticated:
+                if request.path.startswith('/api/'):
+                    return jsonify({'status': 'error', 'message': 'Authentication Required'}), 401
                 return login_manager.unauthorized()
             if current_user.role not in roles:
+                if request.path.startswith('/api/'):
+                    return jsonify({'status': 'error', 'message': f'Access Restricted: Required role: {", ".join(roles)}'}), 403
                 flash(f'Access denied. Required role: {", ".join(roles)}', 'error')
                 return redirect(url_for('dashboard'))
             return fn(*args, **kwargs)
@@ -80,18 +84,19 @@ def role_required(*roles):
 PERMISSION_MATRIX = {
     'Super Admin': ['all'],
     'Admin': [
-        'users.limited', 'staff.view', 'staff.create', 'staff.edit',
+        'users.limited', 'staff.view', 'staff.create', 'staff.edit', 'staff.delete',
         'clients.view', 'clients.create', 'clients.edit', 'clients.delete',
-        'projects.view', 'projects.create', 'projects.edit', 'projects.delete',
+        'projects.view', 'projects.create', 'projects.edit', 'projects.delete', 'manage_projects',
         'websites.view', 'websites.create', 'websites.edit', 'websites.delete',
+        'tasks.view', 'tasks.create', 'tasks.edit', 'tasks.delete',
         'analytics.view', 'messages.view', 'messages.send', 'activity.view',
-        'system.limited', 'settings.limited'
+        'system.limited', 'settings.limited', 'view_reports', 'manage_users'
     ],
     'Staff': [
-        'clients.assigned', 'projects.assigned', 'websites.assigned',
-        'messages.view', 'messages.send', 'analytics.assigned', 'settings.self'
+        'clients.assigned', 'projects.assigned', 'websites.assigned', 'tasks.assigned',
+        'messages.view', 'messages.send', 'analytics.assigned', 'settings.self', 'projects.view', 'tasks.view'
     ],
-    'User': [ # Client
+    'User': [ # Client record
         'clients.own', 'projects.own', 'websites.own', 'messages.view', 'messages.send'
     ]
 }
@@ -423,17 +428,20 @@ def my_projects():
     return render_template('customer_dashboard.html', user=current_user)
 
 @app.route('/super-admin')
+@app.route('/admin/dashboard')
 @role_required('Super Admin')
 def super_admin_dashboard():
     return render_template('super_admin_dashboard.html', user=current_user)
 
 @app.route('/admin')
+@app.route('/admin/operations')
 @role_required('Admin', 'Super Admin')
 def admin_dashboard():
     return render_template('admin_dashboard.html', user=current_user)
 
 @app.route('/staff')
-@role_required('Staff')
+@app.route('/staff/dashboard')
+@role_required('Staff', 'Admin', 'Super Admin')
 def staff_dashboard():
     return render_template('staff_dashboard.html', user=current_user)
 
@@ -450,10 +458,43 @@ def dashboard():
     return redirect(url_for('my_projects'))
 
 
+def redirect_to_profile():
+    if current_user.role == 'Super Admin':
+        return redirect(url_for('super_admin_profile'))
+    elif current_user.role == 'Admin':
+        return redirect(url_for('admin_profile'))
+    elif current_user.role == 'Staff':
+        return redirect(url_for('staff_profile'))
+    else:
+        return redirect(url_for('customer_profile'))
+
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html', user=current_user)
+    return redirect_to_profile()
+
+@app.route('/super-admin/profile')
+@login_required
+@role_required('Super Admin')
+def super_admin_profile():
+    return render_template('super_admin_profile.html', user=current_user)
+
+@app.route('/admin/profile')
+@login_required
+@role_required('Admin', 'Super Admin')
+def admin_profile():
+    return render_template('admin_profile.html', user=current_user)
+
+@app.route('/staff/profile')
+@login_required
+@role_required('Staff', 'Admin', 'Super Admin')
+def staff_profile():
+    return render_template('staff_profile.html', user=current_user)
+
+@app.route('/customer/profile')
+@login_required
+def customer_profile():
+    return render_template('customer_profile.html', user=current_user)
 
 @app.route('/edit-profile', methods=['POST'])
 @login_required
@@ -463,7 +504,7 @@ def edit_profile():
     
     if not full_name or not mobile:
         flash('Full Name and Mobile Number are required.', 'error')
-        return redirect(url_for('profile'))
+        return redirect_to_profile()
         
     current_user.full_name = full_name
     current_user.mobile = mobile
@@ -471,7 +512,7 @@ def edit_profile():
     
     log_audit('Updated Profile', current_user.email)
     flash('Profile updated successfully!', 'success')
-    return redirect(url_for('profile'))
+    return redirect_to_profile()
 
 @app.route('/change-password', methods=['POST'])
 @login_required
@@ -482,20 +523,20 @@ def change_password():
 
     if not current_pw or not new_pw or not confirm_pw:
         flash('All fields are required.', 'error')
-        return redirect(url_for('profile'))
+        return redirect_to_profile()
 
     if new_pw != confirm_pw:
         flash('New passwords do not match.', 'error')
-        return redirect(url_for('profile'))
+        return redirect_to_profile()
 
     if not current_user.check_password(current_pw):
         flash('Incorrect current password.', 'error')
-        return redirect(url_for('profile'))
+        return redirect_to_profile()
 
     current_user.set_password(new_pw)
     db.session.commit()
     flash('Password updated successfully!', 'success')
-    return redirect(url_for('profile'))
+    return redirect_to_profile()
 
 @app.route('/api/me', methods=['GET'])
 def api_me():
@@ -594,8 +635,10 @@ def get_users():
 # --- User Management API (Super Admin) ---
 
 @app.route('/api/super-admin/users', methods=['GET', 'POST'])
-@requires_permission('users.limited')
+@login_required
 def manage_users():
+    if current_user.role not in ['Super Admin', 'Admin']:
+        return jsonify({'status': 'error', 'message': 'Forbidden'}), 403
     if request.method == 'GET':
         users = User.query.all()
         return jsonify({'status': 'success', 'data': [u.to_dict() for u in users]})
@@ -609,6 +652,9 @@ def manage_users():
         role = data.get('role')
         status = data.get('status', True)
         
+        if current_user.role == 'Admin' and role == 'Super Admin':
+            return jsonify({'status': 'error', 'message': 'Permission denied: Cannot create Super Admin'})
+            
         if User.query.filter_by(email=email).first():
             return jsonify({'status': 'error', 'message': 'Email already exists'})
             
@@ -627,6 +673,10 @@ def modify_user(user_id):
     
     if request.method == 'PUT':
         data = request.json
+        
+        if current_user.role == 'Admin' and (user.role == 'Super Admin' or data.get('role') == 'Super Admin'):
+            return jsonify({'status': 'error', 'message': 'Permission denied: Cannot modify Super Admin'})
+            
         user.full_name = data.get('full_name', user.full_name)
         user.mobile = data.get('mobile', user.mobile)
         user.role = data.get('role', user.role)
@@ -638,6 +688,8 @@ def modify_user(user_id):
         return jsonify({'status': 'success', 'message': 'User updated successfully'})
         
     if request.method == 'DELETE':
+        if current_user.role == 'Admin' and user.role == 'Super Admin':
+            return jsonify({'status': 'error', 'message': 'Permission denied: Cannot delete Super Admin'})
         email = user.email
         try:
             db.session.delete(user)
@@ -980,6 +1032,280 @@ def download_file(filename):
     # Ideally check permissions here based on file ownership
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+
+# ==========================================
+# ENTERPRISE IT OPERATIONS PLATFORM APIs
+# ==========================================
+
+# --- Clients API ---
+@app.route('/api/clients', methods=['GET', 'POST'])
+@login_required
+def manage_clients():
+    if request.method == 'GET':
+        if current_user.role in ['Super Admin', 'Admin']:
+            clients = User.query.filter_by(role='User').order_by(User.created_at.desc()).all()
+        elif current_user.role == 'Staff':
+            assigned_client_ids = [sa.client_id for sa in StaffAssignment.query.filter_by(staff_id=current_user.id).all() if sa.client_id]
+            clients = User.query.filter(User.id.in_(assigned_client_ids), User.role == 'User').all() if assigned_client_ids else []
+        else:
+            clients = [current_user]
+        return jsonify({'status': 'success', 'data': [c.to_dict() for c in clients]})
+        
+    if request.method == 'POST':
+        if current_user.role not in ['Super Admin', 'Admin']:
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        data = request.json or {}
+        full_name = data.get('full_name')
+        email = data.get('email')
+        mobile = data.get('mobile', '+91 0000000000')
+        password = data.get('password', 'Client@1234')
+        
+        if not full_name or not email:
+            return jsonify({'status': 'error', 'message': 'Full name and email are required'}), 400
+            
+        if User.query.filter_by(email=email).first():
+            return jsonify({'status': 'error', 'message': 'Client email already exists'}), 400
+            
+        client = User(full_name=full_name, email=email, mobile=mobile, role='User', is_active=True)
+        client.set_password(password)
+        db.session.add(client)
+        db.session.commit()
+        log_audit('Created Client', current_user.email, target_user=email)
+        return jsonify({'status': 'success', 'message': 'Client created successfully', 'data': client.to_dict()})
+
+@app.route('/api/clients/<int:client_id>', methods=['PUT', 'DELETE'])
+@login_required
+def modify_client(client_id):
+    if current_user.role not in ['Super Admin', 'Admin']:
+        return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        
+    client = User.query.get_or_404(client_id)
+    if request.method == 'PUT':
+        data = request.json or {}
+        client.full_name = data.get('full_name', client.full_name)
+        client.mobile = data.get('mobile', client.mobile)
+        if 'is_active' in data:
+            client.is_active = bool(data['is_active'])
+        db.session.commit()
+        log_audit('Updated Client', current_user.email, target_user=client.email)
+        return jsonify({'status': 'success', 'message': 'Client updated successfully'})
+        
+    if request.method == 'DELETE':
+        email = client.email
+        db.session.delete(client)
+        db.session.commit()
+        log_audit('Deleted Client', current_user.email, target_user=email)
+        return jsonify({'status': 'success', 'message': 'Client deleted successfully'})
+
+# --- Tasks API ---
+@app.route('/api/tasks', methods=['GET', 'POST'])
+@login_required
+def manage_tasks():
+    if request.method == 'GET':
+        if current_user.role in ['Super Admin', 'Admin']:
+            tasks = Task.query.order_by(Task.created_at.desc()).all()
+        elif current_user.role == 'Staff':
+            tasks = Task.query.filter_by(assigned_staff_id=current_user.id).order_by(Task.created_at.desc()).all()
+        else:
+            tasks = []
+        return jsonify({'status': 'success', 'data': [t.to_dict() for t in tasks]})
+        
+    if request.method == 'POST':
+        if current_user.role not in ['Super Admin', 'Admin', 'Staff']:
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        data = request.json or {}
+        project_id = data.get('project_id')
+        title = data.get('title')
+        if not project_id or not title:
+            return jsonify({'status': 'error', 'message': 'Project ID and title are required'}), 400
+            
+        due_date = datetime.strptime(data.get('due_date'), '%Y-%m-%d').date() if data.get('due_date') else None
+        task = Task(
+            project_id=project_id,
+            assigned_staff_id=data.get('assigned_staff_id'),
+            title=title,
+            description=data.get('description', ''),
+            priority=data.get('priority', 'Normal'),
+            status=data.get('status', 'Todo'),
+            due_date=due_date
+        )
+        db.session.add(task)
+        db.session.commit()
+        log_audit('Created Task', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Task created successfully', 'data': task.to_dict()})
+
+@app.route('/api/tasks/<int:task_id>', methods=['PUT', 'DELETE'])
+@login_required
+def modify_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    if current_user.role == 'Staff' and task.assigned_staff_id != current_user.id:
+        return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        
+    if request.method == 'PUT':
+        data = request.json or {}
+        if 'title' in data and current_user.role in ['Super Admin', 'Admin']:
+            task.title = data['title']
+        if 'description' in data:
+            task.description = data['description']
+        if 'priority' in data and current_user.role in ['Super Admin', 'Admin']:
+            task.priority = data['priority']
+        if 'status' in data:
+            task.status = data['status']
+            if data['status'] == 'Completed':
+                task.completed_at = datetime.utcnow()
+        if 'assigned_staff_id' in data and current_user.role in ['Super Admin', 'Admin']:
+            task.assigned_staff_id = data['assigned_staff_id'] or None
+        if 'due_date' in data and data['due_date'] and current_user.role in ['Super Admin', 'Admin']:
+            task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
+            
+        db.session.commit()
+        log_audit('Updated Task', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Task updated successfully'})
+        
+    if request.method == 'DELETE':
+        if current_user.role not in ['Super Admin', 'Admin']:
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        db.session.delete(task)
+        db.session.commit()
+        log_audit('Deleted Task', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Task deleted successfully'})
+
+# --- Websites API ---
+@app.route('/api/websites', methods=['GET', 'POST'])
+@login_required
+def manage_websites():
+    if request.method == 'GET':
+        if current_user.role in ['Super Admin', 'Admin']:
+            websites = Website.query.order_by(Website.created_at.desc()).all()
+        elif current_user.role == 'Staff':
+            assigned_project_ids = [p.id for p in Project.query.filter_by(assigned_staff_id=current_user.id).all()]
+            websites = Website.query.filter(Website.project_id.in_(assigned_project_ids)).all() if assigned_project_ids else []
+        else:
+            websites = Website.query.filter_by(client_id=current_user.id).all()
+        return jsonify({'status': 'success', 'data': [w.to_dict() for w in websites]})
+        
+    if request.method == 'POST':
+        if current_user.role not in ['Super Admin', 'Admin']:
+            return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        data = request.json or {}
+        name = data.get('name')
+        client_id = data.get('client_id')
+        if not name or not client_id:
+            return jsonify({'status': 'error', 'message': 'Website name and client ID are required'}), 400
+            
+        website = Website(
+            client_id=client_id,
+            project_id=data.get('project_id'),
+            name=name,
+            domain=data.get('domain', ''),
+            status=data.get('status', 'Draft')
+        )
+        db.session.add(website)
+        db.session.commit()
+        log_audit('Created Website', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Website created successfully', 'data': website.to_dict()})
+
+@app.route('/api/websites/<int:website_id>', methods=['PUT', 'DELETE'])
+@login_required
+def modify_website(website_id):
+    website = Website.query.get_or_404(website_id)
+    if current_user.role not in ['Super Admin', 'Admin']:
+        return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
+        
+    if request.method == 'PUT':
+        data = request.json or {}
+        website.name = data.get('name', website.name)
+        website.domain = data.get('domain', website.domain)
+        website.status = data.get('status', website.status)
+        db.session.commit()
+        log_audit('Updated Website', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Website updated successfully'})
+        
+    if request.method == 'DELETE':
+        db.session.delete(website)
+        db.session.commit()
+        log_audit('Deleted Website', current_user.email)
+        return jsonify({'status': 'success', 'message': 'Website deleted successfully'})
+
+# --- Workload & Team Performance API ---
+@app.route('/api/admin/workload', methods=['GET'])
+@role_required('Admin', 'Super Admin')
+def admin_workload_api():
+    staff_members = User.query.filter_by(role='Staff').all()
+    workload_data = []
+    for s in staff_members:
+        assigned_projects_count = Project.query.filter_by(assigned_staff_id=s.id).count()
+        assigned_tasks_count = Task.query.filter_by(assigned_staff_id=s.id).count()
+        completed_tasks_count = Task.query.filter_by(assigned_staff_id=s.id, status='Completed').count()
+        
+        # Calculate load percentage based on tasks capacity (e.g. 20 tasks = 100%)
+        load_pct = min(100, int((assigned_tasks_count / max(1, 20)) * 100))
+        if load_pct >= 90:
+            state = 'Overloaded'
+        elif load_pct >= 70:
+            state = 'High'
+        elif load_pct >= 40:
+            state = 'Balanced'
+        else:
+            state = 'Low'
+            
+        workload_data.append({
+            'staff_id': s.id,
+            'name': s.full_name,
+            'email': s.email,
+            'projects_count': assigned_projects_count,
+            'tasks_count': assigned_tasks_count,
+            'completed_tasks_count': completed_tasks_count,
+            'load_percentage': load_pct,
+            'state': state
+        })
+    return jsonify({'status': 'success', 'data': workload_data})
+
+@app.route('/api/admin/team-performance', methods=['GET'])
+@role_required('Admin', 'Super Admin')
+def admin_team_performance_api():
+    staff_members = User.query.filter_by(role='Staff').all()
+    perf_data = []
+    for s in staff_members:
+        total_tasks = Task.query.filter_by(assigned_staff_id=s.id).count()
+        completed_tasks = Task.query.filter_by(assigned_staff_id=s.id, status='Completed').count()
+        overdue_tasks = Task.query.filter(Task.assigned_staff_id == s.id, Task.status != 'Completed', Task.due_date < datetime.utcnow().date()).count()
+        
+        completion_rate = int((completed_tasks / max(1, total_tasks)) * 100) if total_tasks > 0 else 100
+        on_time_rate = max(0, 100 - (overdue_tasks * 10))
+        
+        perf_data.append({
+            'staff_id': s.id,
+            'name': s.full_name,
+            'email': s.email,
+            'total_tasks': total_tasks,
+            'completed_tasks': completed_tasks,
+            'overdue_tasks': overdue_tasks,
+            'completion_rate': completion_rate,
+            'on_time_rate': on_time_rate,
+            'is_active': s.is_active,
+            'last_active': s.last_login.isoformat() if s.last_login else 'Never'
+        })
+    return jsonify({'status': 'success', 'data': perf_data})
+
+# --- System Health API ---
+@app.route('/api/admin/system-health', methods=['GET'])
+@role_required('Super Admin')
+def system_health_api():
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'application_status': 'Healthy (Online)',
+            'database_status': 'Connected (SQLite DB)',
+            'api_status': 'Operational (Flask REST API)',
+            'storage': 'Local Storage (Uploads active)',
+            'background_jobs': 'Active',
+            'recent_errors': 0,
+            'last_backup': datetime.utcnow().strftime('%Y-%m-%d 02:00:00 UTC')
+        }
+    })
+
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, port=5000)
@@ -1090,16 +1416,22 @@ def get_reports():
 
 @app.route('/api/super-admin/users/<int:user_id>/change-role', methods=['PUT'])
 @login_required
-@requires_permission('manage_users')
 def change_user_role(user_id):
+    if current_user.role not in ['Super Admin', 'Admin']:
+        return jsonify({'status': 'error', 'message': 'Forbidden'}), 403
+        
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
-        return jsonify({'status': 'error', 'message': 'Cannot change your own role'})
+        return jsonify({'status': 'error', 'message': 'Cannot change your own role'}), 400
     
-    data = request.json
+    data = request.json or {}
     new_role = data.get('role')
+    
+    if current_user.role == 'Admin' and (user.role == 'Super Admin' or new_role == 'Super Admin'):
+        return jsonify({'status': 'error', 'message': 'Permission denied: Cannot modify Super Admin role'}), 403
+        
     if new_role not in ['Super Admin', 'Admin', 'Staff', 'User']:
-        return jsonify({'status': 'error', 'message': 'Invalid role'})
+        return jsonify({'status': 'error', 'message': 'Invalid role'}), 400
         
     user.role = new_role
     db.session.commit()

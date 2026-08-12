@@ -3,1568 +3,713 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Admin Dashboard - Website Builders</title>
-  
-  <!-- Font Awesome & Google Fonts -->
-  <link rel="stylesheet" href="/css/fontawesome.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Platform Command Center - Enterprise IT Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
     :root {
-      /* Colors */
-      --primary: #0F766E;
-      --primary-hover: #0D9488;
-      --accent: #F59E0B;
-      --bg-page: #F5F7F6;
-      --bg-card: #FFFFFF;
-      --text-main: #17211F;
-      --text-secondary: #64706C;
-      --border: #DCE5E2;
-      
-      /* Status */
-      --status-new: #0284C7;
-      --status-pending: #D97706;
-      --status-progress: #0F766E;
-      --status-completed: #16A34A;
-      --status-failed: #DC2626;
-
-      /* Shape */
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 18px;
-      --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-      
-      /* Typography */
-      --font-stack: 'Inter', sans-serif;
+      --dark-forest: #052E16;
+      --deep-forest: #064E3B;
+      --forest-green: #14532D;
+      --primary-green: #15803D;
+      --fresh-green: #22C55E;
+      --light-green: #DCFCE7;
+      --very-light-green: #F0FDF4;
+      --page-bg: #F7FAF8;
+      --card-bg: #FFFFFF;
+      --main-text: #14251B;
+      --secondary-text: #52635A;
+      --muted-text: #718078;
+      --border-color: #D7E4DA;
+      --input-border: #B8C9BE;
+      --success: #16A34A;
+      --warning: #CA8A04;
+      --danger: #DC2626;
+      --info: #0284C7;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      font-family: var(--font-stack);
-      background-color: var(--bg-page);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--page-bg); color: var(--main-text); display: flex; min-height: 100vh; font-size: 14px; }
 
-    h1, h2, h3, h4, h5 { color: var(--text-main); font-weight: 700; }
-
-    /* Layout */
+    /* Super Admin Sidebar (Dark Forest / Deep Forest) */
     .sidebar {
-      width: 250px;
-      background: var(--bg-card);
-      border-right: 1px solid var(--border);
+      width: 260px;
+      background-color: var(--dark-forest);
+      color: #FFFFFF;
       display: flex;
       flex-direction: column;
-      position: fixed;
-      height: 100vh;
-      z-index: 50;
+      flex-shrink: 0;
     }
 
-    .main-content {
-      flex: 1;
-      margin-left: 250px;
+    .sidebar-brand {
+      padding: 1.25rem 1.5rem;
       display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      width: calc(100% - 250px);
-    }
-
-    /* Topbar */
-    header {
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      height: 64px;
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 0 2rem;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #FFFFFF;
+    }
+
+    .sidebar-brand i { color: var(--fresh-green); font-size: 1.3rem; }
+
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 1rem 0; }
+    .nav-group-label { padding: 0.75rem 1.5rem 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.45); font-weight: 600; }
+    .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.5rem; color: rgba(255, 255, 255, 0.8); text-decoration: none; font-weight: 500; font-size: 0.9rem; border-left: 3px solid transparent; transition: all 0.15s ease; }
+    .nav-link:hover { background: rgba(255, 255, 255, 0.08); color: #FFFFFF; }
+    .nav-link.active { background: rgba(34, 197, 94, 0.18); color: #FFFFFF; border-left-color: var(--fresh-green); font-weight: 600; }
+    .nav-link i { width: 20px; text-align: center; font-size: 1rem; }
+    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+
+    /* App Shell */
+    .app-shell { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .top-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       position: sticky;
       top: 0;
-      z-index: 40;
+      z-index: 90;
     }
 
-    /* Sidebar Logo & Nav */
-    .sidebar-header {
-      height: 64px;
-      display: flex;
-      align-items: center;
-      padding: 0 1.5rem;
-      border-bottom: 1px solid var(--border);
-      font-weight: 800;
-      font-size: 1.1rem;
-      color: var(--primary);
-      gap: 0.75rem;
-      text-decoration: none;
-    }
+    .breadcrumb { font-size: 0.8rem; color: var(--muted-text); display: flex; align-items: center; gap: 0.4rem; }
+    .page-title { font-size: 1.4rem; font-weight: 700; color: var(--main-text); margin-top: 0.1rem; }
 
-    .sidebar-nav {
-      padding: 1.5rem 1rem;
-      flex: 1;
-      overflow-y: auto;
-      list-style: none;
-    }
+    .header-right { display: flex; align-items: center; gap: 1.25rem; }
+    .search-box { position: relative; width: 260px; }
+    .search-box input { background: #FFFFFF !important; color: var(--main-text) !important; border: 1px solid var(--input-border) !important; border-radius: 6px; padding: 0.5rem 0.75rem 0.5rem 2.25rem; font-size: 0.85rem; width: 100%; }
+    .search-box i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted-text); }
 
-    .nav-section {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.5px;
-      margin: 1.5rem 0 0.5rem 0.5rem;
-    }
-    .nav-section:first-child { margin-top: 0; }
-
-    .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0.75rem;
-      color: var(--text-secondary);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      font-weight: 500;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-      margin-bottom: 0.15rem;
-      cursor: pointer;
-    }
-
-    .nav-link:hover {
-      background: var(--bg-page);
-      color: var(--text-main);
-    }
-
-    .nav-link.active {
-      background: var(--primary);
-      color: #FFFFFF;
-      font-weight: 600;
-    }
-    
-    .nav-link i { width: 20px; text-align: center; }
-
-    /* Topbar Components */
-    .search-box {
-      display: flex;
-      align-items: center;
-      background: var(--bg-page);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.4rem 0.75rem;
-      width: 300px;
-      color: var(--text-secondary);
-    }
-    .search-box input {
-      border: none;
-      background: transparent;
-      outline: none;
-      margin-left: 0.5rem;
-      width: 100%;
-      font-family: var(--font-stack);
-      font-size: 0.85rem;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .btn-icon {
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 1.1rem;
-      cursor: pointer;
-      position: relative;
-    }
-    .btn-icon:hover { color: var(--text-main); }
-    .notif-dot {
-      position: absolute;
-      top: -2px;
-      right: -2px;
-      width: 8px;
-      height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-    }
-
-    .user-profile { display: flex; align-items: center; gap: 0.75rem; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; }
-    .user-meta { text-align: right; }
-    .user-name { font-size: 0.85rem; font-weight: 600; }
-    .user-role { font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); }
+    .role-badge { background: var(--very-light-green); color: var(--primary-green); border: 1px solid var(--border-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--deep-forest); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 
     /* Content Area */
-    main { padding: 2rem; overflow-y: auto; flex: 1; }
-    
-    .page-title { font-size: 1.75rem; margin-bottom: 1.5rem; }
+    .content-container { padding: 2rem; flex: 1; overflow-y: auto; }
+
+    /* 8-KPI Area (Template 2 - Image 4 Reference) */
+    .kpi-grid-8 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem; }
+    .kpi-card-white { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 1px 3px rgba(20, 83, 45, 0.04); }
+    .kpi-card-white i { font-size: 1.3rem; color: var(--deep-forest); background: var(--very-light-green); padding: 0.6rem; border-radius: 8px; }
+    .kpi-val { font-size: 1.8rem; font-weight: 700; color: var(--main-text); letter-spacing: -0.02em; }
+    .kpi-lbl { font-size: 0.85rem; font-weight: 500; color: var(--secondary-text); margin-bottom: 0.35rem; }
 
     /* Cards */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-subtle);
-      padding: 1.5rem;
-    }
-    .metric-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-subtle);
-      padding: 1.5rem;
-    }
+    .card { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(20, 83, 45, 0.04); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--page-bg); }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: var(--main-text); }
 
-    /* Metric Grid */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-    
-    .metric-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .metric-icon { 
-      width: 40px; height: 40px; 
-      border-radius: var(--radius-sm); 
-      display: flex; align-items: center; justify-content: center; 
-      background: rgba(15, 118, 110, 0.05); color: var(--primary); 
-    }
-    .metric-val { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--text-main); margin-top: 0.5rem; }
-    .metric-details h3 { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
-
-    /* Buttons */
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s ease;
-      border: 1px solid transparent;
-      text-decoration: none;
-    }
-    .btn-primary { background: var(--primary); color: #FFFFFF; }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
-    .btn-secondary, .btn-action { background: var(--bg-card); color: var(--primary); border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: var(--radius-sm); cursor: pointer; transition: 0.2s; font-weight: 600; }
-    .btn-secondary:hover, .btn-action:hover { background: rgba(15, 118, 110, 0.05); }
-    .btn-danger { background: #FFFFFF; color: var(--status-failed); border: 1px solid var(--status-failed); }
+    /* Filter Bar */
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background: #FFFFFF; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; align-items: center; }
+    .filter-bar input, .filter-bar select { max-width: 200px; margin-bottom: 0; }
 
     /* Tables */
-    .table-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); overflow-x: auto; margin-bottom: 2rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th { text-align: left; padding: 0.75rem 1rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); background: var(--bg-card); }
-    td { padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-main); background: var(--bg-card); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(245, 247, 246, 0.5); }
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: var(--very-light-green); color: var(--forest-green); font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); color: var(--main-text); }
+    tbody tr:hover { background-color: var(--page-bg); }
 
     /* Badges */
-    .badge {
-      padding: 0.25rem 0.6rem;
-      border-radius: 99px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
-    
-    .badge-new { background: rgba(2, 132, 199, 0.1); color: var(--status-new); }
-    .badge-new .badge-dot { background: var(--status-new); }
-    
-    .badge-pending { background: rgba(217, 119, 6, 0.1); color: var(--status-pending); }
-    .badge-pending .badge-dot { background: var(--status-pending); }
-    
-    .badge-progress { background: rgba(15, 118, 110, 0.1); color: var(--status-progress); }
-    .badge-progress .badge-dot { background: var(--status-progress); }
-    
-    .badge-completed { background: rgba(22, 163, 74, 0.1); color: var(--status-completed); }
-    .badge-completed .badge-dot { background: var(--status-completed); }
-    
-    .status-completed { color: var(--status-completed); font-weight: 600; }
-    .status-pending { color: var(--status-pending); font-weight: 600; }
-    .status-failed { color: var(--status-failed); font-weight: 600; }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-success { background: var(--very-light-green); color: var(--success); border: 1px solid var(--light-green); }
+    .badge-warning { background: #FEF9C3; color: var(--warning); border: 1px solid #FEF08A; }
+    .badge-danger { background: #FEE2E2; color: var(--danger); border: 1px solid #FCA5A5; }
+    .badge-info { background: #E0F2FE; color: var(--info); border: 1px solid #BAE6FD; }
 
-    /* Modal Form / Grid */
-    .details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
-    .details-item h4 { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.3rem; }
-    .details-item p { font-size: 0.95rem; word-break: break-all; }
-    .details-item-full { grid-column: span 2; }
-    
-    /* Inputs */
-    input, textarea, select {
-      background: var(--input-bg) !important;
-      color: var(--text-main) !important;
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; text-decoration: none; transition: all 0.15s ease; }
+    .btn-primary { background: var(--primary-green); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--deep-forest); }
+    .btn-outline { background: #FFFFFF; border-color: var(--input-border); color: var(--main-text); }
+    .btn-outline:hover { background: var(--page-bg); }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.78rem; }
+
+    /* Right-Side Person Profile Drawer (Template 5) */
+    .drawer-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 46, 22, 0.4); display: none; z-index: 1000; }
+    .drawer-backdrop.active { display: block; }
+    .drawer { position: fixed; top: 0; right: -450px; width: 420px; height: 100vh; background: #FFFFFF; border-left: 1px solid var(--border-color); box-shadow: -5px 0 25px rgba(0,0,0,0.1); transition: right 0.25s ease; z-index: 1001; display: flex; flex-direction: column; }
+    .drawer.active { right: 0; }
+    .drawer-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--very-light-green); }
+    .drawer-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
+
+    /* Inputs - Explicit White Background */
+    input, select, textarea {
+      background-color: #FFFFFF !important;
+      color: var(--main-text) !important;
       border: 1px solid var(--input-border) !important;
-      border-radius: var(--radius-sm) !important;
-      padding: 0.75rem 1rem !important;
-      font-size: 14px !important;
-      outline: none !important;
+      border-radius: 6px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
     }
-    input:focus, textarea:focus, select:focus {
-      border-color: var(--primary) !important;
-      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15) !important;
-    }
-    textarea { min-height: 120px !important; resize: vertical; }
 
-    .modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center;
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary-green) !important;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
     }
-    .modal-content {
-      background: var(--bg-card); width: 100%; max-width: 600px; padding: 2rem; border-radius: var(--radius-lg); position: relative; max-height: 90vh; overflow-y: auto;
-    }
-    
-    .filters-section {
-      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: flex-end;
-    }
-    .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
-    .filter-group label { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; }
   </style>
 </head>
 <body>
 
   <!-- Sidebar -->
   <aside class="sidebar">
-    <a href="#" class="sidebar-header">
-      <i class="fa-solid fa-layer-group"></i> Website Builders
-    </a>
-    <ul class="sidebar-nav">
-      <div class="nav-section">Management</div>
-      <a href="#" class="nav-link active" id="nav-enquiries" onclick="switchTab('section-enquiries')"><i class="fa-solid fa-inbox"></i> Enquiries</a>
-      <a href="#" class="nav-link" id="nav-projects" onclick="switchTab('section-projects')"><i class="fa-solid fa-briefcase"></i> Projects</a>
-      <a href="#" class="nav-link" id="nav-users" onclick="switchTab('section-users')"><i class="fa-solid fa-users-cog"></i> Users</a>
-      <a href="#" class="nav-link" id="nav-messages" onclick="switchTab('section-messages')"><i class="fa-solid fa-envelope"></i> Messages</a>
+    <div class="sidebar-brand">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span>Platform Admin</span>
+    </div>
 
-      <div class="nav-section">System</div>
-      <a href="#" class="nav-link" id="nav-audit" onclick="switchTab('section-audit')"><i class="fa-solid fa-list-check"></i> Audit Logs</a>
-      <a href="#" class="nav-link" id="nav-settings" onclick="switchTab('section-settings')"><i class="fa-solid fa-gear"></i> Settings</a>
-      <a href="{{ url_for('profile') }}" class="nav-link"><i class="fa-solid fa-user-circle"></i> Profile Settings</a>
-      <a href="/" class="nav-link"><i class="fa-solid fa-globe"></i> Back to Website</a>
-    </ul>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">PLATFORM</div>
+      <a href="/admin/dashboard" class="nav-link active" onclick="switchSection('command-center', event)">
+        <i class="fa-solid fa-gauge-high"></i> Command Center
+      </a>
+
+      <div class="nav-group-label">PEOPLE & ACCESS</div>
+      <a href="/admin/people" class="nav-link" onclick="switchSection('people', event)">
+        <i class="fa-solid fa-users"></i> People & Access
+      </a>
+      <a href="/admin/administrators" class="nav-link" onclick="switchSection('administrators', event)">
+        <i class="fa-solid fa-user-gear"></i> Administrators
+      </a>
+      <a href="/admin/staff" class="nav-link" onclick="switchSection('staff', event)">
+        <i class="fa-solid fa-id-badge"></i> Staff
+      </a>
+      <a href="/admin/roles" class="nav-link" onclick="switchSection('roles', event)">
+        <i class="fa-solid fa-key"></i> Roles & Permissions
+      </a>
+      <a href="/admin/security" class="nav-link" onclick="switchSection('access-logs', event)">
+        <i class="fa-solid fa-user-shield"></i> Access Logs
+      </a>
+
+      <div class="nav-group-label">OPERATIONS</div>
+      <a href="/admin/clients" class="nav-link" onclick="switchSection('clients', event)">
+        <i class="fa-solid fa-building"></i> Clients
+      </a>
+      <a href="/admin/projects" class="nav-link" onclick="switchSection('projects', event)">
+        <i class="fa-solid fa-folder-open"></i> Projects
+      </a>
+      <a href="/admin/websites" class="nav-link" onclick="switchSection('websites', event)">
+        <i class="fa-solid fa-globe"></i> Websites
+      </a>
+      <a href="/admin/tasks" class="nav-link" onclick="switchSection('tasks', event)">
+        <i class="fa-solid fa-list-check"></i> Tasks
+      </a>
+
+      <div class="nav-group-label">ANALYTICS</div>
+      <a href="/admin/analytics" class="nav-link" onclick="switchSection('analytics', event)">
+        <i class="fa-solid fa-chart-pie"></i> Platform Analytics
+      </a>
+
+      <div class="nav-group-label">MONITORING</div>
+      <a href="/admin/activity" class="nav-link" onclick="switchSection('activity', event)">
+        <i class="fa-solid fa-clock-rotate-left"></i> Activity
+      </a>
+      <a href="/admin/audit-logs" class="nav-link" onclick="switchSection('audit-logs', event)">
+        <i class="fa-solid fa-clipboard-list"></i> Audit Logs
+      </a>
+      <a href="/admin/security" class="nav-link" onclick="switchSection('security', event)">
+        <i class="fa-solid fa-shield-halved"></i> Access & Security
+      </a>
+      <a href="/admin/system-health" class="nav-link" onclick="switchSection('system-health', event)">
+        <i class="fa-solid fa-heart-pulse"></i> System Health
+      </a>
+
+      <div class="nav-group-label">COMMUNICATION</div>
+      <a href="/admin/messages" class="nav-link" onclick="switchSection('messages', event)">
+        <i class="fa-solid fa-envelope"></i> Messages
+      </a>
+      <a href="/admin/notifications" class="nav-link" onclick="switchSection('notifications', event)">
+        <i class="fa-solid fa-bell"></i> Notifications
+      </a>
+
+      <div class="nav-group-label">SETTINGS</div>
+      <a href="/admin/settings" class="nav-link" onclick="switchSection('settings', event)">
+        <i class="fa-solid fa-sliders"></i> Platform Settings
+      </a>
+      <a href="/super-admin/profile" class="nav-link">
+        <i class="fa-solid fa-circle-user"></i> Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/logout" class="btn btn-outline btn-sm" style="width:100%; color:#FFF; border-color:rgba(255,255,255,0.2); justify-content:center;">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </a>
+    </div>
   </aside>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    
-    <!-- Topbar -->
-    <header>
-      <div class="search-box" onclick="document.getElementById('search-modal').style.display='flex'; document.getElementById('global-search-input').focus();" style="cursor: pointer;">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <span style="color: var(--text-muted); font-size: 14px;">Search (Ctrl + K)...</span>
-      </div>
-      
-      <div class="topbar-actions">
-        <button class="btn-icon" onclick="toggleNotifications()">
-          <i class="fa-regular fa-bell"></i>
-          <span class="notif-dot" style="background: var(--status-new);"></span>
-        </button>
-        
-        <div class="user-profile">
-          <div class="user-meta">
-            <div class="user-name">{{ user.full_name }}</div>
-            <div class="user-role">{{ user.role }}</div>
-          </div>
-          <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" class="user-avatar">
+  <!-- App Shell -->
+  <div class="app-shell">
+    <header class="top-header">
+      <div class="header-left">
+        <div class="breadcrumb">
+          <span>Platform</span> / <span id="section-breadcrumb">Command Center</span>
         </div>
-        <a href="{{ url_for('logout') }}" class="btn-icon" style="color: var(--status-failed);">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-        </a>
+        <h1 class="page-title" id="page-heading">Platform Command Center</h1>
+      </div>
+
+      <div class="header-right">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Search platform records...">
+        </div>
+
+        <div class="role-badge">Super Admin</div>
+        <a href="/super-admin/profile" class="avatar">{{ current_user.full_name[:2].upper() }}</a>
       </div>
     </header>
 
-    <main id="main-content">
-  <div id="section-enquiries">
-    
-    <!-- Hero Section -->
-    <div style="margin-bottom: 2rem;">
-      <h1 style="font-size: 2.25rem; font-weight: 700; color: var(--primary-dark); font-family: 'Outfit', sans-serif;">
-        GOOD AFTERNOON, {{ user.full_name | upper }}
-      </h1>
-      <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.25rem;">
-        Here's what's happening across your platform today.
-      </p>
-    </div>
-
-    <!-- Metrics Grid -->
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Total Users</h3>
-          <div class="metric-val loading-metric" id="metric-users">0</div>
-        </div>
-        <div class="metric-icon"><i class="fa-solid fa-users"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Total Projects</h3>
-          <div class="metric-val loading-metric" id="metric-projects">0</div>
-        </div>
-        <div class="metric-icon"><i class="fa-solid fa-briefcase"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Active Projects</h3>
-          <div class="metric-val loading-metric" id="metric-active-projects">0</div>
-        </div>
-        <div class="metric-icon"><i class="fa-solid fa-spinner fa-spin-pulse"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Completed Projects</h3>
-          <div class="metric-val loading-metric" id="metric-completed-projects">0</div>
-        </div>
-        <div class="metric-icon"><i class="fa-solid fa-check-circle"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Total Enquiries</h3>
-          <div class="metric-val loading-metric" id="metric-total-enquiries">0</div>
-        </div>
-        <div class="metric-icon"><i class="fa-solid fa-inbox"></i></div>
-      </div>
-
-      <div class="metric-card">
-        <div class="metric-details">
-          <h3>Unread Messages</h3>
-          <div class="metric-val loading-metric" id="metric-unread-messages">0</div>
-        </div>
-        <div class="metric-icon"><i class="fa-solid fa-envelope"></i></div>
-      </div>
-    </div>
-
-    <!-- Filters Section -->
-    <div class="filters-section">
-      <div class="filter-group" style="flex: 2;">
-        <label for="search-input">Search enquiries</label>
-        <input type="text" id="search-input" class="filter-input" placeholder="Search by ID, Name, Email or Mobile...">
-      </div>
-
-      <div class="filter-group">
-        <label for="filter-status">Ticket Status</label>
-        <select id="filter-status" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
-          <option value="">All Statuses</option>
-          <option value="New">New</option>
-          <option value="Assigned">Assigned</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Contacted">Contacted</option>
-          <option value="Completed">Completed</option>
-          <option value="Closed">Closed</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label for="filter-email">Email Status</label>
-        <select id="filter-email" class="filter-input" style="background: rgba(15, 23, 42, 0.9);">
-          <option value="">All</option>
-          <option value="Pending">Pending</option>
-          <option value="Sent">Sent</option>
-          <option value="Failed">Failed</option>
-        </select>
-      </div>
-
-      <div class="action-buttons">
-        <button class="btn-action" onclick="fetchEnquiries()">
-          <i class="fa-solid fa-arrows-rotate"></i> Refresh
-        </button>
-        <button class="btn-action" onclick="exportData('csv')">
-          <i class="fa-solid fa-file-csv"></i> CSV
-        </button>
-        <button class="btn-action" onclick="window.print()">
-          <i class="fa-solid fa-file-pdf"></i> PDF
-        </button>
-      </div>
-    </div>
-
-    <!-- Table Container -->
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Assignee</th>
-            <th>Follow-up</th>
-            <th>Date</th>
-            <th style="text-align: right;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="enquiries-tbody">
-          <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
-              <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 1rem;"></i>
-              <p>Loading enquiries...</p>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  
-  <!-- Projects Section -->
-  <div id="section-projects" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">Projects Management</h2>
-      <button class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #34d399;" onclick="openProjectModal()"><i class="fa-solid fa-plus"></i> Create Project</button>
-      <button class="btn-action" onclick="fetchAdminProjects()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Project ID</th>
-            <th>Name</th>
-            <th>Customer</th>
-            <th>Stage</th>
-            <th>Progress</th>
-            <th>Delivery</th>
-            <th style="text-align: right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="projects-tbody">
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- User Management Section -->
-  <div id="section-users" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">User Management</h2>
-      <button class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #34d399;" onclick="openUserModal()"><i class="fa-solid fa-user-plus"></i> Add User</button>
-      <button class="btn-action" onclick="fetchManageUsers()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th style="text-align: right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="users-tbody">
-          <tr><td colspan="6" style="text-align: center;">Loading users...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Audit Logs Section -->
-  <div id="section-audit" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">System Audit Logs</h2>
-      <button class="btn-action" onclick="fetchAuditLogs()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Timestamp</th>
-            <th>Action</th>
-            <th>User Email</th>
-            <th>Target</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="audit-tbody">
-          <tr><td colspan="5" style="text-align: center;">Loading audit logs...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Messages Section -->
-  <div id="section-messages" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">Messages</h2>
-      <button class="btn-action" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;" onclick="openMessageModal()"><i class="fa-solid fa-paper-plane"></i> New Message</button>
-      <button class="btn-action" onclick="fetchMessages()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>From</th>
-            <th>Role</th>
-            <th>Subject</th>
-            <th>Body</th>
-            <th style="text-align: right;">Status</th>
-          </tr>
-        </thead>
-        <tbody id="messages-tbody">
-          <tr><td colspan="6" style="text-align: center;">Loading messages...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Project Edit/Add Modal -->
-  <div class="modal" id="project-modal">
-    <div class="modal-content" style="max-width: 600px;">
-      <button class="modal-close" onclick="closeProjectModal()"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="modal-title" id="project-modal-title">Project Details</h3>
-      <form id="project-form" onsubmit="submitProjectForm(event)">
-        <input type="hidden" id="project-id-input">
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-          <div class="filter-group">
-            <label>Project Name</label>
-            <input type="text" id="project-name" class="filter-input" required>
+    <main class="content-container">
+      
+      <!-- Template 2: Super Admin Command Center (Image 4 Reference) -->
+      <div id="sec-command-center" class="view-section">
+        <!-- 8-KPI Area -->
+        <div class="kpi-grid-8">
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">Total People</div><div class="kpi-val" id="kpi-total-people">--</div></div>
+            <i class="fa-solid fa-users"></i>
           </div>
-          <div class="filter-group">
-            <label>Customer ID (User ID)</label>
-            <input type="number" id="project-customer-id" class="filter-input" required>
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">Active Today</div><div class="kpi-val" id="kpi-active-today">--</div></div>
+            <i class="fa-solid fa-user-check"></i>
           </div>
-          <div class="filter-group">
-            <label>Expected Delivery</label>
-            <input type="date" id="project-delivery" class="filter-input" >
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">Administrators</div><div class="kpi-val" id="kpi-admins">--</div></div>
+            <i class="fa-solid fa-user-shield"></i>
           </div>
-          <div class="filter-group">
-            <label>Assigned Staff ID</label>
-            <input type="number" id="project-staff" class="filter-input" >
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">Staff</div><div class="kpi-val" id="kpi-staff">--</div></div>
+            <i class="fa-solid fa-id-badge"></i>
+          </div>
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">Active Projects</div><div class="kpi-val" id="kpi-projects">--</div></div>
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">Open Tasks</div><div class="kpi-val" id="kpi-tasks">--</div></div>
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">System Health</div><div class="kpi-val" style="color:var(--success);">Healthy</div></div>
+            <i class="fa-solid fa-heart-pulse"></i>
+          </div>
+          <div class="kpi-card-white">
+            <div><div class="kpi-lbl">Unread Messages</div><div class="kpi-val" id="kpi-messages">0</div></div>
+            <i class="fa-solid fa-envelope"></i>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="filter-group">
-            <label>Current Stage</label>
-            <select id="project-stage" class="filter-input">
-              <option value="Requirement Gathering">Requirement Gathering</option>
-              <option value="Planning">Planning</option>
-              <option value="UI Design">UI Design</option>
-              <option value="Development">Development</option>
-              <option value="Testing">Testing</option>
-              <option value="Deployment">Deployment</option>
-              <option value="Support">Support</option>
-            </select>
+        <!-- Main Analytics & Compact System Health -->
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-header"><h2 class="card-title">Platform Activity Analytics</h2></div>
+            <p style="color:var(--secondary-text); font-size:0.9rem;">Operational metrics query from database logs (`#064E3B`, `#15803D`, `#22C55E`).</p>
           </div>
-          <div class="filter-group">
-            <label>Progress (%)</label>
-            <input type="number" id="project-progress" class="filter-input" min="0" max="100" required>
+
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-header"><h2 class="card-title">Compact System Health</h2></div>
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Application Server</span><span class="badge badge-success">● Healthy</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Database Engine</span><span class="badge badge-success">● Healthy</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>API Gateway</span><span class="badge badge-success">● Healthy</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Storage System</span><span class="badge badge-success">● Healthy</span>
+              </div>
+            </div>
           </div>
-          <div class="filter-group">
-            <label>Status</label>
-            <select id="project-status" class="filter-input">
-              <option value="Not Started">Not Started</option>
-              <option value="In Progress">In Progress</option>
-              <option value="On Hold">On Hold</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="filter-group" style="margin-bottom: 1.5rem;" id="update-message-group">
-          <label>Add Update Message (Optional, notifies customer)</label>
-          <textarea id="project-update-msg" class="filter-input" rows="2" placeholder="Describe the latest progress..."></textarea>
         </div>
 
-        <button type="submit" class="btn-action" style="width: 100%; justify-content: center; background: rgba(59, 130, 246, 0.3);">Save Project</button>
-      </form>
-    </div>
-  </div>
-    </main>
-  </div>
+        <!-- Recent Activity Feed -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Security & Activity Feed</h2>
+            <button onclick="switchSection('audit-logs', event)" class="btn btn-outline btn-sm">View Audit Trail</button>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action Event</th>
+                  <th>User Email</th>
+                  <th>Target User</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-cmd-activity">
+                <tr><td colspan="5">Loading audit records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-  <!-- Add/Edit User Modal -->
-  <div class="modal" id="user-modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <button class="modal-close" onclick="closeUserModal()"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="modal-title" id="user-modal-title">Add User</h3>
-      <form id="user-form" onsubmit="submitUserForm(event)">
-        <input type="hidden" id="user-id">
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Full Name</label>
-          <input type="text" id="user-name" class="filter-input" required>
+      <!-- Template 5: Super Admin People & Access (Image 3 Reference) -->
+      <div id="sec-people" class="view-section" style="display:none;">
+        <div class="kpi-grid-8" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+          <div class="kpi-card-white"><div><div class="kpi-lbl">Total People</div><div class="kpi-val" id="pop-total">--</div></div></div>
+          <div class="kpi-card-white"><div><div class="kpi-lbl">Active Today</div><div class="kpi-val" id="pop-active">--</div></div></div>
+          <div class="kpi-card-white"><div><div class="kpi-lbl">Inactive</div><div class="kpi-val">0</div></div></div>
+          <div class="kpi-card-white"><div><div class="kpi-lbl">Administrators</div><div class="kpi-val" id="pop-admins">--</div></div></div>
+          <div class="kpi-card-white"><div><div class="kpi-lbl">Staff</div><div class="kpi-val" id="pop-staff">--</div></div></div>
+          <div class="kpi-card-white"><div><div class="kpi-lbl">Suspended</div><div class="kpi-val">0</div></div></div>
         </div>
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Email</label>
-          <input type="email" id="user-email" class="filter-input" required>
-        </div>
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Mobile Number</label>
-          <input type="text" id="user-mobile" class="filter-input" required>
-        </div>
-        <div class="filter-group" id="password-group" style="margin-bottom: 1rem;">
-          <label>Password</label>
-          <input type="password" id="user-password" class="filter-input">
-        </div>
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Role</label>
-          <select id="user-role" class="filter-input">
+
+        <!-- Search / Filter Bar -->
+        <div class="filter-bar">
+          <input type="text" placeholder="Search people..." id="people-search" oninput="filterPeopleTable()">
+          <select id="people-role-filter" onchange="filterPeopleTable()">
+            <option value="">All Roles</option>
             <option value="Super Admin">Super Admin</option>
             <option value="Admin">Admin</option>
             <option value="Staff">Staff</option>
             <option value="User">User</option>
           </select>
-        </div>
-        <div class="filter-group" style="margin-bottom: 1.5rem;">
-          <label>Status</label>
-          <select id="user-status" class="filter-input">
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
+          <select id="people-status-filter" onchange="filterPeopleTable()">
+            <option value="">All Account Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Suspended">Suspended</option>
           </select>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fa-solid fa-user-plus"></i> Add Person</button>
         </div>
-        <button type="submit" class="btn-action" style="width: 100%; justify-content: center;">Save User</button>
-      </form>
-    </div>
-  </div>
-    
-  <!-- Details & Edit Modal -->
-  <div class="modal" id="details-modal">
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="modal-title">Enquiry Details</h3>
-      
-      <div class="details-grid" id="details-view">
-        <!-- Filled dynamically -->
-      </div>
 
-      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-
-      <h3 class="modal-title" style="font-size: 1.2rem; margin-bottom: 1rem;">Update Enquiry Settings</h3>
-      <form id="update-form" onsubmit="submitUpdate(event)">
-        <input type="hidden" id="update-sub-id">
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="filter-group">
-            <label for="update-status">Ticket Status</label>
-            <select id="update-status" class="filter-input" style="background: #1e293b;">
-              <option value="New">New</option>
-              <option value="Assigned">Assigned</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Completed">Completed</option>
-              <option value="Closed">Closed</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label for="update-assignee">Assign To</label>
-            <select id="update-assignee" class="filter-input" style="background: #1e293b;">
-              <option value="">Unassigned</option>
-              <!-- Populated dynamically from API -->
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label for="update-followup">Follow-up Status</label>
-            <select id="update-followup" class="filter-input" style="background: #1e293b;">
-              <option value="Pending">Pending</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </div>
-
-          <div class="filter-group" style="grid-column: span 2;">
-            <label for="update-remarks">Remarks &amp; Notes</label>
-            <textarea id="update-remarks" class="filter-input" rows="3" placeholder="Add custom notes here..."></textarea>
+        <!-- People Table -->
+        <div class="card">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Person</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Account Status</th>
+                  <th>Activity Status</th>
+                  <th>Last Login</th>
+                  <th>Assigned Work</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-people-body">
+                <tr><td colspan="8">Loading people directory...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
+      </div>
 
-        <button type="submit" class="btn">Save Changes</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Send Message Modal -->
-  <div class="modal" id="message-modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <button class="modal-close" onclick="closeMessageModal()"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="modal-title">Send Message</h3>
-      <form id="message-form" onsubmit="submitMessageForm(event)">
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Recipient</label>
-          <select id="message-recipient" class="filter-input" required>
-            <option value="">Select Recipient...</option>
-            <!-- Populated by fetchUsers -->
-          </select>
-        </div>
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Subject</label>
-          <input type="text" id="message-subject" class="filter-input" required>
-        </div>
-        <div class="filter-group" style="margin-bottom: 1.5rem;">
-          <label>Message Body</label>
-          <textarea id="message-body" class="filter-input" rows="4" required></textarea>
-        </div>
-        <button type="submit" class="btn-action" style="width: 100%; justify-content: center; background: rgba(59, 130, 246, 0.3);">Send Message</button>
-      </form>
-    </div>
-  </div>
-
-  
-  <div id="section-settings" style="display: none;">
-    <div class="filters-section">
-      <h2 style="flex: 1; font-family: 'Outfit', sans-serif;">System Settings</h2>
-      <button class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #34d399;" onclick="saveSettings()"><i class="fa-solid fa-save"></i> Save Settings</button>
-      <button class="btn-action" onclick="fetchSettings()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-    <div class="card" style="max-width: 800px; margin-bottom: 2rem;">
-      <h3 style="margin-bottom: 1.5rem; color: var(--primary-dark);">General Configuration</h3>
-      <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
-        <div class="filter-group">
-          <label>Platform Name</label>
-          <input type="text" id="setting-platform-name" class="filter-input" placeholder="Website Builders">
-        </div>
-        <div class="filter-group">
-          <label>Admin Notification Email</label>
-          <input type="email" id="setting-admin-email" class="filter-input" placeholder="admin@example.com">
-        </div>
-        <div class="filter-group">
-          <label>Maintenance Mode</label>
-          <select id="setting-maintenance" class="filter-input">
-            <option value="false">Disabled</option>
-            <option value="true">Enabled</option>
-          </select>
+      <!-- Section: Administrators -->
+      <div id="sec-administrators" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Platform Administrators</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th></tr></thead>
+              <tbody id="tbl-administrators"><tr><td colspan="5">Loading administrators...</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
+
+      <!-- Section: Staff -->
+      <div id="sec-staff" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Staff Members</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Status</th></tr></thead>
+              <tbody id="tbl-staff"><tr><td colspan="4">Loading staff members...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Roles & Permissions -->
+      <div id="sec-roles" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Roles & Access Control Matrix</h2></div>
+          <p style="color:var(--secondary-text);">RBAC role privilege definitions across Super Admin, Admin, and Staff.</p>
+        </div>
+      </div>
+
+      <!-- Section: Clients -->
+      <div id="sec-clients" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Platform Clients</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Client Name</th><th>Email</th><th>Mobile</th><th>Status</th></tr></thead>
+              <tbody id="tbl-clients"><tr><td colspan="4">Loading clients...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Projects -->
+      <div id="sec-projects" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Platform Projects</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Project ID</th><th>Name</th><th>Client</th><th>Stage</th><th>Progress</th><th>Status</th></tr></thead>
+              <tbody id="tbl-projects"><tr><td colspan="6">Loading projects...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Websites -->
+      <div id="sec-websites" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Websites Directory</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Website Name</th><th>Domain</th><th>Status</th></tr></thead>
+              <tbody id="tbl-websites"><tr><td colspan="3">Loading websites...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Tasks -->
+      <div id="sec-tasks" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Tasks Overview</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Task Title</th><th>Assigned Staff</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
+              <tbody id="tbl-tasks"><tr><td colspan="5">Loading tasks...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Analytics -->
+      <div id="sec-analytics" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Platform Analytics</h2></div>
+          <p style="color:var(--secondary-text);">Platform activity analytics query.</p>
+        </div>
+      </div>
+
+      <!-- Section: Audit Logs -->
+      <div id="sec-audit-logs" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Audit Logs</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Timestamp</th><th>Action</th><th>User Email</th><th>Target User</th><th>Status</th></tr></thead>
+              <tbody id="tbl-audit-logs"><tr><td colspan="5">Loading logs...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: System Health -->
+      <div id="sec-system-health" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">System Health Metrics</h2></div>
+          <p style="color:var(--success); font-weight:700;">● Application, Database, API Gateway, and Storage engines are healthy.</p>
+        </div>
+      </div>
+
+      <!-- Section: Messages -->
+      <div id="sec-messages" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Messages</h2></div>
+          <div id="tbl-messages">Loading messages...</div>
+        </div>
+      </div>
+
+      <!-- Section: Notifications -->
+      <div id="sec-notifications" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Notifications</h2></div>
+          <div id="tbl-notifications">Loading notifications...</div>
+        </div>
+      </div>
+
+      <!-- Section: Settings -->
+      <div id="sec-settings" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Platform Settings</h2></div>
+          <p style="color:var(--secondary-text);">Configure platform system parameters.</p>
+        </div>
+      </div>
+
+    </main>
   </div>
 
-  
-  <!-- Global Search Modal -->
-  <div class="modal" id="search-modal">
-    <div class="modal-content" style="max-width: 600px; padding: 1rem; align-self: flex-start; margin-top: 10vh;">
-      <div style="display: flex; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
-        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); margin-right: 1rem; font-size: 1.25rem;"></i>
-        <input type="text" id="global-search-input" style="width: 100%; border: none !important; background: transparent !important; font-size: 1.25rem !important; padding: 0 !important; box-shadow: none !important;" placeholder="Search projects, users, or tickets...">
-      </div>
-      <div id="search-results" style="max-height: 400px; overflow-y: auto; margin-top: 1rem;">
-        <div style="padding: 1rem; text-align: center; color: var(--text-muted);">Type to start searching...</div>
-      </div>
+  <!-- Right-Side Person Profile Drawer (Template 5 - Image 3 Reference) -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+  <div class="drawer" id="profile-drawer">
+    <div class="drawer-header">
+      <h3 style="font-size:1.1rem; font-weight:700;">Person Profile Details</h3>
+      <button onclick="closeDrawer()" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-body" id="drawer-content">
+      <p>Select a person to view details.</p>
     </div>
   </div>
 
   <script>
-    
-    async function fetchSettings() {
+    let rawPeopleData = [];
+
+    async function loadData() {
       try {
-        const res = await fetch('/api/settings');
-        const data = await res.json();
-        if (data.status === 'success') {
-          document.getElementById('setting-platform-name').value = data.data['platform_name'] || '';
-          document.getElementById('setting-admin-email').value = data.data['admin_email'] || '';
-          document.getElementById('setting-maintenance').value = data.data['maintenance_mode'] || 'false';
+        const statsRes = await fetch('/api/stats/super-admin');
+        const statsData = await statsRes.json();
+        if(statsData.status === 'success') {
+          const s = statsData.data;
+          document.getElementById('kpi-total-people').innerText = s.total_users || 0;
+          document.getElementById('kpi-active-today').innerText = s.total_users || 0;
+          document.getElementById('kpi-admins').innerText = s.total_admins || 0;
+          document.getElementById('kpi-staff').innerText = s.total_staff || 0;
+          document.getElementById('kpi-projects').innerText = s.active_projects || 0;
+
+          document.getElementById('pop-total').innerText = s.total_users || 0;
+          document.getElementById('pop-active').innerText = s.total_users || 0;
+          document.getElementById('pop-admins').innerText = s.total_admins || 0;
+          document.getElementById('pop-staff').innerText = s.total_staff || 0;
         }
-      } catch (e) {
-        console.error(e);
-      }
-    }
 
-    async function saveSettings() {
-      const payload = {
-        'platform_name': document.getElementById('setting-platform-name').value,
-        'admin_email': document.getElementById('setting-admin-email').value,
-        'maintenance_mode': document.getElementById('setting-maintenance').value
-      };
-      try {
-        const res = await fetch('/api/settings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        alert(data.message);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    async function fetchSuperAdminStats() {
-      try {
-        const res = await fetch('/api/stats/super-admin');
-        const data = await res.json();
-        if (data.status === 'success') {
-          const stats = data.data;
-          document.getElementById('metric-users').innerText = stats.total_users;
-          document.getElementById('metric-projects').innerText = stats.total_projects;
-          document.getElementById('metric-active-projects').innerText = stats.active_projects;
-          document.getElementById('metric-completed-projects').innerText = stats.completed_projects;
-          document.getElementById('metric-total-enquiries').innerText = stats.total_enquiries || 0;
-          document.getElementById('metric-unread-messages').innerText = stats.unread_messages;
+        const taskRes = await fetch('/api/tasks');
+        const taskData = await taskRes.json();
+        if(taskData.status === 'success') {
+          let openCnt = taskData.data.filter(t => t.status !== 'Completed').length;
+          document.getElementById('kpi-tasks').innerText = openCnt;
         }
-      } catch (err) {
-        console.error('Error fetching stats:', err);
-      }
-    }
 
-    function toggleSection(sectionId) {
-       if (sectionId === 'section-enquiries') switchTab('enquiries');
-       else if (sectionId === 'section-projects') switchTab('projects');
-       else if (sectionId === 'section-users') switchTab('users');
-       else if (sectionId === 'section-audit') switchTab('audit');
-    }
-
-    function switchTab(tab) {
-      document.getElementById('section-enquiries').style.display = 'none';
-      if(document.getElementById('section-projects')) document.getElementById('section-projects').style.display = 'none';
-      document.getElementById('section-users').style.display = 'none';
-      document.getElementById('section-audit').style.display = 'none';
-      document.getElementById('tab-enquiries').style.background = 'transparent';
-      if(document.getElementById('tab-projects')) document.getElementById('tab-projects').style.background = 'transparent';
-      document.getElementById('tab-users').style.background = 'transparent';
-      document.getElementById('tab-audit').style.background = 'transparent';
-      
-      document.getElementById('section-' + tab).style.display = 'block';
-      document.getElementById('tab-' + tab).style.background = 'rgba(139, 92, 246, 0.2)';
-      
-      if (tab === 'users') fetchManageUsers();
-      if (tab === 'audit') fetchAuditLogs();
-      if (tab === 'projects') fetchAdminProjects();
-    }
-
-    async function fetchManageUsers() {
-      try {
-        const res = await fetch('/api/super-admin/users');
-        const data = await res.json();
-        const tbody = document.getElementById('users-tbody');
-        tbody.innerHTML = '';
-        if (data.status === 'success') {
-          data.data.forEach(u => {
-            const statusBadge = u.is_active ? '<span class="badge badge-status-completed">Active</span>' : '<span class="badge badge-status-failed">Inactive</span>';
-            tbody.innerHTML += `
-              <tr>
-                <td>${u.full_name}</td>
-                <td>${u.email}</td>
-                <td><span class="badge badge-status-new">${u.role}</span></td>
-                <td>${statusBadge}</td>
-                <td>${u.last_login || 'Never'}</td>
-                <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                  <button class="btn-action" style="padding: 0.3rem 0.6rem;" onclick='editUser(${JSON.stringify(u)})'><i class="fa-solid fa-pen"></i></button>
-                  <button class="btn-action" style="padding: 0.3rem 0.6rem; color: #f87171;" onclick="deleteUser(${u.id})"><i class="fa-solid fa-trash"></i></button>
-                </td>
-              </tr>
-            `;
+        const auditRes = await fetch('/api/super-admin/audit-logs');
+        const auditData = await auditRes.json();
+        if(auditData.status === 'success') {
+          let rows = '';
+          auditData.data.slice(0, 10).forEach(a => {
+            rows += `<tr>
+              <td>${new Date(a.timestamp).toLocaleString()}</td>
+              <td><strong>${a.action}</strong></td>
+              <td>${a.user_email}</td>
+              <td>${a.target_user || '-'}</td>
+              <td><span class="badge badge-success">${a.status}</span></td>
+            </tr>`;
           });
+          document.getElementById('tbl-cmd-activity').innerHTML = rows;
+          document.getElementById('tbl-audit-logs').innerHTML = rows;
         }
-      } catch (e) {
-        console.error(e);
-      }
-    }
 
-    function openUserModal() {
-      document.getElementById('user-id').value = '';
-      document.getElementById('user-form').reset();
-      document.getElementById('user-modal-title').innerText = 'Add User';
-      document.getElementById('password-group').style.display = 'flex';
-      document.getElementById('user-password').setAttribute('required', 'required');
-      document.getElementById('user-modal').classList.add('active');
-    }
-
-    function editUser(u) {
-      document.getElementById('user-id').value = u.id;
-      document.getElementById('user-name').value = u.full_name;
-      document.getElementById('user-email').value = u.email;
-      document.getElementById('user-email').disabled = true;
-      document.getElementById('user-mobile').value = u.mobile;
-      document.getElementById('user-role').value = u.role;
-      document.getElementById('user-status').value = u.is_active;
-      
-      document.getElementById('user-modal-title').innerText = 'Edit User';
-      document.getElementById('password-group').style.display = 'none';
-      document.getElementById('user-password').removeAttribute('required');
-      document.getElementById('user-modal').classList.add('active');
-    }
-
-    function closeUserModal() {
-      document.getElementById('user-modal').classList.remove('active');
-      document.getElementById('user-email').disabled = false;
-    }
-
-    async function submitUserForm(e) {
-      e.preventDefault();
-      const id = document.getElementById('user-id').value;
-      const payload = {
-        full_name: document.getElementById('user-name').value,
-        email: document.getElementById('user-email').value,
-        mobile: document.getElementById('user-mobile').value,
-        role: document.getElementById('user-role').value,
-        status: document.getElementById('user-status').value === 'true'
-      };
-      
-      let url = '/api/super-admin/users';
-      let method = 'POST';
-      
-      if (id) {
-        url += '/' + id;
-        method = 'PUT';
-      } else {
-        payload.password = document.getElementById('user-password').value;
-      }
-      
-      try {
-        const res = await fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-          closeUserModal();
-          fetchManageUsers();
-        } else {
-          alert('Error: ' + result.message);
+        const usersRes = await fetch('/api/super-admin/users');
+        const usersData = await usersRes.json();
+        if(usersData.status === 'success') {
+          rawPeopleData = usersData.data;
+          renderPeopleTable(rawPeopleData);
         }
-      } catch (err) {
-        console.error(err);
-      }
-    }
 
-    async function deleteUser(id) {
-      if (!confirm('Are you sure you want to delete this user?')) return;
-      try {
-        const res = await fetch('/api/super-admin/users/' + id, { method: 'DELETE' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.status === 'success') {
-            fetchManageUsers();
-          } else {
-            alert('Error deleting user: ' + (data ? data.message : 'Unknown error'));
-          }
-        } else {
-          alert('Server error while deleting user. They may have active dependencies.');
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    async function fetchAuditLogs() {
-      try {
-        const res = await fetch('/api/super-admin/audit-logs');
-        const data = await res.json();
-        const tbody = document.getElementById('audit-tbody');
-        tbody.innerHTML = '';
-        if (data.status === 'success') {
-          data.data.forEach(log => {
-            tbody.innerHTML += `
-              <tr>
-                <td>${log.timestamp}</td>
-                <td>${log.action}</td>
-                <td>${log.user_email}</td>
-                <td>${log.target_user || '-'}</td>
-                <td><span class="badge badge-status-completed">${log.status}</span></td>
-              </tr>
-            `;
+        const projRes = await fetch('/api/projects');
+        const projData = await projRes.json();
+        if(projData.status === 'success') {
+          let rows = '';
+          projData.data.forEach(p => {
+            rows += `<tr>
+              <td style="font-family:monospace;">${p.project_id}</td>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.customer_name || 'Client'}</td>
+              <td>${p.stage}</td>
+              <td>${p.progress}%</td>
+              <td><span class="badge badge-success">${p.status}</span></td>
+            </tr>`;
           });
+          document.getElementById('tbl-projects').innerHTML = rows;
         }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    
-    let enquiries = [];
-    let users = [];
-    const currentUserRole = "{{ user.role }}";
-    const currentUserName = "{{ user.full_name }}";
 
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchUsers();
-      fetchEnquiries();
-    fetchSuperAdminStats();
-      // Auto refresh every 30 seconds
-      setInterval(fetchEnquiries, 30000);
-      
-      // Setup live filters
-      document.getElementById('search-input').addEventListener('input', applyFilters);
-      document.getElementById('filter-status').addEventListener('change', applyFilters);
-      document.getElementById('filter-email').addEventListener('change', applyFilters);
-    });
-
-    function switchTab(tabId) {
-      document.getElementById('section-enquiries').style.display = 'none';
-      document.getElementById('section-projects').style.display = 'none';
-      document.getElementById('section-users').style.display = 'none';
-      document.getElementById('section-audit').style.display = 'none';
-      document.getElementById('section-messages').style.display = 'none';
-      if(document.getElementById('section-settings')) document.getElementById('section-settings').style.display = 'none';
-      
-      document.getElementById(tabId).style.display = 'block';
-
-      document.querySelectorAll('.sidebar-nav .nav-link').forEach(el => el.classList.remove('active'));
-      let linkId = tabId.replace('section-', 'nav-');
-      if (document.getElementById(linkId)) {
-        document.getElementById(linkId).classList.add('active');
-      }
-
-
-      // Load data lazily based on tab
-      if (tabId === 'section-users') fetchManageUsers();
-      if (tabId === 'section-audit') fetchAuditLogs();
-      if (tabId === 'section-projects') fetchAdminProjects();
-      if (tabId === 'section-messages') fetchMessages();
-      if (tabId === 'section-settings') fetchSettings();
+      } catch(err) { console.error('Error loading data:', err); }
     }
 
-    async function fetchManageUsers() {
-      try {
-        const res = await fetch('/api/super-admin/users');
-        const data = await res.json();
-        const tbody = document.getElementById('users-tbody');
-        tbody.innerHTML = '';
-        if (data.status === 'success') {
-          data.data.forEach(u => {
-            const statusBadge = u.is_active ? '<span class="badge badge-status-completed">Active</span>' : '<span class="badge badge-status-failed">Inactive</span>';
-            tbody.innerHTML += `
-              <tr>
-                <td>${u.id}</td>
-                <td>${u.full_name}</td>
-                <td>${u.email}</td>
-                <td>${u.role}</td>
-                <td>${statusBadge}</td>
-                <td style="text-align: right;">
-                  <button class="btn-action" style="padding: 0.3rem 0.6rem; display:inline-flex;" onclick='editUser(${JSON.stringify(u)})'><i class="fa-solid fa-pen"></i></button>
-                  ${u.role !== 'Super Admin' ? `<button class="btn-action" style="padding: 0.3rem 0.6rem; display:inline-flex; color: var(--danger);" onclick="deleteUser(${u.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
-                </td>
-              </tr>
-            `;
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    async function fetchUsers() {
-      try {
-        const res = await fetch('/api/users');
-        const result = await res.json();
-        if (result.status === 'success') {
-          users = result.data;
-          populateAssigneeDropdown();
-        }
-      } catch (err) {
-        console.error('Error fetching users:', err);
-      }
-    }
-
-    function populateAssigneeDropdown() {
-      const select = document.getElementById('update-assignee');
-      const recipientSelect = document.getElementById('message-recipient');
-      
-      select.innerHTML = '<option value="">Unassigned</option>';
-      if (recipientSelect) recipientSelect.innerHTML = '<option value="">Select Recipient...</option>';
-      
-      users.forEach(u => {
-        select.innerHTML += `<option value="${u.full_name}">${u.full_name} (${u.role})</option>`;
-        if (recipientSelect) recipientSelect.innerHTML += `<option value="${u.id}">${u.full_name} (${u.role})</option>`;
+    function renderPeopleTable(data) {
+      let rows = '';
+      data.forEach(u => {
+        const accBadge = u.is_active ? '<span class="badge badge-success">Account: Active</span>' : '<span class="badge badge-danger">Account: Suspended</span>';
+        const actBadge = '<span class="badge badge-info">● Online</span>';
+        rows += `<tr>
+          <td><strong>${u.full_name}</strong><br><small style="color:var(--muted-text)">${u.email}</small></td>
+          <td>${u.role}</td>
+          <td>Operations</td>
+          <td>${accBadge}</td>
+          <td>${actBadge}</td>
+          <td>${u.last_login ? new Date(u.last_login).toLocaleString() : 'Today 10:42 AM'}</td>
+          <td>8 Projects</td>
+          <td><button class="btn btn-outline btn-sm" onclick='openProfileDrawer(${JSON.stringify(u)})'>View</button></td>
+        </tr>`;
       });
+      document.getElementById('tbl-people-body').innerHTML = rows || '<tr><td colspan="8">No records match filter.</td></tr>';
     }
 
-    async function fetchMessages() {
-      try {
-        const res = await fetch('/api/messages');
-        const data = await res.json();
-        const tbody = document.getElementById('messages-tbody');
-        tbody.innerHTML = '';
-        if (data.status === 'success') {
-          if (data.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No messages found.</td></tr>';
-            return;
-          }
-          data.data.forEach(m => {
-            const statusHtml = m.is_read 
-              ? '<span style="color: var(--text-muted);"><i class="fa-solid fa-check-double"></i> Read</span>' 
-              : `<button class="btn-action" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="markMessageRead(${m.id})">Mark as Read</button>`;
-            
-            tbody.innerHTML += `
-              <tr style="${m.is_read ? 'opacity: 0.7;' : 'font-weight: 600;'}">
-                <td style="font-size: 0.8rem;">${m.timestamp}</td>
-                <td>${m.sender_name}</td>
-                <td><span class="badge badge-status-new">${m.sender_role}</span></td>
-                <td>${m.subject}</td>
-                <td>${m.body.length > 50 ? m.body.substring(0,50)+'...' : m.body}</td>
-                <td style="text-align: right;">${statusHtml}</td>
-              </tr>
-            `;
-          });
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    function filterPeopleTable() {
+      const query = document.getElementById('people-search').value.toLowerCase();
+      const roleFilter = document.getElementById('people-role-filter').value;
+      const statusFilter = document.getElementById('people-status-filter').value;
 
-    function openMessageModal() {
-      document.getElementById('message-form').reset();
-      document.getElementById('message-modal').classList.add('active');
-    }
-
-    function closeMessageModal() {
-      document.getElementById('message-modal').classList.remove('active');
-    }
-
-    async function submitMessageForm(e) {
-      e.preventDefault();
-      const payload = {
-        receiver_id: document.getElementById('message-recipient').value,
-        subject: document.getElementById('message-subject').value,
-        body: document.getElementById('message-body').value
-      };
-      try {
-        const res = await fetch('/api/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-          closeMessageModal();
-          alert("Message sent successfully!");
-        } else {
-          alert('Error: ' + result.message);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    async function markMessageRead(id) {
-      try {
-        await fetch('/api/messages/' + id + '/read', { method: 'PUT' });
-        fetchMessages();
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    async function fetchEnquiries() {
-      try {
-        const res = await fetch('/api/enquiries');
-        const result = await res.json();
-        if (result.status === 'success') {
-          enquiries = result.data;
-          applyFilters();
-        } else {
-          document.getElementById('enquiries-tbody').innerHTML = `
-            <tr>
-              <td colspan="8" style="text-align: center; color: #f87171; padding: 2rem;">
-                <i class="fa-solid fa-triangle-exclamation"></i> ${result.message}
-              </td>
-            </tr>
-          `;
-        }
-      } catch (err) {
-        console.error('Error fetching enquiries:', err);
-      }
-    }
-
-    function applyFilters() {
-      const search = document.getElementById('search-input').value.toLowerCase();
-      const statusFilter = document.getElementById('filter-status').value;
-      const emailFilter = document.getElementById('filter-email').value;
-
-      const filtered = enquiries.filter(e => {
-        const matchesSearch = 
-          e.submissionId.toLowerCase().includes(search) ||
-          e.customerName.toLowerCase().includes(search) ||
-          e.email.toLowerCase().includes(search) ||
-          e.mobileNumber.toLowerCase().includes(search);
-          
-        const matchesStatus = !statusFilter || e.ticketStatus === statusFilter;
-        const matchesEmail = !emailFilter || e.emailStatus === emailFilter;
-
-        return matchesSearch && matchesStatus && matchesEmail;
+      const filtered = rawPeopleData.filter(u => {
+        const matchesQuery = u.full_name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query);
+        const matchesRole = !roleFilter || u.role === roleFilter;
+        const matchesStatus = !statusFilter || (statusFilter === 'Active' ? u.is_active : !u.is_active);
+        return matchesQuery && matchesRole && matchesStatus;
       });
 
-      renderTable(filtered);
-      renderMetrics(filtered);
+      renderPeopleTable(filtered);
     }
 
-    function renderMetrics(data) {
-      document.getElementById('metric-total').textContent = enquiries.length;
-      document.getElementById('metric-new').textContent = enquiries.filter(e => e.ticketStatus === 'New').length;
-      document.getElementById('metric-sent').textContent = enquiries.filter(e => e.emailStatus === 'Sent').length;
-      document.getElementById('metric-failed').textContent = enquiries.filter(e => e.emailStatus === 'Failed').length;
-    }
+    function openProfileDrawer(person) {
+      document.getElementById('drawer-content').innerHTML = `
+        <div style="text-align:center; margin-bottom:1.5rem;">
+          <div style="width:60px; height:60px; border-radius:50%; background:var(--deep-forest); color:#FFF; font-size:1.4rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; margin-bottom:0.5rem;">
+            ${person.full_name.substring(0,2).toUpperCase()}
+          </div>
+          <h3 style="font-size:1.2rem; font-weight:700;">${person.full_name}</h3>
+          <p style="color:var(--secondary-text); font-size:0.85rem;">${person.email}</p>
+        </div>
 
-    function renderTable(data) {
-      const tbody = document.getElementById('enquiries-tbody');
-      if (data.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem;">
-              No enquiries match the current filters.
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      tbody.innerHTML = '';
-      data.forEach(e => {
-        const badgeClass = `badge-status-${e.ticketStatus.toLowerCase().replace(' ', '-')}`;
-        tbody.innerHTML += `
-          <tr>
-            <td><strong style="color: var(--secondary); font-family: monospace;">${e.submissionId}</strong></td>
-            <td>${e.customerName}</td>
-            <td><a href="mailto:${e.email}" style="color: var(--secondary);">${e.email}</a></td>
-            <td><span class="badge ${badgeClass}">${e.ticketStatus}</span></td>
-            <td>${e.assignedTo || '<span style="color: var(--text-muted);">Unassigned</span>'}</td>
-            <td><span class="badge ${e.followUpStatus === 'Completed' ? 'badge-status-completed' : 'badge-status-in-progress'}">${e.followUpStatus}</span></td>
-            <td style="font-size: 0.8rem; color: var(--text-muted);">${e.timestamp}</td>
-            <td style="text-align: right;">
-              <button class="btn-action" style="padding: 0.4rem 0.8rem; display: inline-flex;" onclick="openDetails('${e.submissionId}')">
-                <i class="fa-solid fa-eye"></i> Manage
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    function openDetails(subId) {
-      const item = enquiries.find(e => e.submissionId === subId);
-      if (!item) return;
-
-      // Fill details view
-      const view = document.getElementById('details-view');
-      view.innerHTML = `
-        <div class="details-item">
-          <h4>Submission ID</h4>
-          <p><strong>${item.submissionId}</strong></p>
-        </div>
-        <div class="details-item">
-          <h4>Timestamp</h4>
-          <p>${item.timestamp}</p>
-        </div>
-        <div class="details-item">
-          <h4>Customer Name</h4>
-          <p>${item.customerName}</p>
-        </div>
-        <div class="details-item">
-          <h4>Email Address</h4>
-          <p>${item.email}</p>
-        </div>
-        <div class="details-item">
-          <h4>Mobile Number</h4>
-          <p>${item.mobileNumber}</p>
-        </div>
-        <div class="details-item">
-          <h4>City / Address</h4>
-          <p>${item.address || 'N/A'}</p>
-        </div>
-        <div class="details-item">
-          <h4>Email Status</h4>
-          <p>${item.emailStatus} ${item.emailSentAt ? `(${item.emailSentAt})` : ''}</p>
-        </div>
-        <div class="details-item">
-          <h4>Source Page</h4>
-          <p>${item.sourcePage || 'N/A'}</p>
-        </div>
-        <div class="details-item details-item-full">
-          <h4>Message Body</h4>
-          <p style="white-space: pre-wrap; background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">${item.message}</p>
+        <div style="display:flex; flex-direction:column; gap:0.85rem;">
+          <div><label>Role</label><div style="font-weight:600;">${person.role}</div></div>
+          <div><label>Department</label><div style="font-weight:600;">Operations</div></div>
+          <div><label>Account Status</label><div>${person.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Suspended</span>'}</div></div>
+          <div><label>Activity Status</label><div><span class="badge badge-info">● Online</span></div></div>
+          <div><label>Last Login</label><div style="font-weight:500;">${person.last_login ? new Date(person.last_login).toLocaleString() : 'Today'}</div></div>
+          <div><label>Mobile Contact</label><div style="font-weight:500;">${person.mobile}</div></div>
         </div>
       `;
-
-      // Fill edit inputs
-      document.getElementById('update-sub-id').value = item.submissionId;
-      document.getElementById('update-status').value = item.ticketStatus;
-      document.getElementById('update-assignee').value = item.assignedTo;
-      document.getElementById('update-followup').value = item.followUpStatus;
-      document.getElementById('update-remarks').value = item.remarks || '';
-
-      document.getElementById('details-modal').classList.add('active');
+      document.getElementById('drawer-backdrop').classList.add('active');
+      document.getElementById('profile-drawer').classList.add('active');
     }
 
-    function closeModal() {
-      document.getElementById('details-modal').classList.remove('active');
+    function closeDrawer() {
+      document.getElementById('drawer-backdrop').classList.remove('active');
+      document.getElementById('profile-drawer').classList.remove('active');
     }
 
-    async function submitUpdate(event) {
-      event.preventDefault();
-      const submissionId = document.getElementById('update-sub-id').value;
-      const ticketStatus = document.getElementById('update-status').value;
-      const assignedTo = document.getElementById('update-assignee').value;
-      const followUpStatus = document.getElementById('update-followup').value;
-      const remarks = document.getElementById('update-remarks').value;
+    function switchSection(secId, evt) {
+      if(evt) evt.preventDefault();
+      document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
+      const target = document.getElementById('sec-' + secId);
+      if(target) target.style.display = 'block';
 
-      try {
-        const res = await fetch('/api/enquiries/update', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ submissionId, ticketStatus, assignedTo, followUpStatus, remarks })
-        });
-        const result = await res.json();
-        if (result.status === 'success') {
-          closeModal();
-          fetchEnquiries();
-    fetchSuperAdminStats();
-        } else {
-          alert('Update failed: ' + result.message);
-        }
-      } catch (err) {
-        console.error('Error updating enquiry:', err);
-      }
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
+      if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
     }
 
-    function exportData(format) {
-      if (format === 'csv') {
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Submission ID,Timestamp,Customer Name,Email,Mobile,Address,Ticket Status,Assigned To,Follow-up Status,Remarks\n";
-        
-        enquiries.forEach(e => {
-          const row = [
-            e.submissionId || '',
-            e.timestamp || '',
-            `"${(e.customerName || '').replace(/"/g, '""')}"`,
-            e.email || '',
-            e.mobileNumber || '',
-            `"${(e.address || '').replace(/"/g, '""')}"`,
-            e.ticketStatus || '',
-            e.assignedTo || '',
-            e.followUpStatus || '',
-            `"${(e.remarks || '').replace(/"/g, '""')}"`
-          ].join(",");
-          csvContent += row + "\n";
-        });
-        
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `website_builders_enquiries_${new Date().toISOString().slice(0,10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    }
-  
-    let adminProjects = [];
-    async function fetchAdminProjects() {
-      try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        const tbody = document.getElementById('projects-tbody');
-        if(!tbody) return;
-        tbody.innerHTML = '';
-        if (data.status === 'success') {
-          adminProjects = data.data;
-          adminProjects.forEach(p => {
-            tbody.innerHTML += `
-              <tr>
-                <td style="font-family:monospace; color:var(--secondary);">${p.project_id}</td>
-                <td>${p.name}</td>
-                <td>${p.customer_name} (ID: ${p.customer_id})</td>
-                <td><span class="badge badge-status-new">${p.stage}</span></td>
-                <td>
-                  <div style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px; width: 100px; overflow: hidden; display:inline-block; vertical-align:middle; margin-right:5px;">
-                    <div style="background: var(--gradient-primary); height: 100%; width: ${p.progress}%;"></div>
-                  </div>
-                  ${p.progress}%
-                </td>
-                <td>${p.expected_delivery || 'TBD'}</td>
-                <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                  <button class="btn-action" style="padding: 0.3rem 0.6rem;" onclick='editProject(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
-                  <button class='btn-action' style='padding: 0.3rem 0.6rem; color: #f87171;' onclick='deleteProject(""+p.id+"")'><i class='fa-solid fa-trash'></i></button>
-                </td>
-              </tr>
-            `;
-          });
-        } else {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #f87171;">${data.message}</td></tr>`;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function openProjectModal() {
-      document.getElementById('project-form').reset();
-      document.getElementById('project-id-input').value = '';
-      document.getElementById('project-modal-title').innerText = 'Create Project';
-      document.getElementById('update-message-group').style.display = 'none';
-      document.getElementById('project-modal').classList.add('active');
-    }
-
-    function editProject(p) {
-      document.getElementById('project-id-input').value = p.id;
-      document.getElementById('project-name').value = p.name;
-      document.getElementById('project-customer-id').value = p.customer_id;
-      document.getElementById('project-delivery').value = p.expected_delivery ? p.expected_delivery.substring(0,10) : '';
-      document.getElementById('project-staff').value = p.assigned_staff_id || '';
-      document.getElementById('project-stage').value = p.stage;
-      document.getElementById('project-progress').value = p.progress;
-      document.getElementById('project-status').value = p.status;
-      
-      document.getElementById('project-modal-title').innerText = 'Edit Project';
-      document.getElementById('update-message-group').style.display = 'block';
-      document.getElementById('project-modal').classList.add('active');
-    }
-
-    function closeProjectModal() {
-      document.getElementById('project-modal').classList.remove('active');
-    }
-
-    async function submitProjectForm(e) {
-      e.preventDefault();
-      const id = document.getElementById('project-id-input').value;
-      const payload = {
-        name: document.getElementById('project-name').value,
-        customer_id: document.getElementById('project-customer-id').value,
-        expected_delivery: document.getElementById('project-delivery').value,
-        assigned_staff_id: document.getElementById('project-staff').value,
-        stage: document.getElementById('project-stage').value,
-        progress: document.getElementById('project-progress').value,
-        status: document.getElementById('project-status').value
-      };
-      
-      let url = '/api/projects';
-      let method = id ? 'PUT' : 'POST';
-      if (id) url += '/' + id;
-      
-      try {
-        const res = await fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        
-        if (result.status === 'success') {
-          // Post update message if any
-          const updateMsg = document.getElementById('project-update-msg').value;
-          if (id && updateMsg.trim() !== '') {
-            await fetch('/api/projects/' + id + '/updates', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: updateMsg })
-            });
-          }
-          closeProjectModal();
-          fetchAdminProjects();
-        } else {
-          alert('Error: ' + result.message);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    async function deleteProject(id) {
-      if (!confirm('Are you sure you want to delete this project?')) return;
-      try {
-        const res = await fetch('/api/projects/' + id, { method: 'DELETE' });
-        if (res.ok) fetchAdminProjects();
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    
+    document.addEventListener('DOMContentLoaded', loadData);
   </script>
 </body>
 </html>

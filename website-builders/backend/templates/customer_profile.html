@@ -1,0 +1,122 @@
+{% extends "layout.html" %}
+
+{% block title %}My Profile - Website Builders{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 600px; margin: 0 auto; width: 100%;">
+  <div class="auth-card" style="max-width: 100%; width: 100%; border-color: rgba(59, 130, 246, 0.25);">
+    
+    <!-- Header / Navigation Back -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+      <div style="display: flex; gap: 1.5rem;">
+        <a href="{{ url_for('dashboard') }}" class="forgot-link" style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <a href="/index.html" class="forgot-link" style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);">
+          <i class="fa-solid fa-globe"></i> Back to Website
+        </a>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; padding: 0.4rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.3s;">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+      </a>
+    </div>
+
+    <div class="logo-container" style="margin-bottom: 1.5rem; text-align: left;">
+      <h2 class="auth-title" style="text-align: left; font-size: 1.8rem;">My Profile</h2>
+      <p class="auth-subtitle" style="text-align: left; margin-bottom: 0;">Manage your account details and security settings</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Profile Details Card (Editable) -->
+    <h3 class="auth-title" style="font-size: 1.25rem; text-align: left; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-user-pen" style="color: var(--secondary);"></i> Edit Profile
+    </h3>
+    <form action="{{ url_for('edit_profile') }}" method="POST">
+      <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Full Name</label>
+          <input type="text" class="form-control" name="full_name" value="{{ user.full_name }}" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Mobile Number</label>
+          <input type="text" class="form-control" name="mobile" value="{{ user.mobile }}" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Email Address (Read-only)</label>
+          <input type="email" class="form-control" value="{{ user.email }}" disabled style="background: rgba(0,0,0,0.2); color: var(--text-muted);">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Account Role</label>
+          <input type="text" class="form-control" value="{{ user.role }}" disabled style="background: rgba(0,0,0,0.2); color: var(--secondary); font-weight: bold;">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Member Since</label>
+          <input type="text" class="form-control" value="{{ user.created_at.strftime('%d-%b-%Y') if user.created_at else 'N/A' }}" disabled style="background: rgba(0,0,0,0.2); color: var(--text-muted);">
+        </div>
+        <div style="grid-column: span 2; display: flex; justify-content: flex-end; margin-top: 1rem;">
+          <button type="submit" class="btn" style="width: auto; padding: 0.6rem 1.5rem;">
+            <span>Save Changes</span>
+            <i class="fa-solid fa-floppy-disk"></i>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Change Password Section -->
+    <h3 class="auth-title" style="font-size: 1.25rem; text-align: left; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-key" style="color: var(--secondary);"></i> Change Password
+    </h3>
+
+    <form action="{{ url_for('change_password') }}" method="POST" onsubmit="return validateChangePassword()">
+      <div class="form-group">
+        <label class="form-label" for="current_password">Current Password</label>
+        <input type="password" class="form-control" id="current_password" name="current_password" required placeholder="••••••••">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="new_password">New Password</label>
+        <input type="password" class="form-control" id="new_password" name="new_password" required placeholder="••••••••">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirm_password">Confirm New Password</label>
+        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required placeholder="••••••••">
+      </div>
+
+      <button type="submit" class="btn">
+        <span>Update Password</span>
+        <i class="fa-solid fa-floppy-disk"></i>
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<script>
+  function validateChangePassword() {
+    const newPw = document.getElementById('new_password').value;
+    const confirmPw = document.getElementById('confirm_password').value;
+    if (newPw !== confirmPw) {
+      alert("New passwords do not match.");
+      return false;
+    }
+    if (newPw.length < 6) {
+      alert("Password must be at least 6 characters long.");
+      return false;
+    }
+    return true;
+  }
+</script>
+{% endblock %}

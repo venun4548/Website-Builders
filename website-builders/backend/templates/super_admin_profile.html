@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Profile - Enterprise IT Operations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --deep-forest: #14532D;
+      --primary-green: #15803D;
+      --fresh-green: #22C55E;
+      --light-green: #DCFCE7;
+      --very-light-green: #F0FDF4;
+      --page-bg: #F7FAF8;
+      --card-bg: #FFFFFF;
+      --main-text: #14251B;
+      --secondary-text: #52635A;
+      --muted-text: #718078;
+      --border-color: #D7E4DA;
+      --input-border: #B8C9BE;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--page-bg); color: var(--main-text); min-height: 100vh; padding: 2rem; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 2rem; margin-bottom: 1.5rem; }
+    .card-title { font-size: 1.25rem; font-weight: 700; color: var(--main-text); margin-bottom: 1rem; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
+    .btn-primary { background: var(--primary-green); color: #FFF; }
+    .btn-outline { background: #FFF; border-color: var(--input-border); color: var(--main-text); }
+    input, select { background-color: #FFF !important; color: var(--main-text) !important; border: 1px solid var(--input-border) !important; border-radius: 6px; padding: 0.65rem; font-size: 0.9rem; width: 100%; margin-bottom: 1rem; }
+    label { display: block; font-weight: 600; color: var(--main-text); font-size: 0.85rem; margin-bottom: 0.4rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav-bar">
+      <a href="/admin/dashboard" class="btn btn-outline"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+      <a href="/" class="btn btn-outline"><i class="fa-solid fa-globe"></i> Back to Website</a>
+    </div>
+
+    <div class="card">
+      <h1 class="card-title"><i class="fa-solid fa-shield-halved" style="color:var(--primary-green)"></i> Super Admin Profile</h1>
+      <p style="color:var(--secondary-text); margin-bottom:1.5rem;">Platform Administration Account Privileges</p>
+      
+      <form action="/edit-profile" method="POST">
+        <label>Full Name</label>
+        <input type="text" name="full_name" value="{{ user.full_name }}" required>
+
+        <label>Email Address</label>
+        <input type="email" value="{{ user.email }}" disabled style="background:#F1F5F9 !important;">
+
+        <label>Mobile Number</label>
+        <input type="text" name="mobile" value="{{ user.mobile }}" required>
+
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Update Profile</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title"><i class="fa-solid fa-key" style="color:var(--primary-green)"></i> Change Security Password</h2>
+      <form action="/change-password" method="POST">
+        <label>Current Password</label>
+        <input type="password" name="current_password" required>
+
+        <label>New Password</label>
+        <input type="password" name="new_password" required>
+
+        <label>Confirm New Password</label>
+        <input type="password" name="confirm_password" required>
+
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Update Password</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

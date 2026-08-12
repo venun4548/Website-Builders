@@ -3,644 +3,622 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Operations Dashboard - Website Builders</title>
-  
-  <link rel="stylesheet" href="/css/fontawesome.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Operations Dashboard - Enterprise IT Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
     :root {
-      /* Colors */
-      --primary: #0F766E;
-      --primary-hover: #0D9488;
-      --accent: #F59E0B;
-      --bg-page: #F5F7F6;
-      --bg-card: #FFFFFF;
-      --text-main: #17211F;
-      --text-secondary: #64706C;
-      --border: #DCE5E2;
-      
-      /* Status */
-      --status-new: #0284C7;
-      --status-pending: #D97706;
-      --status-progress: #0F766E;
-      --status-completed: #16A34A;
-      --status-failed: #DC2626;
-
-      /* Shape */
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 18px;
-      --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-      
-      /* Typography */
-      --font-stack: 'Inter', sans-serif;
+      --forest-green: #14532D;
+      --primary-green: #15803D;
+      --emerald: #059669;
+      --fresh-green: #22C55E;
+      --light-green: #DCFCE7;
+      --very-light-green: #F0FDF4;
+      --page-bg: #F7FAF8;
+      --card-bg: #FFFFFF;
+      --main-text: #14251B;
+      --secondary-text: #52635A;
+      --muted-text: #718078;
+      --border-color: #D7E4DA;
+      --input-border: #B8C9BE;
+      --success: #16A34A;
+      --warning: #CA8A04;
+      --danger: #DC2626;
+      --info: #0284C7;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      font-family: var(--font-stack);
-      background-color: var(--bg-page);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--page-bg); color: var(--main-text); display: flex; min-height: 100vh; font-size: 14px; }
 
-    h1, h2, h3, h4, h5 { color: var(--text-main); font-weight: 700; }
-
-    /* Layout */
+    /* Admin Sidebar (Forest Green) */
     .sidebar {
-      width: 250px;
-      background: var(--bg-card);
-      border-right: 1px solid var(--border);
+      width: 260px;
+      background-color: var(--forest-green);
+      color: #FFFFFF;
       display: flex;
       flex-direction: column;
-      position: fixed;
-      height: 100vh;
-      z-index: 50;
-      transition: transform 0.3s ease;
+      flex-shrink: 0;
     }
 
-    .main-content {
-      flex: 1;
-      margin-left: 250px;
+    .sidebar-brand {
+      padding: 1.25rem 1.5rem;
       display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* Topbar */
-    header {
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      height: 64px;
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 0 2rem;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #FFFFFF;
+    }
+
+    .sidebar-brand i { color: var(--fresh-green); font-size: 1.3rem; }
+
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 1rem 0; }
+    .nav-group-label { padding: 0.75rem 1.5rem 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.5); font-weight: 600; }
+    .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.5rem; color: rgba(255, 255, 255, 0.85); text-decoration: none; font-weight: 500; font-size: 0.9rem; border-left: 3px solid transparent; transition: all 0.15s ease; }
+    .nav-link:hover { background: rgba(255, 255, 255, 0.08); color: #FFFFFF; }
+    .nav-link.active { background: rgba(34, 197, 94, 0.18); color: #FFFFFF; border-left-color: var(--fresh-green); font-weight: 600; }
+    .nav-link i { width: 20px; text-align: center; font-size: 1rem; }
+    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+
+    /* App Shell */
+    .app-shell { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .top-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       position: sticky;
       top: 0;
-      z-index: 40;
+      z-index: 90;
     }
 
-    /* Sidebar Logo & Nav */
-    .sidebar-header {
-      height: 64px;
-      display: flex;
-      align-items: center;
-      padding: 0 1.5rem;
-      border-bottom: 1px solid var(--border);
-      font-weight: 800;
-      font-size: 1.1rem;
-      color: var(--primary);
-      gap: 0.75rem;
-      text-decoration: none;
-    }
+    .breadcrumb { font-size: 0.8rem; color: var(--muted-text); display: flex; align-items: center; gap: 0.4rem; }
+    .page-title { font-size: 1.4rem; font-weight: 700; color: var(--main-text); margin-top: 0.1rem; }
 
-    .sidebar-nav {
-      padding: 1.5rem 1rem;
-      flex: 1;
-      overflow-y: auto;
-    }
+    .header-right { display: flex; align-items: center; gap: 1.25rem; }
+    .search-box { position: relative; width: 260px; }
+    .search-box input { background: #FFFFFF !important; color: var(--main-text) !important; border: 1px solid var(--input-border) !important; border-radius: 6px; padding: 0.5rem 0.75rem 0.5rem 2.25rem; font-size: 0.85rem; width: 100%; }
+    .search-box i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted-text); }
 
-    .nav-section {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.5px;
-      margin: 1.5rem 0 0.5rem 0.5rem;
-    }
-    .nav-section:first-child { margin-top: 0; }
+    .role-badge { background: var(--very-light-green); color: var(--primary-green); border: 1px solid var(--border-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--forest-green); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 
-    .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0.75rem;
-      color: var(--text-secondary);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      font-weight: 500;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-      margin-bottom: 0.15rem;
-    }
+    /* Content Container */
+    .content-container { padding: 2rem; flex: 1; overflow-y: auto; }
 
-    .nav-link:hover {
-      background: var(--bg-page);
-      color: var(--text-main);
-    }
-
-    .nav-link.active {
-      background: var(--primary);
-      color: #FFFFFF;
-      font-weight: 600;
-    }
-    
-    .nav-link i { width: 20px; text-align: center; }
-
-    /* Topbar Components */
-    .search-box {
-      display: flex;
-      align-items: center;
-      background: var(--bg-page);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.4rem 0.75rem;
-      width: 300px;
-      color: var(--text-secondary);
-    }
-    .search-box input {
-      border: none;
-      background: transparent;
-      outline: none;
-      margin-left: 0.5rem;
-      width: 100%;
-      font-family: var(--font-stack);
-      font-size: 0.85rem;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .btn-icon {
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 1.1rem;
-      cursor: pointer;
-      position: relative;
-    }
-    .btn-icon:hover { color: var(--text-main); }
-    .notif-dot {
-      position: absolute;
-      top: -2px;
-      right: -2px;
-      width: 8px;
-      height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-    }
-
-    .user-profile { display: flex; align-items: center; gap: 0.75rem; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; }
-    .user-meta { text-align: right; }
-    .user-name { font-size: 0.85rem; font-weight: 600; }
-    .user-role { font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); }
-
-    /* Content Area */
-    .content-area { padding: 2rem; }
-    
-    .page-title { font-size: 1.75rem; margin-bottom: 1.5rem; }
+    /* KPI Cards Grid */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; }
+    .kpi-card { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(20, 83, 45, 0.04); }
+    .kpi-lbl { font-size: 0.85rem; font-weight: 500; color: var(--secondary-text); margin-bottom: 0.35rem; }
+    .kpi-val { font-size: 1.8rem; font-weight: 700; color: var(--main-text); letter-spacing: -0.02em; }
 
     /* Cards */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-subtle);
-      padding: 1.5rem;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.25rem;
-    }
-    .card-title { font-size: 1.1rem; font-weight: 700; }
-
-    /* Metric Grid */
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .metric-card {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    
-    .metric-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .metric-icon { 
-      width: 40px; height: 40px; 
-      border-radius: var(--radius-sm); 
-      display: flex; align-items: center; justify-content: center; 
-      background: rgba(15, 118, 110, 0.05); color: var(--primary); 
-    }
-    .metric-val { font-size: 2rem; font-weight: 800; line-height: 1; }
-    .metric-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
-    .metric-trend { font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
-    .trend-up { color: var(--status-completed); }
-    .trend-down { color: var(--status-failed); }
-
-    /* Buttons */
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s ease;
-      border: 1px solid transparent;
-      text-decoration: none;
-    }
-    .btn-primary { background: var(--primary); color: #FFFFFF; }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
-    .btn-secondary { background: var(--bg-card); color: var(--primary); border-color: var(--primary); }
-    .btn-secondary:hover { background: rgba(15, 118, 110, 0.05); }
+    .card { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(20, 83, 45, 0.04); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--page-bg); }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: var(--main-text); }
 
     /* Tables */
     .table-responsive { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th { text-align: left; padding: 0.75rem 1rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); }
-    td { padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-main); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(245, 247, 246, 0.5); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: var(--very-light-green); color: var(--forest-green); font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); color: var(--main-text); }
+    tbody tr:hover { background-color: var(--page-bg); }
 
-    .table-primary-text { font-weight: 600; color: var(--text-main); }
-    .table-sub-text { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+    /* Workload Progress Meters */
+    .meter-bg { background: var(--page-bg); border: 1px solid var(--border-color); border-radius: 10px; height: 12px; overflow: hidden; width: 100%; }
+    .meter-fill { height: 100%; transition: width 0.3s ease; }
+
+    .fill-low { background: #86EFAC; }
+    .fill-balanced { background: #22C55E; }
+    .fill-high { background: #CA8A04; }
+    .fill-overloaded { background: #DC2626; }
 
     /* Badges */
-    .badge {
-      padding: 0.25rem 0.6rem;
-      border-radius: 99px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
-    
-    .badge-new { background: rgba(2, 132, 199, 0.1); color: var(--status-new); }
-    .badge-new .badge-dot { background: var(--status-new); }
-    
-    .badge-pending { background: rgba(217, 119, 6, 0.1); color: var(--status-pending); }
-    .badge-pending .badge-dot { background: var(--status-pending); }
-    
-    .badge-progress { background: rgba(15, 118, 110, 0.1); color: var(--status-progress); }
-    .badge-progress .badge-dot { background: var(--status-progress); }
-    
-    .badge-completed { background: rgba(22, 163, 74, 0.1); color: var(--status-completed); }
-    .badge-completed .badge-dot { background: var(--status-completed); }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-success { background: var(--very-light-green); color: var(--success); border: 1px solid var(--light-green); }
+    .badge-warning { background: #FEF9C3; color: var(--warning); border: 1px solid #FEF08A; }
+    .badge-danger { background: #FEE2E2; color: var(--danger); border: 1px solid #FCA5A5; }
+    .badge-info { background: #E0F2FE; color: var(--info); border: 1px solid #BAE6FD; }
 
-    /* Progress Bar */
-    .progress-container { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 0.5rem; }
-    .progress-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width 0.5s ease; }
-    
-    /* Project Timeline */
-    .timeline {
-      display: flex;
-      justify-content: space-between;
-      position: relative;
-      margin: 1rem 0 2rem 0;
-    }
-    .timeline::before {
-      content: '';
-      position: absolute;
-      top: 14px;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--border);
-      z-index: 1;
-    }
-    .timeline-step {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      width: 14%;
-    }
-    .timeline-marker {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: var(--bg-card);
-      border: 2px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      transition: all 0.3s;
-    }
-    .timeline-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-align: center; }
-    
-    .step-completed .timeline-marker { background: var(--primary); border-color: var(--primary); color: #FFF; }
-    .step-completed .timeline-label { color: var(--primary); }
-    
-    .step-current .timeline-marker { border-color: var(--primary); border-width: 4px; box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1); }
-    .step-current .timeline-label { color: var(--text-main); font-weight: 700; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; text-decoration: none; transition: all 0.15s ease; }
+    .btn-primary { background: var(--primary-green); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--forest-green); }
+    .btn-outline { background: #FFFFFF; border-color: var(--input-border); color: var(--main-text); }
+    .btn-outline:hover { background: var(--page-bg); }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.78rem; }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .mt-4 { margin-top: 1.5rem; }
+    /* Inputs - Explicit White Background */
+    input, select, textarea {
+      background-color: #FFFFFF !important;
+      color: var(--main-text) !important;
+      border: 1px solid var(--input-border) !important;
+      border-radius: 6px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.9rem;
+      width: 100%;
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary-green) !important;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+    }
   </style>
 </head>
 <body>
 
   <!-- Sidebar -->
   <aside class="sidebar">
-    <a href="#" class="sidebar-header">
-      <i class="fa-solid fa-layer-group"></i> Website Builders
-    </a>
+    <div class="sidebar-brand">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Operations Portal</span>
+    </div>
+
     <nav class="sidebar-nav">
-      <a href="#" class="nav-link active"><i class="fa-solid fa-border-all"></i> Dashboard</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-inbox"></i> Enquiries</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-briefcase"></i> Projects</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-users"></i> Customers</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-envelope"></i> Messages</a>
+      <div class="nav-group-label">OPERATIONS</div>
+      <a href="/admin/operations" class="nav-link active" onclick="switchSection('overview', event)">
+        <i class="fa-solid fa-gauge-high"></i> Operations Overview
+      </a>
+      <a href="/admin/team" class="nav-link" onclick="switchSection('team', event)">
+        <i class="fa-solid fa-users"></i> Team
+      </a>
+      <a href="/admin/clients" class="nav-link" onclick="switchSection('clients', event)">
+        <i class="fa-solid fa-building"></i> Clients
+      </a>
+      <a href="/admin/projects" class="nav-link" onclick="switchSection('projects', event)">
+        <i class="fa-solid fa-briefcase"></i> Projects
+      </a>
+      <a href="/admin/websites" class="nav-link" onclick="switchSection('websites', event)">
+        <i class="fa-solid fa-globe"></i> Websites
+      </a>
+      <a href="/admin/tasks" class="nav-link" onclick="switchSection('tasks', event)">
+        <i class="fa-solid fa-list-check"></i> Tasks
+      </a>
 
-      <div class="nav-section">Management</div>
-      <a href="#" class="nav-link"><i class="fa-solid fa-user-shield"></i> Users</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Reports</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i> Activity</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-gear"></i> Settings</a>
+      <div class="nav-group-label">TEAM MANAGEMENT</div>
+      <a href="/admin/team-performance" class="nav-link" onclick="switchSection('team-performance', event)">
+        <i class="fa-solid fa-chart-bar"></i> Team Performance
+      </a>
+      <a href="/admin/workload" class="nav-link" onclick="switchSection('workload', event)">
+        <i class="fa-solid fa-scale-balanced"></i> Workload Distribution
+      </a>
 
-      <div style="margin-top: 2rem;">
-        <a href="#" class="nav-link" id="nav-reports" onclick="switchTab('section-reports')"><i class="fa-solid fa-chart-line"></i> Reports</a>
-      <a href="{{ url_for('profile') }}" class="nav-link"><i class="fa-solid fa-user-circle"></i> Profile</a>
-        <a href="{{ url_for('logout') }}" class="nav-link" style="color: var(--status-failed);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
-      </div>
+      <div class="nav-group-label">COMMUNICATION</div>
+      <a href="/admin/messages" class="nav-link" onclick="switchSection('messages', event)">
+        <i class="fa-solid fa-envelope"></i> Messages
+      </a>
+      <a href="/admin/notifications" class="nav-link" onclick="switchSection('notifications', event)">
+        <i class="fa-solid fa-bell"></i> Notifications
+      </a>
+
+      <div class="nav-group-label">REPORTING</div>
+      <a href="/admin/reports" class="nav-link" onclick="switchSection('reports', event)">
+        <i class="fa-solid fa-file-invoice"></i> Reports
+      </a>
+      <a href="/admin/activity" class="nav-link" onclick="switchSection('activity', event)">
+        <i class="fa-solid fa-clock-rotate-left"></i> Activity
+      </a>
+
+      <div class="nav-group-label">ACCOUNT</div>
+      <a href="/admin/settings" class="nav-link" onclick="switchSection('settings', event)">
+        <i class="fa-solid fa-sliders"></i> Settings
+      </a>
+      <a href="/admin/profile" class="nav-link">
+        <i class="fa-solid fa-circle-user"></i> Profile
+      </a>
     </nav>
+
+    <div class="sidebar-footer">
+      <a href="/logout" class="btn btn-outline btn-sm" style="width:100%; color:#FFF; border-color:rgba(255,255,255,0.2); justify-content:center;">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </a>
+    </div>
   </aside>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    
-    <!-- Topbar -->
-    <header>
-      <div class="search-box" onclick="document.getElementById('search-modal').style.display='flex'; document.getElementById('global-search-input').focus();" style="cursor: pointer;">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <span style="color: var(--text-muted); font-size: 14px;">Search (Ctrl + K)...</span>
+  <!-- App Shell -->
+  <div class="app-shell">
+    <header class="top-header">
+      <div class="header-left">
+        <div class="breadcrumb"><span>Operations</span> / <span id="section-breadcrumb">Overview</span></div>
+        <h1 class="page-title" id="page-heading">Operations Overview</h1>
       </div>
-      
-      <div class="topbar-actions">
-        <button class="btn-icon" onclick="toggleNotifications()">
-          <i class="fa-regular fa-bell"></i>
-          <span class="notif-dot"></span>
-        </button>
-        
-        <div class="user-profile">
-          <div class="user-meta">
-            <div class="user-name">{{ user.full_name }}</div>
-            <div class="user-role">Administrator</div>
-          </div>
-          <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" class="user-avatar">
+
+      <div class="header-right">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Search team, projects...">
         </div>
+
+        <div class="role-badge">Operations Manager</div>
+        <a href="/admin/profile" class="avatar">{{ current_user.full_name[:2].upper() }}</a>
       </div>
     </header>
 
-    <div class="content-area">
-      <h1 class="page-title">Operations Dashboard</h1>
+    <main class="content-container">
       
-      <!-- Metrics -->
-      <div class="metric-grid">
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon"><i class="fa-solid fa-inbox"></i></div>
-            <span class="metric-trend trend-up"><i class="fa-solid fa-arrow-trend-up"></i> 12%</span>
-          </div>
-          <div>
-            <div class="metric-val" id="metric-enquiries">0</div>
-            <div class="metric-label">Total Enquiries</div>
-          </div>
+      <!-- Template 6: Admin Main Operations Dashboard (Image 2 Design Language) -->
+      <div id="sec-overview" class="view-section">
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-lbl">Active Staff</div><div class="kpi-val" id="op-staff">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Clients</div><div class="kpi-val" id="op-clients">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Projects</div><div class="kpi-val" id="op-projects">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Websites</div><div class="kpi-val" id="op-websites">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Open Tasks</div><div class="kpi-val" id="op-tasks">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Completed Tasks</div><div class="kpi-val" id="op-completed" style="color:var(--success);">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Overdue</div><div class="kpi-val" id="op-overdue" style="color:var(--danger);">0</div></div>
         </div>
-        
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon"><i class="fa-solid fa-briefcase"></i></div>
-            <span class="metric-trend trend-up"><i class="fa-solid fa-arrow-trend-up"></i> 4%</span>
-          </div>
-          <div>
-            <div class="metric-val" id="metric-projects">0</div>
-            <div class="metric-label">Active Projects</div>
-          </div>
-        </div>
-        
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon" style="color: var(--accent); background: rgba(245, 158, 11, 0.1);"><i class="fa-solid fa-envelope-open-text"></i></div>
-            <span class="metric-trend trend-down"><i class="fa-solid fa-arrow-trend-down"></i> 2%</span>
-          </div>
-          <div>
-            <div class="metric-val" id="metric-emails">0</div>
-            <div class="metric-label">Pending Emails</div>
-          </div>
-        </div>
-        
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon" style="color: var(--status-completed); background: rgba(22, 163, 74, 0.1);"><i class="fa-solid fa-check-double"></i></div>
-          </div>
-          <div>
-            <div class="metric-val" id="metric-completed">0</div>
-            <div class="metric-label">Completed Projects</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Project Progress Timeline -->
-      <div class="card mb-4" style="margin-bottom: 2rem;">
-        <div class="card-header">
-          <h2 class="card-title">Project Delivery Pipeline</h2>
-          <button class="btn btn-secondary">View All Projects</button>
-        </div>
-        
-        <div class="timeline">
-          <div class="timeline-step step-completed">
-            <div class="timeline-marker"><i class="fa-solid fa-check"></i></div>
-            <div class="timeline-label">Requirement</div>
-          </div>
-          <div class="timeline-step step-completed">
-            <div class="timeline-marker"><i class="fa-solid fa-check"></i></div>
-            <div class="timeline-label">Planning</div>
-          </div>
-          <div class="timeline-step step-current">
-            <div class="timeline-marker"></div>
-            <div class="timeline-label">UI Design</div>
-          </div>
-          <div class="timeline-step">
-            <div class="timeline-marker"></div>
-            <div class="timeline-label">Development</div>
-          </div>
-          <div class="timeline-step">
-            <div class="timeline-marker"></div>
-            <div class="timeline-label">Testing</div>
-          </div>
-          <div class="timeline-step">
-            <div class="timeline-marker"></div>
-            <div class="timeline-label">Deployment</div>
-          </div>
-          <div class="timeline-step">
-            <div class="timeline-marker"></div>
-            <div class="timeline-label">Support</div>
+        <!-- Project Pipeline Breakdown -->
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">PROJECT PIPELINE</h2></div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; text-align:center;">
+            <div style="padding:1rem; background:var(--very-light-green); border-radius:6px; border:1px solid var(--border-color);">
+              <div style="font-size:0.8rem; color:var(--secondary-text);">Planning</div><div style="font-size:1.4rem; font-weight:700;">1</div>
+            </div>
+            <div style="padding:1rem; background:var(--very-light-green); border-radius:6px; border:1px solid var(--border-color);">
+              <div style="font-size:0.8rem; color:var(--secondary-text);">Assigned</div><div style="font-size:1.4rem; font-weight:700;">2</div>
+            </div>
+            <div style="padding:1rem; background:var(--very-light-green); border-radius:6px; border:1px solid var(--border-color);">
+              <div style="font-size:0.8rem; color:var(--secondary-text);">In Progress</div><div style="font-size:1.4rem; font-weight:700;">3</div>
+            </div>
+            <div style="padding:1rem; background:var(--very-light-green); border-radius:6px; border:1px solid var(--border-color);">
+              <div style="font-size:0.8rem; color:var(--secondary-text);">Review</div><div style="font-size:1.4rem; font-weight:700;">1</div>
+            </div>
+            <div style="padding:1rem; background:var(--very-light-green); border-radius:6px; border:1px solid var(--border-color);">
+              <div style="font-size:0.8rem; color:var(--secondary-text);">Completed</div><div style="font-size:1.4rem; font-weight:700; color:var(--success);">1</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Enquiries and Projects Tables -->
-      <div class="grid-2">
-        <!-- Enquiries -->
+        <!-- Active Operations Projects -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Recent Enquiries</h2>
-            <button class="btn btn-secondary">View All</button>
+            <h2 class="card-title">Active Projects & Team Workload</h2>
+            <button onclick="switchSection('team-performance', event)" class="btn btn-outline btn-sm">Team Performance</button>
           </div>
           <div class="table-responsive">
             <table>
               <thead>
                 <tr>
-                  <th>Customer</th>
-                  <th>Status</th>
-                  <th>Submitted</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="enquiries-tbody">
-                <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        
-        <!-- Active Projects -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Active Projects</h2>
-            <button class="btn btn-secondary">View All</button>
-          </div>
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>Project</th>
+                  <th>Project ID</th>
+                  <th>Name</th>
+                  <th>Client</th>
+                  <th>Assigned Staff</th>
                   <th>Progress</th>
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody id="projects-tbody">
-                <tr><td colspan="3" style="text-align: center;">Loading...</td></tr>
+              <tbody id="tbl-op-projects">
+                <tr><td colspan="6">Loading operational projects...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-    </div>
-  </div>
+      <!-- Template 4: Admin Team Performance (Image 2 Reference) -->
+      <div id="sec-team-performance" class="view-section" style="display:none;">
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-lbl">Total Staff</div><div class="kpi-val" id="tp-total-staff">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Active Staff</div><div class="kpi-val" id="tp-active-staff">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Projects</div><div class="kpi-val" id="tp-projects">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Open Tasks</div><div class="kpi-val" id="tp-tasks">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Completed Tasks</div><div class="kpi-val" id="tp-completed" style="color:var(--success);">--</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">On-Time Rate</div><div class="kpi-val" style="color:var(--success);">94%</div></div>
+          <div class="kpi-card"><div class="kpi-lbl">Overdue Tasks</div><div class="kpi-val" style="color:var(--danger);">0</div></div>
+        </div>
 
-  
-  <!-- Global Search Modal -->
-  <div class="modal" id="search-modal">
-    <div class="modal-content" style="max-width: 600px; padding: 1rem; align-self: flex-start; margin-top: 10vh;">
-      <div style="display: flex; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
-        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); margin-right: 1rem; font-size: 1.25rem;"></i>
-        <input type="text" id="global-search-input" style="width: 100%; border: none !important; background: transparent !important; font-size: 1.25rem !important; padding: 0 !important; box-shadow: none !important;" placeholder="Search projects, users, or tickets...">
+        <!-- Performance Table -->
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Staff Performance Table</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Projects</th>
+                  <th>Tasks</th>
+                  <th>Completed</th>
+                  <th>On-Time %</th>
+                  <th>Workload Meter</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-team-perf">
+                <tr><td colspan="7">Loading team performance...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Team Performance Insights Cards -->
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Team Performance Insights</h2></div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem;">
+            <div style="padding:1rem; border:1px solid var(--border-color); border-radius:6px;">
+              <strong>Highest Workload</strong><br><span style="color:var(--main-text); font-weight:600;">Rahul Kumar (85% Capacity)</span>
+            </div>
+            <div style="padding:1rem; border:1px solid var(--border-color); border-radius:6px;">
+              <strong>Most Completed Tasks</strong><br><span style="color:var(--success); font-weight:600;">Priya Sharma (35 Tasks)</span>
+            </div>
+            <div style="padding:1rem; border:1px solid var(--border-color); border-radius:6px;">
+              <strong>Projects at Risk</strong><br><span style="color:var(--success); font-weight:600;">0 Projects at Risk</span>
+            </div>
+            <div style="padding:1rem; border:1px solid var(--border-color); border-radius:6px;">
+              <strong>Staff Needing Assistance</strong><br><span style="color:var(--main-text); font-weight:600;">None (Workload balanced)</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="search-results" style="max-height: 400px; overflow-y: auto; margin-top: 1rem;">
-        <div style="padding: 1rem; text-align: center; color: var(--text-muted);">Type to start searching...</div>
+
+      <!-- Section: Workload -->
+      <div id="sec-workload" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Staff Workload Meter Visualization</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr><th>Staff Member</th><th>Projects</th><th>Tasks</th><th>Capacity Meter</th><th>Load State</th></tr>
+              </thead>
+              <tbody id="tbl-workload-list">
+                <tr><td colspan="5">Loading workload...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <!-- Section: Team -->
+      <div id="sec-team" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Operations Team Members</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Staff</th><th>Email</th><th>Mobile</th><th>Status</th></tr></thead>
+              <tbody id="tbl-team"><tr><td colspan="4">Loading team...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Clients -->
+      <div id="sec-clients" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Managed Clients</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Client Name</th><th>Email</th><th>Mobile</th><th>Status</th></tr></thead>
+              <tbody id="tbl-clients"><tr><td colspan="4">Loading clients...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Projects -->
+      <div id="sec-projects" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Operations Projects</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Project ID</th><th>Name</th><th>Client</th><th>Assigned Staff</th><th>Progress</th><th>Status</th></tr></thead>
+              <tbody id="tbl-projects"><tr><td colspan="6">Loading projects...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Websites -->
+      <div id="sec-websites" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Websites Tracker</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Website Name</th><th>Domain</th><th>Status</th></tr></thead>
+              <tbody id="tbl-websites"><tr><td colspan="3">Loading websites...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Tasks -->
+      <div id="sec-tasks" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Tasks Board</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Task Title</th><th>Assigned Staff</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
+              <tbody id="tbl-tasks"><tr><td colspan="5">Loading tasks...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Reports -->
+      <div id="sec-reports" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Operations Reports</h2></div>
+          <p style="color:var(--secondary-text);">Generate operational project and workload reports.</p>
+        </div>
+      </div>
+
+      <!-- Section: Messages -->
+      <div id="sec-messages" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Messages</h2></div>
+          <div id="tbl-messages">Loading messages...</div>
+        </div>
+      </div>
+
+      <!-- Section: Notifications -->
+      <div id="sec-notifications" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Notifications</h2></div>
+          <div id="tbl-notifications">Loading notifications...</div>
+        </div>
+      </div>
+
+      <!-- Section: Activity -->
+      <div id="sec-activity" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Operations Activity Log</h2></div>
+          <p style="color:var(--secondary-text);">Audit trail of operations actions.</p>
+        </div>
+      </div>
+
+      <!-- Section: Settings -->
+      <div id="sec-settings" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Settings</h2></div>
+          <p style="color:var(--secondary-text);">Manage operational account preferences.</p>
+        </div>
+      </div>
+
+    </main>
   </div>
 
   <script>
-    async function fetchDashboardData() {
+    async function loadData() {
       try {
-        // Fetch Metrics
-        const statRes = await fetch('/api/stats/admin');
-        const statData = await statRes.json();
-        if (statData.status === 'success') {
-          const stats = statData.data;
-          document.getElementById('metric-projects').innerText = stats.active_projects;
-          document.getElementById('metric-completed').innerText = stats.completed_projects;
-          document.getElementById('metric-emails').innerText = stats.unread_messages;
+        const statsRes = await fetch('/api/stats/admin');
+        const statsData = await statsRes.json();
+        if(statsData.status === 'success') {
+          const s = statsData.data;
+          document.getElementById('op-projects').innerText = s.active_projects || 0;
+          document.getElementById('op-completed').innerText = s.completed_projects || 0;
+          document.getElementById('tp-projects').innerText = s.active_projects || 0;
+          document.getElementById('tp-completed').innerText = s.completed_projects || 0;
         }
 
-        // Fetch Projects
+        const usersRes = await fetch('/api/users');
+        const usersData = await usersRes.json();
+        if(usersData.status === 'success') {
+          let sCount = 0, cCount = 0;
+          let tRows = '', cRows = '';
+          usersData.data.forEach(u => {
+            if(u.role === 'Staff') {
+              sCount++;
+              tRows += `<tr><td><strong>${u.full_name}</strong></td><td>${u.email}</td><td>${u.mobile}</td><td><span class="badge badge-success">Active</span></td></tr>`;
+            }
+            if(u.role === 'User') {
+              cCount++;
+              cRows += `<tr><td><strong>${u.full_name}</strong></td><td>${u.email}</td><td>${u.mobile}</td><td><span class="badge badge-success">Active</span></td></tr>`;
+            }
+          });
+          document.getElementById('op-staff').innerText = sCount;
+          document.getElementById('op-clients').innerText = cCount;
+          document.getElementById('tp-total-staff').innerText = sCount;
+          document.getElementById('tp-active-staff').innerText = sCount;
+          document.getElementById('tbl-team').innerHTML = tRows;
+          document.getElementById('tbl-clients').innerHTML = cRows;
+        }
+
         const projRes = await fetch('/api/projects');
         const projData = await projRes.json();
-        if (projData.status === 'success') {
-          const ptbody = document.getElementById('projects-tbody');
-          ptbody.innerHTML = '';
-          const activeProjects = projData.data.filter(p => p.status !== 'Completed');
-          if (activeProjects.length === 0) {
-            ptbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No active projects.</td></tr>';
-          } else {
-            activeProjects.slice(0, 5).forEach(p => {
-              let badgeClass = 'badge-pending';
-              if (p.status === 'Completed') badgeClass = 'badge-completed';
-              if (p.status === 'In Progress') badgeClass = 'badge-progress';
-              
-              ptbody.innerHTML += `
-                <tr>
-                  <td>
-                    <div class="table-primary-text">${p.name}</div>
-                    <div class="table-sub-text">${p.customer_name || 'Unassigned'}</div>
-                  </td>
-                  <td style="width: 30%;">
-                    <span style="font-size: 0.75rem; font-weight: 600;">${p.progress}%</span>
-                    <div class="progress-container">
-                      <div class="progress-fill" style="width: ${p.progress}%;"></div>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="badge ${badgeClass}">
-                      <span class="badge-dot"></span> ${p.status}
-                    </span>
-                  </td>
-                </tr>
-              `;
-            });
-          }
+        if(projData.status === 'success') {
+          let rows = '';
+          projData.data.forEach(p => {
+            rows += `<tr>
+              <td style="font-family:monospace;">${p.project_id}</td>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.customer_name || 'Client'}</td>
+              <td>${p.assigned_staff_name || 'Unassigned'}</td>
+              <td>${p.progress}%</td>
+              <td><span class="badge badge-success">${p.status}</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-op-projects').innerHTML = rows;
+          document.getElementById('tbl-projects').innerHTML = rows;
         }
 
-        // Fetch Enquiries
-        const enqRes = await fetch('/api/enquiries');
-        const enqData = await enqRes.json();
-        if (enqData.status === 'success') {
-          document.getElementById('metric-enquiries').innerText = enqData.data.length;
-          const etbody = document.getElementById('enquiries-tbody');
-          etbody.innerHTML = '';
-          
-          if (enqData.data.length === 0) {
-            etbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No recent enquiries.</td></tr>';
-          } else {
-            enqData.data.slice(0, 5).forEach(e => {
-              etbody.innerHTML += `
-                <tr>
-                  <td>
-                    <div class="table-primary-text">${e.customerName || 'Unknown'}</div>
-                    <div class="table-sub-text">${e.email || 'No Email'}</div>
-                  </td>
-                  <td><span class="badge badge-new"><span class="badge-dot"></span> ${e.status || 'New'}</span></td>
-                  <td><span class="table-sub-text">${e.timestamp ? new Date(e.timestamp).toLocaleDateString() : 'N/A'}</span></td>
-                  <td><button class="btn btn-secondary">Review</button></td>
-                </tr>
-              `;
-            });
-          }
+        const perfRes = await fetch('/api/admin/team-performance');
+        const perfData = await perfRes.json();
+        if(perfData.status === 'success') {
+          let rows = '';
+          perfData.data.forEach(p => {
+            let loadFillClass = 'fill-balanced';
+            let loadStateLabel = 'Balanced Workload (65%)';
+            if(p.completion_rate < 80) { loadFillClass = 'fill-high'; loadStateLabel = 'High Load (85%)'; }
+
+            rows += `<tr>
+              <td><strong>${p.name}</strong></td>
+              <td>2 Projects</td>
+              <td>${p.total_tasks}</td>
+              <td><span style="color:var(--success); font-weight:600;">${p.completed_tasks}</span></td>
+              <td><strong>${p.completion_rate}%</strong></td>
+              <td style="width:180px;">
+                <div class="meter-bg"><div class="meter-fill ${loadFillClass}" style="width:75%;"></div></div>
+                <small>${loadStateLabel}</small>
+              </td>
+              <td><span class="badge badge-success">Active</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-team-perf').innerHTML = rows;
         }
-        
-      } catch (e) {
-        console.error(e);
-      }
+
+        const workloadRes = await fetch('/api/admin/workload');
+        const workloadData = await workloadRes.json();
+        if(workloadData.status === 'success') {
+          let rows = '';
+          workloadData.data.forEach(w => {
+            let fillClass = 'fill-balanced';
+            if(w.state === 'Overloaded') fillClass = 'fill-overloaded';
+            else if(w.state === 'High') fillClass = 'fill-high';
+            else if(w.state === 'Low') fillClass = 'fill-low';
+
+            rows += `<tr>
+              <td><strong>${w.name}</strong></td>
+              <td>${w.projects_count} Projects</td>
+              <td>${w.tasks_count} Tasks</td>
+              <td style="width:200px;">
+                <div class="meter-bg"><div class="meter-fill ${fillClass}" style="width:${w.load_percentage}%;"></div></div>
+                <small style="font-weight:600;">${w.load_percentage}% (${w.state})</small>
+              </td>
+              <td><span class="badge badge-info">${w.state}</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-workload-list').innerHTML = rows;
+        }
+
+        const taskRes = await fetch('/api/tasks');
+        const taskData = await taskRes.json();
+        if(taskData.status === 'success') {
+          let openCnt = taskData.data.filter(t => t.status !== 'Completed').length;
+          document.getElementById('op-tasks').innerText = openCnt;
+          document.getElementById('tp-tasks').innerText = openCnt;
+        }
+
+        const webRes = await fetch('/api/websites');
+        const webData = await webRes.json();
+        if(webData.status === 'success') {
+          let rows = '';
+          document.getElementById('op-websites').innerText = webData.data.length;
+          webData.data.forEach(w => {
+            rows += `<tr><td><strong>${w.name}</strong></td><td>${w.domain || 'N/A'}</td><td><span class="badge badge-success">${w.status}</span></td></tr>`;
+          });
+          document.getElementById('tbl-websites').innerHTML = rows;
+        }
+
+      } catch(err) { console.error('Error loading operations data:', err); }
     }
 
-    fetchDashboardData();
+    function switchSection(secId, evt) {
+      if(evt) evt.preventDefault();
+      document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
+      const target = document.getElementById('sec-' + secId);
+      if(target) target.style.display = 'block';
+
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
+      if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
   </script>
 </body>
 </html>

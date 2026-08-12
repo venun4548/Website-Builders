@@ -3,580 +3,595 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Workspace - Website Builders</title>
-  
-  <link rel="stylesheet" href="/css/fontawesome.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>My Workspace - Enterprise Staff Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
     :root {
-      /* Colors */
-      --primary: #0F766E;
-      --primary-hover: #0D9488;
-      --accent: #F59E0B;
-      --bg-page: #F5F7F6;
-      --bg-card: #FFFFFF;
-      --text-main: #17211F;
-      --text-secondary: #64706C;
-      --border: #DCE5E2;
-      
-      /* Status */
-      --status-new: #0284C7;
-      --status-pending: #D97706;
-      --status-progress: #0F766E;
-      --status-completed: #16A34A;
-      --status-failed: #DC2626;
-
-      /* Shape */
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 18px;
-      --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-      
-      /* Typography */
-      --font-stack: 'Inter', sans-serif;
+      --sidebar-teal: #115E59;
+      --primary-teal: #0D9488;
+      --mint-accent: #34D399;
+      --light-mint: #D1FAE5;
+      --very-light-mint: #F0FDFA;
+      --page-bg: #F7FAF8;
+      --card-bg: #FFFFFF;
+      --main-text: #14251B;
+      --secondary-text: #52635A;
+      --muted-text: #718078;
+      --border-color: #D7E4DA;
+      --input-border: #B8C9BE;
+      --success: #16A34A;
+      --warning: #CA8A04;
+      --danger: #DC2626;
+      --info: #0284C7;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      font-family: var(--font-stack);
-      background-color: var(--bg-page);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--page-bg); color: var(--main-text); display: flex; min-height: 100vh; font-size: 14px; }
 
-    h1, h2, h3, h4, h5 { color: var(--text-main); font-weight: 700; }
-
-    /* Layout */
+    /* Sidebar - Jade / Teal Theme (Template 1) */
     .sidebar {
-      width: 250px;
-      background: var(--bg-card);
-      border-right: 1px solid var(--border);
+      width: 260px;
+      background-color: var(--sidebar-teal);
+      color: #FFFFFF;
       display: flex;
       flex-direction: column;
-      position: fixed;
-      height: 100vh;
-      z-index: 50;
+      flex-shrink: 0;
     }
 
-    .main-content {
-      flex: 1;
-      margin-left: 250px;
+    .sidebar-brand {
+      padding: 1.25rem 1.5rem;
       display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* Topbar */
-    header {
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      height: 64px;
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 0 2rem;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #FFFFFF;
+    }
+
+    .sidebar-brand i { color: var(--mint-accent); font-size: 1.3rem; }
+
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 1rem 0; }
+    .nav-group-label { padding: 0.75rem 1.5rem 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); font-weight: 600; }
+    .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.5rem; color: rgba(255, 255, 255, 0.85); text-decoration: none; font-weight: 500; font-size: 0.9rem; border-left: 3px solid transparent; transition: all 0.15s ease; }
+    .nav-link:hover { background: rgba(255, 255, 255, 0.08); color: #FFFFFF; }
+    .nav-link.active { background: rgba(52, 211, 153, 0.18); color: #FFFFFF; border-left-color: var(--mint-accent); font-weight: 600; }
+    .nav-link i { width: 20px; text-align: center; font-size: 1rem; }
+    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+
+    /* App Shell */
+    .app-shell { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .top-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       position: sticky;
       top: 0;
-      z-index: 40;
+      z-index: 90;
     }
 
-    /* Sidebar Logo & Nav */
-    .sidebar-header {
-      height: 64px;
-      display: flex;
-      align-items: center;
-      padding: 0 1.5rem;
-      border-bottom: 1px solid var(--border);
-      font-weight: 800;
-      font-size: 1.1rem;
-      color: var(--primary);
-      gap: 0.75rem;
-      text-decoration: none;
-    }
+    .greeting-title { font-size: 1.6rem; font-weight: 700; color: var(--main-text); }
+    .greeting-sub { font-size: 0.9rem; color: var(--secondary-text); margin-top: 0.15rem; }
 
-    .sidebar-nav {
-      padding: 1.5rem 1rem;
-      flex: 1;
-      overflow-y: auto;
-    }
+    .header-right { display: flex; align-items: center; gap: 1.25rem; }
+    .search-box { position: relative; width: 250px; }
+    .search-box input { background: #FFFFFF !important; color: var(--main-text) !important; border: 1px solid var(--input-border) !important; border-radius: 6px; padding: 0.5rem 0.75rem 0.5rem 2.25rem; font-size: 0.85rem; width: 100%; }
+    .search-box i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted-text); }
 
-    .nav-section {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--text-secondary);
-      letter-spacing: 0.5px;
-      margin: 1.5rem 0 0.5rem 0.5rem;
-    }
-    .nav-section:first-child { margin-top: 0; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--sidebar-teal); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 
-    .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0.75rem;
-      color: var(--text-secondary);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      font-weight: 500;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-      margin-bottom: 0.15rem;
-    }
+    /* Main Container */
+    .content-container { padding: 2rem; flex: 1; overflow-y: auto; }
 
-    .nav-link:hover {
-      background: var(--bg-page);
-      color: var(--text-main);
-    }
+    /* Summary Cards */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem; }
+    .summary-card { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 1px 3px rgba(13, 148, 136, 0.04); position: relative; overflow: hidden; }
+    .summary-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--primary-teal); }
 
-    .nav-link.active {
-      background: var(--primary);
-      color: #FFFFFF;
-      font-weight: 600;
-    }
-    
-    .nav-link i { width: 20px; text-align: center; }
+    .card-label { font-size: 0.85rem; font-weight: 500; color: var(--secondary-text); margin-bottom: 0.4rem; }
+    .card-number { font-size: 1.9rem; font-weight: 700; color: var(--main-text); letter-spacing: -0.02em; }
+    .card-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--very-light-mint); color: var(--primary-teal); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
 
-    /* Topbar Components */
-    .search-box {
-      display: flex;
-      align-items: center;
-      background: var(--bg-page);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.4rem 0.75rem;
-      width: 300px;
-      color: var(--text-secondary);
-    }
-    .search-box input {
-      border: none;
-      background: transparent;
-      outline: none;
-      margin-left: 0.5rem;
-      width: 100%;
-      font-family: var(--font-stack);
-      font-size: 0.85rem;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
-    .btn-icon {
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 1.1rem;
-      cursor: pointer;
-      position: relative;
-    }
-    .btn-icon:hover { color: var(--text-main); }
-    .notif-dot {
-      position: absolute;
-      top: -2px;
-      right: -2px;
-      width: 8px;
-      height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-    }
-
-    .user-profile { display: flex; align-items: center; gap: 0.75rem; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; }
-    .user-meta { text-align: right; }
-    .user-name { font-size: 0.85rem; font-weight: 600; }
-    .user-role { font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); }
-
-    /* Content Area */
-    .content-area { padding: 2rem; }
-    
-    .page-title { font-size: 1.75rem; margin-bottom: 1.5rem; }
-
-    /* Cards */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-subtle);
-      padding: 1.5rem;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.25rem;
-    }
-    .card-title { font-size: 1.1rem; font-weight: 700; }
-
-    /* Metric Grid */
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .metric-card {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    
-    .metric-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .metric-icon { 
-      width: 40px; height: 40px; 
-      border-radius: var(--radius-sm); 
-      display: flex; align-items: center; justify-content: center; 
-      background: rgba(15, 118, 110, 0.05); color: var(--primary); 
-    }
-    .metric-val { font-size: 2rem; font-weight: 800; line-height: 1; }
-    .metric-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; }
-    .metric-trend { font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
-    .trend-up { color: var(--status-completed); }
-
-    /* Buttons */
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius-sm);
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s ease;
-      border: 1px solid transparent;
-      text-decoration: none;
-    }
-    .btn-primary { background: var(--primary); color: #FFFFFF; }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
-    .btn-secondary { background: var(--bg-card); color: var(--primary); border-color: var(--primary); }
-    .btn-secondary:hover { background: rgba(15, 118, 110, 0.05); }
+    /* Content Cards */
+    .card { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(13, 148, 136, 0.04); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--page-bg); }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: var(--main-text); }
 
     /* Tables */
     .table-responsive { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th { text-align: left; padding: 0.75rem 1rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); }
-    td { padding: 1rem; border-bottom: 1px solid var(--border); color: var(--text-main); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(245, 247, 246, 0.5); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th { background: var(--very-light-mint); color: var(--sidebar-teal); font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); color: var(--main-text); }
+    tbody tr:hover { background-color: var(--page-bg); }
 
-    .table-primary-text { font-weight: 600; color: var(--text-main); }
-    .table-sub-text { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-success { background: var(--very-light-mint); color: var(--success); border: 1px solid var(--light-mint); }
+    .badge-warning { background: #FEF9C3; color: var(--warning); border: 1px solid #FEF08A; }
+    .badge-danger { background: #FEE2E2; color: var(--danger); border: 1px solid #FCA5A5; }
 
-    /* Badges */
-    .badge {
-      padding: 0.25rem 0.6rem;
-      border-radius: 99px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
-    
-    .badge-new { background: rgba(2, 132, 199, 0.1); color: var(--status-new); }
-    .badge-new .badge-dot { background: var(--status-new); }
-    
-    .badge-pending { background: rgba(217, 119, 6, 0.1); color: var(--status-pending); }
-    .badge-pending .badge-dot { background: var(--status-pending); }
-    
-    .badge-progress { background: rgba(15, 118, 110, 0.1); color: var(--status-progress); }
-    .badge-progress .badge-dot { background: var(--status-progress); }
-    
-    .badge-completed { background: rgba(22, 163, 74, 0.1); color: var(--status-completed); }
-    .badge-completed .badge-dot { background: var(--status-completed); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.9rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; text-decoration: none; transition: all 0.15s ease; }
+    .btn-teal { background: var(--primary-teal); color: #FFFFFF; }
+    .btn-teal:hover { background: var(--sidebar-teal); }
+    .btn-outline { background: #FFFFFF; border-color: var(--input-border); color: var(--main-text); }
+    .btn-outline:hover { background: var(--page-bg); }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.78rem; }
 
-    /* Progress Bar */
-    .progress-container { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 0.5rem; }
-    .progress-fill { height: 100%; background: var(--primary); border-radius: 99px; transition: width 0.5s ease; }
+    /* Kanban Board Layout (Template 3) */
+    .kanban-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+    .kanban-column { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; min-height: 400px; display: flex; flex-direction: column; }
+    .column-header { font-size: 0.9rem; font-weight: 700; padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
     
+    .col-todo { background: #F1F5F3; color: var(--main-text); }
+    .col-progress { background: #DCFCE7; color: var(--deep-forest); }
+    .col-review { background: #FEF3C7; color: var(--warning); }
+    .col-completed { background: #DCFCE7; color: var(--success); }
+    .col-overdue { background: #FEE2E2; color: var(--danger); }
+
+    .kanban-card { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.85rem; margin-bottom: 0.85rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    .kanban-card-title { font-weight: 600; font-size: 0.9rem; color: var(--main-text); margin-bottom: 0.35rem; }
+    .kanban-card-sub { font-size: 0.78rem; color: var(--secondary-text); margin-bottom: 0.6rem; }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
+  <!-- Staff Sidebar (Jade / Teal) -->
   <aside class="sidebar">
-    <a href="#" class="sidebar-header">
-      <i class="fa-solid fa-layer-group"></i> Website Builders
-    </a>
+    <div class="sidebar-brand">
+      <i class="fa-solid fa-seedling"></i>
+      <span>My Workspace</span>
+    </div>
+
     <nav class="sidebar-nav">
-      <div class="nav-section">My Workspace</div>
-      <a href="#" class="nav-link active"><i class="fa-solid fa-border-all"></i> Dashboard</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-address-book"></i> My Clients</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-briefcase"></i> My Projects</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-globe"></i> My Websites</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-list-check"></i> My Tasks</a>
+      <div class="nav-group-label">MY WORKSPACE</div>
+      <a href="/staff/dashboard" class="nav-link active" onclick="switchSection('overview', event)">
+        <i class="fa-solid fa-house"></i> Overview
+      </a>
+      <a href="/staff/tasks" class="nav-link" onclick="switchSection('tasks-kanban', event)">
+        <i class="fa-solid fa-square-check"></i> My Tasks (Board)
+      </a>
+      <a href="/staff/projects" class="nav-link" onclick="switchSection('projects', event)">
+        <i class="fa-solid fa-folder-open"></i> My Projects
+      </a>
+      <a href="/staff/clients" class="nav-link" onclick="switchSection('clients', event)">
+        <i class="fa-solid fa-address-book"></i> My Clients
+      </a>
+      <a href="/staff/websites" class="nav-link" onclick="switchSection('websites', event)">
+        <i class="fa-solid fa-globe"></i> My Websites
+      </a>
+      <a href="/staff/schedule" class="nav-link" onclick="switchSection('schedule', event)">
+        <i class="fa-solid fa-calendar-days"></i> My Schedule
+      </a>
 
-      <div class="nav-section">Communication</div>
-      <a href="#" class="nav-link"><i class="fa-solid fa-envelope"></i> Messages</a>
-      <a href="#" class="nav-link"><i class="fa-solid fa-bell"></i> Notifications</a>
+      <div class="nav-group-label">COMMUNICATION</div>
+      <a href="/staff/messages" class="nav-link" onclick="switchSection('messages', event)">
+        <i class="fa-solid fa-envelope"></i> Messages
+      </a>
+      <a href="/staff/notifications" class="nav-link" onclick="switchSection('notifications', event)">
+        <i class="fa-solid fa-bell"></i> Notifications
+      </a>
 
-      <div class="nav-section">System</div>
-      <a href="#" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i> Activity</a>
+      <div class="nav-group-label">MONITORING</div>
+      <a href="/staff/activity" class="nav-link" onclick="switchSection('activity', event)">
+        <i class="fa-solid fa-clock-rotate-left"></i> My Activity
+      </a>
 
-      <div style="margin-top: 2rem;">
-        <a href="{{ url_for('profile') }}" class="nav-link"><i class="fa-solid fa-user-circle"></i> Profile</a>
-        <a href="{{ url_for('logout') }}" class="nav-link" style="color: var(--status-failed);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
-      </div>
+      <div class="nav-group-label">ACCOUNT</div>
+      <a href="/staff/profile" class="nav-link">
+        <i class="fa-solid fa-circle-user"></i> Profile
+      </a>
     </nav>
+
+    <div class="sidebar-footer">
+      <a href="/logout" class="btn btn-outline btn-sm" style="width:100%; color:#FFF; border-color:rgba(255,255,255,0.2); justify-content:center;">
+        <i class="fa-solid fa-right-from-bracket"></i> Logout
+      </a>
+    </div>
   </aside>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    
-    <!-- Topbar -->
-    <header>
-      <div class="search-box" onclick="document.getElementById('search-modal').style.display='flex'; document.getElementById('global-search-input').focus();" style="cursor: pointer;">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <span style="color: var(--text-muted); font-size: 14px;">Search (Ctrl + K)...</span>
+  <!-- App Shell -->
+  <div class="app-shell">
+    <header class="top-header">
+      <div>
+        <h1 class="greeting-title">Good morning, {{ current_user.full_name }}</h1>
+        <p class="greeting-sub">Here's what needs your attention today.</p>
       </div>
-      
-      <div class="topbar-actions">
-        <button class="btn-icon" onclick="toggleNotifications()">
-          <i class="fa-regular fa-bell"></i>
-          <span class="notif-dot"></span>
-        </button>
-        
-        <div class="user-profile">
-          <div class="user-meta">
-            <div class="user-name">{{ user.full_name }}</div>
-            <div class="user-role">Staff Member</div>
-          </div>
-          <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" class="user-avatar">
+
+      <div class="header-right">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Search assigned work...">
         </div>
+
+        <a href="/staff/profile" class="avatar">{{ current_user.full_name[:2].upper() }}</a>
       </div>
     </header>
 
-    <div class="content-area">
-      <h1 class="page-title">My Workspace</h1>
+    <main class="content-container">
       
-      <!-- Metrics -->
-      <div class="metric-grid">
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon"><i class="fa-solid fa-briefcase"></i></div>
+      <!-- Section: Workspace Overview (Template 1) -->
+      <div id="sec-overview" class="view-section">
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div>
+              <div class="card-label">My Projects</div>
+              <div class="card-number" id="card-my-projects">--</div>
+            </div>
+            <div class="card-icon"><i class="fa-solid fa-folder-open"></i></div>
           </div>
-          <div>
-            <div class="metric-val" id="metric-projects">0</div>
-            <div class="metric-label">My Projects</div>
+          <div class="summary-card">
+            <div>
+              <div class="card-label">Open Tasks</div>
+              <div class="card-number" id="card-open-tasks">--</div>
+            </div>
+            <div class="card-icon"><i class="fa-solid fa-list-check"></i></div>
+          </div>
+          <div class="summary-card">
+            <div>
+              <div class="card-label">Due Today</div>
+              <div class="card-number" id="card-due-today" style="color:var(--warning);">--</div>
+            </div>
+            <div class="card-icon"><i class="fa-solid fa-clock"></i></div>
+          </div>
+          <div class="summary-card">
+            <div>
+              <div class="card-label">Completed</div>
+              <div class="card-number" id="card-completed" style="color:var(--success);">--</div>
+            </div>
+            <div class="card-icon"><i class="fa-solid fa-circle-check"></i></div>
           </div>
         </div>
-        
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon" style="color: var(--accent); background: rgba(245, 158, 11, 0.1);"><i class="fa-solid fa-address-book"></i></div>
+
+        <!-- MY TASKS Table -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">MY TASKS</h2>
+            <button onclick="switchSection('tasks-kanban', event)" class="btn btn-outline btn-sm">View Kanban Board</button>
           </div>
-          <div>
-            <div class="metric-val" id="metric-clients">0</div>
-            <div class="metric-label">My Clients</div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Task Title</th>
+                  <th>Project</th>
+                  <th>Priority</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-my-tasks-list">
+                <tr><td colspan="6">Loading assigned tasks...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
-        
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon" style="color: var(--status-new); background: rgba(2, 132, 199, 0.1);"><i class="fa-solid fa-list-check"></i></div>
+
+        <!-- UPCOMING DEADLINES Timeline -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">UPCOMING DEADLINES</h2>
           </div>
-          <div>
-            <div class="metric-val">0</div>
-            <div class="metric-label">Pending Tasks</div>
-          </div>
-        </div>
-        
-        <div class="card metric-card">
-          <div class="metric-top">
-            <div class="metric-icon" style="color: var(--status-completed); background: rgba(22, 163, 74, 0.1);"><i class="fa-solid fa-check-double"></i></div>
-          </div>
-          <div>
-            <div class="metric-val">0</div>
-            <div class="metric-label">Completed Tasks</div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Project Name</th>
+                  <th>Deadline</th>
+                  <th>Priority</th>
+                  <th>Progress Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-upcoming-deadlines">
+                <tr><td colspan="4">Loading upcoming project deadlines...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- Projects Tables -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title" style="flex:1;">My Active Projects</h2>
-          <button class="btn btn-secondary" onclick="openFileModal()"><i class="fa-solid fa-upload"></i> Upload Asset</button>
-          <button class="btn btn-secondary">View All</button>
+      <!-- Section: Task Board Kanban (Template 3) -->
+      <div id="sec-tasks-kanban" class="view-section" style="display:none;">
+        <div class="card-header" style="margin-bottom:1.5rem;">
+          <div>
+            <h2 class="card-title" style="font-size:1.4rem;">My Tasks (Kanban Board)</h2>
+            <p style="color:var(--secondary-text); font-size:0.85rem;">Manage and complete your assigned tasks across workflow stages.</p>
+          </div>
         </div>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Project Name</th>
-                <th>Client</th>
-                <th>Progress</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="projects-tbody">
-              <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
-            </tbody>
-          </table>
+
+        <div class="kanban-grid">
+          <!-- TODO Column -->
+          <div class="kanban-column">
+            <div class="column-header col-todo"><span>TODO</span><span id="cnt-todo">0</span></div>
+            <div id="col-todo-list"></div>
+          </div>
+
+          <!-- IN PROGRESS Column -->
+          <div class="kanban-column">
+            <div class="column-header col-progress"><span>IN PROGRESS</span><span id="cnt-progress">0</span></div>
+            <div id="col-progress-list"></div>
+          </div>
+
+          <!-- REVIEW Column -->
+          <div class="kanban-column">
+            <div class="column-header col-review"><span>REVIEW</span><span id="cnt-review">0</span></div>
+            <div id="col-review-list"></div>
+          </div>
+
+          <!-- COMPLETED Column -->
+          <div class="kanban-column">
+            <div class="column-header col-completed"><span>COMPLETED</span><span id="cnt-completed">0</span></div>
+            <div id="col-completed-list"></div>
+          </div>
+
+          <!-- OVERDUE Column -->
+          <div class="kanban-column">
+            <div class="column-header col-overdue"><span>OVERDUE</span><span id="cnt-overdue">0</span></div>
+            <div id="col-overdue-list"></div>
+          </div>
         </div>
       </div>
 
-    </div>
-  </div>
-
-  
-  <!-- Global Search Modal -->
-  <div class="modal" id="search-modal">
-    <div class="modal-content" style="max-width: 600px; padding: 1rem; align-self: flex-start; margin-top: 10vh;">
-      <div style="display: flex; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
-        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); margin-right: 1rem; font-size: 1.25rem;"></i>
-        <input type="text" id="global-search-input" style="width: 100%; border: none !important; background: transparent !important; font-size: 1.25rem !important; padding: 0 !important; box-shadow: none !important;" placeholder="Search projects, users, or tickets...">
+      <!-- Section: My Projects -->
+      <div id="sec-projects" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">My Assigned Projects</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Project ID</th>
+                  <th>Name</th>
+                  <th>Client</th>
+                  <th>Progress</th>
+                  <th>Stage</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-my-projects">
+                <tr><td colspan="6">Loading projects...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <div id="search-results" style="max-height: 400px; overflow-y: auto; margin-top: 1rem;">
-        <div style="padding: 1rem; text-align: center; color: var(--text-muted);">Type to start searching...</div>
-      </div>
-    </div>
-  </div>
 
-  
-  <!-- File Upload Modal -->
-  <div class="modal" id="file-modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <button class="modal-close" onclick="closeFileModal()"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="modal-title">Upload Project Asset</h3>
-      <form id="file-form" onsubmit="submitFile(event)">
-        <input type="hidden" id="file-project-id">
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Select Project</label>
-          <select id="file-project-select" class="filter-input" required></select>
+      <!-- Section: My Clients -->
+      <div id="sec-clients" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">My Assigned Clients</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Client Name</th>
+                  <th>Email</th>
+                  <th>Mobile</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-my-clients">
+                <tr><td colspan="4">Loading clients...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="filter-group" style="margin-bottom: 1rem;">
-          <label>Asset Category</label>
-          <select id="file-category" class="filter-input">
-            <option value="Design">Design</option>
-            <option value="Document">Document</option>
-            <option value="Other">Other</option>
-          </select>
+      </div>
+
+      <!-- Section: My Websites -->
+      <div id="sec-websites" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">My Assigned Websites</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr><th>Website Name</th><th>Domain</th><th>Status</th></tr>
+              </thead>
+              <tbody id="tbl-my-websites">
+                <tr><td colspan="3">Loading websites...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="filter-group" style="margin-bottom: 1.5rem;">
-          <label>File</label>
-          <input type="file" id="file-input" class="filter-input" required>
+      </div>
+
+      <!-- Section: Schedule -->
+      <div id="sec-schedule" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">My Schedule</h2></div>
+          <p style="color:var(--secondary-text);">Milestones and task deadlines calendar view.</p>
         </div>
-        <button type="submit" class="btn-action" style="width: 100%; justify-content: center; background: rgba(16, 185, 129, 0.15); color: #34d399;">Upload Asset</button>
-      </form>
-    </div>
+      </div>
+
+      <!-- Section: Messages -->
+      <div id="sec-messages" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Messages</h2></div>
+          <div id="tbl-messages">Loading messages...</div>
+        </div>
+      </div>
+
+      <!-- Section: Notifications -->
+      <div id="sec-notifications" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Notifications</h2></div>
+          <div id="tbl-notifications">Loading notifications...</div>
+        </div>
+      </div>
+
+      <!-- Section: My Activity -->
+      <div id="sec-activity" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">My Activity History</h2></div>
+          <p style="color:var(--secondary-text);">Log of your personal workspace activities.</p>
+        </div>
+      </div>
+
+    </main>
   </div>
 
   <script>
-    
-    function openFileModal() {
-       document.getElementById('file-modal').style.display = 'flex';
-       const select = document.getElementById('file-project-select');
-       select.innerHTML = '<option value="">Loading...</option>';
-       fetch('/api/projects').then(r => r.json()).then(d => {
-          if(d.status === 'success') {
-             select.innerHTML = d.data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-          }
-       });
-    }
-    
-    function closeFileModal() {
-       document.getElementById('file-modal').style.display = 'none';
-    }
-
-    async function submitFile(e) {
-       e.preventDefault();
-       const projectId = document.getElementById('file-project-select').value;
-       const file = document.getElementById('file-input').files[0];
-       const category = document.getElementById('file-category').value;
-       
-       if(!projectId || !file) return alert('Missing fields');
-       
-       const formData = new FormData();
-       formData.append('file', file);
-       formData.append('category', category);
-       
-       try {
-         const res = await fetch(`/api/projects/${projectId}/files`, {
-            method: 'POST',
-            body: formData
-         });
-         const data = await res.json();
-         if(data.status === 'success') {
-            alert('File uploaded successfully!');
-            closeFileModal();
-         } else {
-            alert(data.message);
-         }
-       } catch (err) {
-         console.error(err);
-         alert('Upload failed');
-       }
-    }
-
-    async function fetchDashboardData() {
+    async function loadData() {
       try {
-        // Fetch Metrics
-        const statRes = await fetch('/api/stats/staff');
-        const statData = await statRes.json();
-        if (statData.status === 'success') {
-          const stats = statData.data;
-          document.getElementById('metric-projects').innerText = stats.assigned_projects;
-          document.getElementById('metric-clients').innerText = stats.active_projects;
+        const statsRes = await fetch('/api/stats/staff');
+        const statsData = await statsRes.json();
+        if(statsData.status === 'success') {
+          const s = statsData.data;
+          document.getElementById('card-my-projects').innerText = s.assigned_projects || 0;
+          document.getElementById('card-completed').innerText = s.completed_projects || 0;
         }
 
-        // Fetch Projects
+        const taskRes = await fetch('/api/tasks');
+        const taskData = await taskRes.json();
+        if(taskData.status === 'success') {
+          let rows = '';
+          let openCount = 0, dueTodayCount = 0;
+          const todayStr = new Date().toISOString().split('T')[0];
+
+          let todoCards = '', progressCards = '', reviewCards = '', completedCards = '', overdueCards = '';
+          let todoCnt = 0, progressCnt = 0, reviewCnt = 0, completedCnt = 0, overdueCnt = 0;
+
+          taskData.data.forEach(t => {
+            if(t.status !== 'Completed') openCount++;
+            if(t.due_date === todayStr) dueTodayCount++;
+
+            rows += `<tr>
+              <td><strong>${t.title}</strong></td>
+              <td>Enterprise Project</td>
+              <td><span class="badge badge-warning">${t.priority}</span></td>
+              <td>${t.due_date || 'TBD'}</td>
+              <td><span class="badge badge-info">${t.status}</span></td>
+              <td>
+                ${t.status !== 'Completed' ? `<button class="btn btn-teal btn-sm" onclick="completeTask(${t.id})">Mark Complete</button>` : '<i class="fa-solid fa-check" style="color:var(--success);"></i>'}
+              </td>
+            </tr>`;
+
+            const kCard = `
+              <div class="kanban-card">
+                <div class="kanban-card-title">${t.title}</div>
+                <div class="kanban-card-sub">Priority: ${t.priority} | Due: ${t.due_date || 'TBD'}</div>
+                ${t.status !== 'Completed' ? `<button class="btn btn-teal btn-sm" style="width:100%; justify-center;" onclick="completeTask(${t.id})">Mark Complete</button>` : '<span class="badge badge-success">Completed</span>'}
+              </div>
+            `;
+
+            if(t.due_date && t.due_date < todayStr && t.status !== 'Completed') {
+              overdueCards += kCard; overdueCnt++;
+            } else if(t.status === 'Completed') {
+              completedCards += kCard; completedCnt++;
+            } else if(t.status === 'Review') {
+              reviewCards += kCard; reviewCnt++;
+            } else if(t.status === 'In Progress') {
+              progressCards += kCard; progressCnt++;
+            } else {
+              todoCards += kCard; todoCnt++;
+            }
+          });
+
+          document.getElementById('card-open-tasks').innerText = openCount;
+          document.getElementById('card-due-today').innerText = dueTodayCount;
+          document.getElementById('tbl-my-tasks-list').innerHTML = rows || '<tr><td colspan="6">No tasks assigned.</td></tr>';
+
+          document.getElementById('col-todo-list').innerHTML = todoCards || '<small style="color:var(--muted-text);">No todo tasks</small>';
+          document.getElementById('col-progress-list').innerHTML = progressCards || '<small style="color:var(--muted-text);">No tasks in progress</small>';
+          document.getElementById('col-review-list').innerHTML = reviewCards || '<small style="color:var(--muted-text);">No tasks under review</small>';
+          document.getElementById('col-completed-list').innerHTML = completedCards || '<small style="color:var(--muted-text);">No completed tasks</small>';
+          document.getElementById('col-overdue-list').innerHTML = overdueCards || '<small style="color:var(--muted-text);">No overdue tasks</small>';
+
+          document.getElementById('cnt-todo').innerText = todoCnt;
+          document.getElementById('cnt-progress').innerText = progressCnt;
+          document.getElementById('cnt-review').innerText = reviewCnt;
+          document.getElementById('cnt-completed').innerText = completedCnt;
+          document.getElementById('cnt-overdue').innerText = overdueCnt;
+        }
+
         const projRes = await fetch('/api/projects');
         const projData = await projRes.json();
-        if (projData.status === 'success') {
-          const ptbody = document.getElementById('projects-tbody');
-          ptbody.innerHTML = '';
-          const activeProjects = projData.data.filter(p => p.status !== 'Completed');
-          
-          if (activeProjects.length === 0) {
-            ptbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No active projects.</td></tr>';
-            return;
-          }
-          
-          activeProjects.slice(0, 5).forEach(p => {
-            let badgeClass = 'badge-pending';
-            if (p.status === 'Completed') badgeClass = 'badge-completed';
-            if (p.status === 'In Progress') badgeClass = 'badge-progress';
-            
-            ptbody.innerHTML += `
-              <tr>
-                <td>
-                  <div class="table-primary-text">${p.name}</div>
-                  <div class="table-sub-text">${p.project_id}</div>
-                </td>
-                <td>
-                  <div class="table-primary-text">${p.customer_name || 'Unassigned'}</div>
-                </td>
-                <td style="width: 30%;">
-                  <span style="font-size: 0.75rem; font-weight: 600;">${p.progress}%</span>
-                  <div class="progress-container">
-                    <div class="progress-fill" style="width: ${p.progress}%;"></div>
-                  </div>
-                </td>
-                <td>
-                  <span class="badge ${badgeClass}">
-                    <span class="badge-dot"></span> ${p.status}
-                  </span>
-                </td>
-              </tr>
-            `;
+        if(projData.status === 'success') {
+          let rows = '', deadlineRows = '';
+          projData.data.forEach(p => {
+            rows += `<tr>
+              <td style="font-family:monospace;">${p.project_id}</td>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.customer_name || 'Enterprise Client'}</td>
+              <td>${p.progress}%</td>
+              <td><span class="badge badge-info">${p.stage}</span></td>
+              <td><span class="badge badge-success">${p.status}</span></td>
+            </tr>`;
+
+            deadlineRows += `<tr>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.expected_delivery || 'TBD'}</td>
+              <td><span class="badge badge-warning">High Priority</span></td>
+              <td>${p.progress}% Completed (${p.stage})</td>
+            </tr>`;
           });
+          document.getElementById('tbl-my-projects').innerHTML = rows || '<tr><td colspan="6">No assigned projects.</td></tr>';
+          document.getElementById('tbl-upcoming-deadlines').innerHTML = deadlineRows || '<tr><td colspan="4">No upcoming deadlines.</td></tr>';
         }
-      } catch (e) {
-        console.error(e);
+
+        const clientRes = await fetch('/api/clients');
+        const clientData = await clientRes.json();
+        if(clientData.status === 'success') {
+          let rows = '';
+          clientData.data.forEach(c => {
+            rows += `<tr>
+              <td><strong>${c.full_name}</strong></td>
+              <td>${c.email}</td>
+              <td>${c.mobile}</td>
+              <td><span class="badge badge-success">Active</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-my-clients').innerHTML = rows || '<tr><td colspan="4">No assigned clients.</td></tr>';
+        }
+
+        const webRes = await fetch('/api/websites');
+        const webData = await webRes.json();
+        if(webData.status === 'success') {
+          let rows = '';
+          webData.data.forEach(w => {
+            rows += `<tr>
+              <td><strong>${w.name}</strong></td>
+              <td><a href="https://${w.domain}" target="_blank" style="color:var(--primary-teal);">${w.domain || 'N/A'}</a></td>
+              <td><span class="badge badge-success">${w.status}</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-my-websites').innerHTML = rows || '<tr><td colspan="3">No assigned websites.</td></tr>';
+        }
+
+      } catch(err) {
+        console.error('Error loading workspace:', err);
       }
     }
 
-    fetchDashboardData();
+    async function completeTask(id) {
+      if(!confirm('Mark task as completed?')) return;
+      await fetch('/api/tasks/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status: 'Completed'})
+      });
+      loadData();
+    }
+
+    function switchSection(secId, evt) {
+      if(evt) evt.preventDefault();
+      document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
+      const target = document.getElementById('sec-' + secId);
+      if(target) target.style.display = 'block';
+
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
+      if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
   </script>
 </body>
 </html>
