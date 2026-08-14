@@ -3,46 +3,248 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enterprise IT Operations Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>User & Client Portal Login - Website Builders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
     :root {
-      --deep-forest: #14532D;
-      --primary-green: #15803D;
-      --page-bg: #F7FAF8;
-      --main-text: #14251B;
-      --border-color: #D7E4DA;
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --page-bg: #0F172A;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --border-color: rgba(255, 255, 255, 0.12);
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --input-bg: rgba(15, 23, 42, 0.6);
+      --danger: #EF4444;
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
     body {
-      font-family: 'Inter', sans-serif;
-      background: var(--page-bg);
-      color: var(--main-text);
+      background-color: var(--page-bg);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(37, 99, 235, 0.15), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.15), transparent 45%);
+      color: var(--text-main);
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 2rem;
+      padding: 1.5rem;
     }
-    .notice-card {
-      background: #FFFFFF;
+
+    .auth-container {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
+      border-radius: 20px;
       padding: 2.5rem;
-      max-width: 500px;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(20,83,45,0.06);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     }
-    h2 { margin-bottom: 0.75rem; color: var(--deep-forest); }
-    p { margin-bottom: 1.5rem; color: #52635A; line-height: 1.5; font-size: 0.95rem; }
-    .btn { display: inline-block; background: var(--primary-green); color: #FFF; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: 600; }
-    .btn:hover { background: var(--deep-forest); }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .brand-header img {
+      height: 55px;
+      width: auto;
+      object-fit: contain;
+      margin-bottom: 1rem;
+    }
+
+    .auth-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+    }
+
+    .auth-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    }
+
+    select option {
+      background: #0F172A;
+      color: #FFF;
+    }
+
+    .flash-message {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #FCA5A5;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .remember-me input {
+      width: auto;
+    }
+
+    .forgot-link {
+      color: #60A5FA;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), #3B82F6);
+      color: #FFFFFF;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .auth-footer a {
+      color: #60A5FA;
+      text-decoration: none;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
-  <div class="notice-card">
-    <h2>Enterprise Operations Portal</h2>
-    <p>Client login is disabled on this platform. Super Admin, Admin, and Staff users should access the enterprise operations portal below.</p>
-    <a href="/admin/login" class="btn">Proceed to Enterprise Portal Login</a>
+
+  <div class="auth-container">
+    <div class="brand-header">
+      <a href="/index.html" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <img src="/images/logo.png" alt="Website Builders Logo" style="height: 44px; width: auto; object-fit: contain;">
+        <span style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF;">Website <span style="color: #60A5FA;">Builders</span></span>
+      </a>
+      <h1 class="auth-title">Client & User Portal</h1>
+      <p class="auth-subtitle">Sign in to manage your website projects</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-message">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/user/login">
+      <input type="hidden" name="role" value="User">
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label>Access Portal</label>
+        <div style="background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(37, 99, 235, 0.3); color: #60A5FA; padding: 0.65rem 1rem; border-radius: 10px; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-user-check"></i> Client & User Portal
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="user@websitebuilders.com" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <div class="form-options">
+        <label class="remember-me">
+          <input type="checkbox" name="remember" id="remember">
+          <span>Remember me</span>
+        </label>
+        <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        <span>Sign In to Client Portal</span>
+        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Don't have a client account? <a href="/user/register">Register Client Account</a><br><br>
+      Admin / Staff Access: <a href="/admin/access" style="color: #34D399; font-weight: 600; text-decoration: none;">Admin Portal</a> | <a href="/index.html" style="color: var(--text-muted); font-size: 0.82rem;"><i class="fa-solid fa-house"></i> Home</a>
+    </div>
   </div>
+
 </body>
 </html>

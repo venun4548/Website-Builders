@@ -12,6 +12,7 @@ const CONFIG = {
   BUSINESS_PHONE  : '+91 7386204885',
   BUSINESS_ADDRESS: 'Tirupathi, Balaji Colony, 517502',
   BUSINESS_WEBSITE: 'https://website-builders-wine.vercel.app',
+  LOGO_URL        : 'https://website-builders-wine.vercel.app/images/logo.png',
   DELAY_MINUTES   : 5,
   SHARED_SECRET   : 'sec_wb_crm_77c4e569bbd18f0a1c6a58' // Shared secret for Flask-to-GAS auth
 };
@@ -73,26 +74,38 @@ const COL = {
 
 function initialSetup() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  let sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(CONFIG.SHEET_NAME);
-  }
   
-  const headers = [
+  // 1. Enquiries / Contact Submissions Tab
+  let sheetEnquiries = ss.getSheetByName(CONFIG.SHEET_NAME) || ss.insertSheet(CONFIG.SHEET_NAME);
+  const headersEnquiries = [
     'Submission ID', 'Timestamp', 'Customer Name', 'Email', 'Mobile Number',
     'Address', 'Message', 'Email Status', 'Email Sent At', 'Owner Notification Status',
     'Owner Notification Time', 'Ticket Status', 'Assigned To', 'Follow-up Date',
     'Follow-up Status', 'Source Page', 'Remarks'
   ];
-  
-  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  sheet.setFrozenRows(1);
-  sheet.getRange(1, 1, 1, headers.length)
+  sheetEnquiries.getRange(1, 1, 1, headersEnquiries.length).setValues([headersEnquiries]);
+  sheetEnquiries.setFrozenRows(1);
+  sheetEnquiries.getRange(1, 1, 1, headersEnquiries.length)
     .setBackground('#0f172a')
     .setFontColor('#ffffff')
     .setFontWeight('bold');
-  
-  Logger.log('Sheet initialized successfully.');
+
+  // 2. Users Tab (Super Admin, Admin, Staff, Clients)
+  getOrCreateSheet('Users', ['User ID', 'Full Name', 'Email', 'Mobile', 'Role', 'Status', 'Created At', 'Last Login']);
+
+  // 3. Projects Tab
+  getOrCreateSheet('Projects', ['Project ID', 'Project Name', 'Customer ID', 'Submission ID', 'Stage', 'Progress %', 'Status', 'Start Date', 'Delivery Date']);
+
+  // 4. Websites Tab
+  getOrCreateSheet('Websites', ['Website ID', 'Name', 'Domain', 'Client ID', 'Project ID', 'Status', 'Created At']);
+
+  // 5. Tasks Tab
+  getOrCreateSheet('Tasks', ['Task ID', 'Title', 'Project ID', 'Assigned Staff ID', 'Priority', 'Status', 'Due Date', 'Created At']);
+
+  // 6. AuditLogs Tab
+  getOrCreateSheet('AuditLogs', ['Log ID', 'Timestamp', 'Action Event', 'User Email', 'Target User', 'Status']);
+
+  Logger.log('✅ All 6 database tabs (Sheet1/Enquiries, Users, Projects, Websites, Tasks, AuditLogs) initialized successfully!');
 }
 
 /**
@@ -151,16 +164,171 @@ function doPost(e) {
 
   const params = e.parameter;
 
-  // Check if it's an administrative action from Flask Backend
-  if (params.action && params.action === 'update_enquiry') {
-    if (params.token !== CONFIG.SHARED_SECRET) {
-      return jsonResponse('error', 'Unauthorized administrative request.');
-    }
-    return handleAdministrativeUpdate(params);
+  // Handle multi-tab sync from Flask Backend
+  if (params.token && params.token === CONFIG.SHARED_SECRET) {
+    const action = params.action;
+    let data = {};
+    try {
+      if (params.data) data = JSON.parse(params.data);
+    } catch(err) {}
+
+    if (action === 'sync_user') return handleUserSync(data);
+    if (action === 'sync_project') return handleProjectSync(data);
+    if (action === 'sync_website') return handleWebsiteSync(data);
+    if (action === 'sync_task') return handleTaskSync(data);
+    if (action === 'sync_audit') return handleAuditSync(data);
+    if (action === 'update_enquiry') return handleAdministrativeUpdate(params);
   }
 
-  // Otherwise, it's a standard customer form submission
+  // Otherwise, standard customer contact form submission
   return handleCustomerSubmission(params);
+}
+
+function getOrCreateSheet(sheetName, headers) {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 1, 1, headers.length)
+      .setBackground('#0f172a')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+  }
+  return sheet;
+}
+
+function handleUserSync(u) {
+  try {
+    const headers = ['User ID', 'Full Name', 'Email', 'Mobile', 'Role', 'Status', 'Created At', 'Last Login'];
+    const sheet = getOrCreateSheet('Users', headers);
+    const lastRow = sheet.getLastRow();
+    let rowIndex = -1;
+
+    if (lastRow > 1) {
+      const emails = sheet.getRange(2, 3, lastRow - 1, 1).getValues();
+      for (let i = 0; i < emails.length; i++) {
+        if (String(emails[i][0]).toLowerCase() === String(u.email).toLowerCase()) {
+          rowIndex = i + 2;
+          break;
+        }
+      }
+    }
+
+    const rowValues = [u.id || '', u.full_name || '', u.email || '', u.mobile || '', u.role || '', u.is_active ? 'Active' : 'Suspended', u.created_at || '', u.last_login || ''];
+
+    if (rowIndex > -1) {
+      sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return jsonResponse('success', 'User synced to Google Sheets Users tab.');
+  } catch(err) {
+    return jsonResponse('error', err.toString());
+  }
+}
+
+function handleProjectSync(p) {
+  try {
+    const headers = ['Project ID', 'Project Name', 'Customer ID', 'Submission ID', 'Stage', 'Progress %', 'Status', 'Start Date', 'Delivery Date'];
+    const sheet = getOrCreateSheet('Projects', headers);
+    const lastRow = sheet.getLastRow();
+    let rowIndex = -1;
+
+    if (lastRow > 1) {
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(p.project_id)) {
+          rowIndex = i + 2;
+          break;
+        }
+      }
+    }
+
+    const rowValues = [p.project_id || '', p.name || '', p.customer_id || '', p.submission_id || '', p.stage || '', p.progress || 0, p.status || '', p.start_date || '', p.expected_delivery || ''];
+
+    if (rowIndex > -1) {
+      sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return jsonResponse('success', 'Project synced to Google Sheets Projects tab.');
+  } catch(err) {
+    return jsonResponse('error', err.toString());
+  }
+}
+
+function handleWebsiteSync(w) {
+  try {
+    const headers = ['Website ID', 'Name', 'Domain', 'Client ID', 'Project ID', 'Status', 'Created At'];
+    const sheet = getOrCreateSheet('Websites', headers);
+    const lastRow = sheet.getLastRow();
+    let rowIndex = -1;
+
+    if (lastRow > 1) {
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(w.id)) {
+          rowIndex = i + 2;
+          break;
+        }
+      }
+    }
+
+    const rowValues = [w.id || '', w.name || '', w.domain || '', w.client_id || '', w.project_id || '', w.status || '', w.created_at || ''];
+
+    if (rowIndex > -1) {
+      sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return jsonResponse('success', 'Website synced to Google Sheets Websites tab.');
+  } catch(err) {
+    return jsonResponse('error', err.toString());
+  }
+}
+
+function handleTaskSync(t) {
+  try {
+    const headers = ['Task ID', 'Title', 'Project ID', 'Assigned Staff ID', 'Priority', 'Status', 'Due Date', 'Created At'];
+    const sheet = getOrCreateSheet('Tasks', headers);
+    const lastRow = sheet.getLastRow();
+    let rowIndex = -1;
+
+    if (lastRow > 1) {
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(t.id)) {
+          rowIndex = i + 2;
+          break;
+        }
+      }
+    }
+
+    const rowValues = [t.id || '', t.title || '', t.project_id || '', t.assigned_staff_id || '', t.priority || '', t.status || '', t.due_date || '', t.created_at || ''];
+
+    if (rowIndex > -1) {
+      sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return jsonResponse('success', 'Task synced to Google Sheets Tasks tab.');
+  } catch(err) {
+    return jsonResponse('error', err.toString());
+  }
+}
+
+function handleAuditSync(a) {
+  try {
+    const headers = ['Log ID', 'Timestamp', 'Action Event', 'User Email', 'Target User', 'Status'];
+    const sheet = getOrCreateSheet('AuditLogs', headers);
+    const rowValues = [a.id || '', a.timestamp || new Date().toISOString(), a.action || '', a.user_email || '', a.target_user || '', a.status || 'Success'];
+    sheet.appendRow(rowValues);
+    return jsonResponse('success', 'Audit log appended to Google Sheets AuditLogs tab.');
+  } catch(err) {
+    return jsonResponse('error', err.toString());
+  }
 }
 
 function handleAdministrativeUpdate(params) {
@@ -358,7 +526,10 @@ function sendOwnerEmail(submissionId, name, email, mobile, address, message, tim
   const subject = `🔔 New Customer Enquiry - ${submissionId}`;
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; color: #1e293b;">
-      <h2 style="color: #1d4ed8; margin-top: 0;">New Enquiry Received</h2>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #3b82f6;">
+        <img src="${CONFIG.LOGO_URL}" alt="Website Builders Logo" style="height: 42px; width: auto; object-fit: contain;">
+        <h2 style="color: #1d4ed8; margin: 0; font-size: 20px;">New Customer Enquiry Received</h2>
+      </div>
       <p>A new customer has filled out the contact form on Website Builders.</p>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <tr>
@@ -539,8 +710,10 @@ function buildEmailTemplate(customerName, submissionId, originalMessage) {
 <body>
 <div class="wrapper">
   <div class="header">
-    <div class="logo-icon">💻</div>
-    <div class="logo-text"><span>Website</span>Builders</div>
+    <div style="margin-bottom: 10px;">
+      <img src="${CONFIG.LOGO_URL}" alt="Website Builders Logo" style="height: 52px; width: auto; object-fit: contain; vertical-align: middle;">
+    </div>
+    <div class="logo-text"><span style="color:#ffffff;">Website</span> <span style="color:#34d399;">Builders</span></div>
     <div class="tagline">Professional Website Design &amp; Development</div>
   </div>
 

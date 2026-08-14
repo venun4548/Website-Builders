@@ -147,6 +147,10 @@
       font-weight: 600;
       cursor: pointer;
       width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
       transition: background 0.15s ease;
     }
 
@@ -164,21 +168,28 @@
 
   <div class="login-wrapper">
     <div class="login-banner">
-      <div class="brand-logo">
-        <i class="fa-solid fa-tree"></i> Enterprise Operations Platform
+      <div class="brand-logo" style="gap: 0.75rem; display: flex; align-items: center;">
+        <img src="/images/logo.png" alt="Website Builders Logo" style="height: 44px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <span style="font-size: 1.3rem; font-weight: 800; color: #FFFFFF;">Website <span style="color: #22C55E;">Builders</span></span>
       </div>
 
       <div class="banner-text">
-        <h2>Enterprise IT Operations</h2>
-        <p>Unified Platform Administration, Operations Management, and Workforce Workspace.</p>
+        <h2>Website Builders Portal</h2>
+        <p>Unified Enterprise Platform for Clients, Operations, Staff, and Administrators.</p>
       </div>
 
-      <div style="font-size:0.8rem; opacity:0.6;">&copy; 2026 Enterprise SaaS Platform</div>
+      <div style="font-size:0.8rem; opacity:0.6;">&copy; 2026 Website Builders Agency</div>
     </div>
 
     <div class="login-form-container">
-      <h2 class="form-title">Portal Login</h2>
-      <p class="form-sub">Select your account role to access your portal</p>
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <a href="/index.html" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.75rem;">
+          <img src="/images/logo.png" alt="Website Builders Logo" style="height: 48px; width: auto; object-fit: contain;">
+          <span style="font-size: 1.35rem; font-weight: 800; color: var(--main-text);">Website <span style="color: var(--primary-green);">Builders</span></span>
+        </a>
+      </div>
+      <h2 class="form-title">Account Portal Login</h2>
+      <p class="form-sub">Select your role to access your dashboard</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -189,27 +200,34 @@
       {% endwith %}
 
       <form method="POST" action="/admin/login">
-        <label for="role">Select Target Role</label>
+        <label for="role">Select Target Administrative Role</label>
         <select name="role" id="role" required>
           <option value="">-- Choose Access Role --</option>
-          <option value="Super Admin">Super Admin (Platform Administration)</option>
-          <option value="Admin">Admin (Operations)</option>
-          <option value="Staff">Staff (My Workspace)</option>
+          <option value="Admin" {% if preset_role == 'Admin' %}selected{% endif %}>Admin (Operations Management)</option>
+          <option value="Staff" {% if preset_role == 'Staff' %}selected{% endif %}>Staff (Workforce Workspace)</option>
+          <option value="Super Admin" {% if preset_role == 'Super Admin' %}selected{% endif %}>Super Admin (System Control)</option>
         </select>
 
-        <label for="email">Work Email</label>
+        <label for="email">Account Email</label>
         <input type="email" id="email" name="email" placeholder="name@company.com" required>
 
         <label for="password">Account Password</label>
         <input type="password" id="password" name="password" placeholder="••••••••" required>
 
-        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem;">
-          <input type="checkbox" id="remember" name="remember" style="width:auto !important; margin-bottom:0;">
-          <label for="remember" style="margin-bottom:0; font-weight:normal; cursor:pointer;">Remember active session</label>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <input type="checkbox" id="remember" name="remember" style="width:auto !important; margin-bottom:0;">
+            <label for="remember" style="margin-bottom:0; font-weight:normal; cursor:pointer;">Remember active session</label>
+          </div>
+          <a href="/forgot-password" style="font-size:0.85rem; color:var(--primary-green); text-decoration:none; font-weight:600;">Forgot Password?</a>
         </div>
 
-        <button type="submit" class="btn-submit">Authenticate Account</button>
+        <button type="submit" class="btn-submit">Sign In to Dashboard</button>
       </form>
+      
+      <div style="margin-top: 1.5rem; text-align: center; font-size: 0.88rem; color: var(--secondary-text);">
+        For Client Portal access: <a href="/user/login" style="color: var(--primary-green); font-weight: 600; text-decoration: none;">Client Login</a> | <a href="/index.html" style="color: var(--secondary-text); text-decoration: underline;">Back to Website</a>
+      </div>
     </div>
   </div>
 

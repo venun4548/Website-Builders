@@ -52,6 +52,41 @@ def check_login_rate_limit(ip):
     RATE_LIMIT_TRACKER[ip].append(now)
     return True
 
+# In-memory Rate Limiter for Admin PIN verification (Max 5 attempts in 15 minutes)
+PIN_RATE_LIMIT_TRACKER = {}  # ip -> list of datetimes
+
+def check_pin_rate_limit(ip):
+    now = datetime.utcnow()
+    timestamps = PIN_RATE_LIMIT_TRACKER.get(ip, [])
+    timestamps = [t for t in timestamps if now - t < timedelta(minutes=15)]
+    PIN_RATE_LIMIT_TRACKER[ip] = timestamps
+    if len(timestamps) >= 5:
+        return False
+    return True
+
+def record_pin_failed_attempt(ip):
+    now = datetime.utcnow()
+    timestamps = PIN_RATE_LIMIT_TRACKER.get(ip, [])
+    timestamps.append(now)
+    PIN_RATE_LIMIT_TRACKER[ip] = timestamps
+
+def clear_pin_failed_attempts(ip):
+    PIN_RATE_LIMIT_TRACKER[ip] = []
+
+def is_admin_access_verified():
+    if current_user.is_authenticated and current_user.role in ['Super Admin', 'Admin', 'Staff']:
+        return True
+    granted = session.get('admin_access_granted', False)
+    expiry_str = session.get('admin_access_expires')
+    if granted and expiry_str:
+        try:
+            expiry = datetime.fromisoformat(expiry_str)
+            if datetime.utcnow() < expiry:
+                return True
+        except Exception:
+            pass
+    return False
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'admin_login'
@@ -59,6 +94,26 @@ login_manager.login_view = 'admin_login'
 # Secret mapping Google Apps Script Web App
 GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec'
 SHARED_SECRET = 'sec_wb_crm_77c4e569bbd18f0a1c6a58'
+
+def sync_to_google_sheets(action, data):
+    def _send():
+        try:
+            import urllib.parse
+            import urllib.request
+            params = {
+                'token': SHARED_SECRET,
+                'action': action,
+                'data': json.dumps(data)
+            }
+            encoded_data = urllib.parse.urlencode(params).encode('utf-8')
+            req = urllib.request.Request(GAS_WEB_APP_URL, data=encoded_data, method='POST')
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                pass
+        except Exception as e:
+            logger.debug(f"Google Sheets background sync notice: {str(e)}")
+
+    import threading
+    threading.Thread(target=_send, daemon=True).start()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -133,6 +188,14 @@ def log_audit(action, user_email, status="Success", target_user=None):
         log = AuditLog(action=action, user_email=user_email, status=status, target_user=target_user)
         db.session.add(log)
         db.session.commit()
+        sync_to_google_sheets('sync_audit', {
+            'id': log.id,
+            'action': action,
+            'user_email': user_email,
+            'status': status,
+            'target_user': target_user or '',
+            'timestamp': log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else ''
+        })
     except Exception as e:
         logger.error(f"Audit Log Error: {str(e)}")
 
@@ -225,91 +288,151 @@ def services_page():
 def contact_page():
     return app.send_static_file('contact.html')
 
+# --- Admin Portal Two-Step Access Verification ---
+
+@app.route('/admin/access', methods=['GET'])
+def admin_access_page():
+    if current_user.is_authenticated and current_user.role in ['Super Admin', 'Admin', 'Staff']:
+        return redirect(url_for('dashboard'))
+    if is_admin_access_verified():
+        return redirect(url_for('admin_login'))
+    return render_template('admin_access_verify.html')
+
+@app.route('/api/admin/access/verify', methods=['POST'])
+def admin_access_verify_api():
+    client_ip = request.remote_addr or '127.0.0.1'
+    
+    if not check_pin_rate_limit(client_ip):
+        log_audit("Temporary Lockout", "system_access_gate", status="Blocked")
+        logger.warning(f"Admin Access PIN rate limit exceeded for IP: {client_ip}")
+        return jsonify({'status': 'error', 'message': 'Too many attempts. Please try again later.'}), 429
+
+    data = request.json or {}
+    entered_pin = str(data.get('pin', '')).strip()
+
+    log_audit("Admin Portal Access Attempt", "system_access_gate", status="Initiated")
+
+    if not entered_pin:
+        return jsonify({'status': 'error', 'message': 'Admin Access PIN is required.'}), 400
+
+    correct_pin = app.config.get('ADMIN_PORTAL_ACCESS_PIN', '7788')
+
+    if entered_pin == correct_pin:
+        clear_pin_failed_attempts(client_ip)
+        session['admin_access_granted'] = True
+        expiry = datetime.utcnow() + timedelta(minutes=app.config.get('ADMIN_PIN_SESSION_MINUTES', 15))
+        session['admin_access_expires'] = expiry.isoformat()
+        
+        log_audit("Successful Admin Portal Access", "system_access_gate", status="Success")
+        logger.info(f"Admin Access PIN verified successfully from IP {client_ip}")
+        return jsonify({
+            'status': 'success',
+            'message': 'Admin Access PIN verified successfully.',
+            'redirect': url_for('admin_login')
+        })
+    else:
+        record_pin_failed_attempt(client_ip)
+        log_audit("Failed Admin Portal Access", "system_access_gate", status="Failed")
+        logger.warning(f"Incorrect Admin Access PIN attempt from IP {client_ip}")
+        return jsonify({'status': 'error', 'message': 'Incorrect Admin Access PIN.'}), 401
+
+@app.route('/login', methods=['GET', 'POST'])
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
         
+    if not is_admin_access_verified():
+        flash('Please enter the Admin Access PIN to continue.', 'error')
+        return redirect(url_for('admin_access_page'))
+
+    preset_role = request.args.get('role', '')
+
     if request.method == 'POST':
         if not check_login_rate_limit(request.remote_addr):
             flash('Too many login attempts. Please wait a minute and try again.', 'error')
-            return render_template('admin_login.html'), 429
+            return render_template('admin_login.html', preset_role=preset_role), 429
 
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
-        selected_role = request.form.get('role', '')
+        selected_role = request.form.get('role', '').strip()
         remember = True if request.form.get('remember') else False
         
         user = User.query.filter_by(email=email).first()
         
         if user and user.is_active and user.check_password(password):
-            if not selected_role:
-                flash('Please select a role to log in.', 'error')
-                return render_template('admin_login.html')
-                
-            if user.role != selected_role:
-                flash(f'Invalid credentials for the selected role.', 'error')
-                return render_template('admin_login.html')
-                
-            if user.role not in ['Super Admin', 'Admin', 'Staff']:
-                flash('Please use the User Portal to log in.', 'error')
-                return render_template('admin_login.html')
+            if user.role == 'User':
+                log_audit("Unauthorized Admin Portal Access Attempt", user.email, status="Denied")
+                flash('Access Denied: Customer accounts cannot access the Admin Portal.', 'error')
+                return render_template('admin_login.html', preset_role=selected_role)
+
+            if selected_role and user.role != selected_role:
+                # If role mismatched, check if Super Admin logging in as Admin
+                if not (user.role == 'Super Admin' and selected_role == 'Admin'):
+                    flash(f'Invalid credentials for the selected role ({selected_role}).', 'error')
+                    return render_template('admin_login.html', preset_role=selected_role)
 
             user.last_login = datetime.utcnow()
             db.session.commit()
             login_user(user, remember=remember)
-            log_audit(f"Logged in", user.email)
+            log_audit("Logged in", user.email)
             logger.info(f"{user.role} login successful: {email}")
             
             if user.role == 'Super Admin':
                 return redirect(url_for('super_admin_dashboard'))
+            elif user.role == 'Admin':
+                return redirect(url_for('admin_dashboard'))
             elif user.role == 'Staff':
                 return redirect(url_for('staff_dashboard'))
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('my_projects'))
             
-        logger.warning(f"Failed Admin login attempt for email: {email}")
-
+        logger.warning(f"Failed login attempt for email: {email}")
         flash('Invalid email or password.', 'error')
         
-    return render_template('admin_login.html')
+    return render_template('admin_login.html', preset_role=preset_role)
 
 @app.route('/user/login', methods=['GET', 'POST'])
 def user_login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
         
+    preset_role = request.args.get('role', 'User')
+
     if request.method == 'POST':
         if not check_login_rate_limit(request.remote_addr):
             flash('Too many login attempts. Please wait a minute and try again.', 'error')
-            return render_template('user_login.html'), 429
+            return render_template('user_login.html', preset_role=preset_role), 429
 
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
+        selected_role = request.form.get('role', '').strip()
         remember = True if request.form.get('remember') else False
         
         user = User.query.filter_by(email=email).first()
         
         if user and user.is_active and user.check_password(password):
-            # Authorize ONLY User role
-            if user.role != 'User':
-                flash('Administrators should use the Admin Portal.', 'error')
-                return render_template('user_login.html')
+            if user.role in ['Super Admin', 'Admin', 'Staff']:
+                flash('Notice: Administrative accounts must log in via the Admin Portal.', 'error')
+                return render_template('user_login.html', preset_role='User')
 
             user.last_login = datetime.utcnow()
             db.session.commit()
             login_user(user, remember=remember)
-            logger.info(f"User login successful: {email}")
+            log_audit("Logged in", user.email)
+            logger.info(f"{user.role} login successful: {email}")
             
-            # Redirect to Vercel frontend if configured
-            frontend_url = os.environ.get('FRONTEND_URL')
-            if frontend_url:
-                return redirect(f"{frontend_url.rstrip('/')}/my-projects")
+            if user.role == 'Super Admin':
+                return redirect(url_for('super_admin_dashboard'))
+            elif user.role == 'Admin':
+                return redirect(url_for('admin_dashboard'))
+            elif user.role == 'Staff':
+                return redirect(url_for('staff_dashboard'))
             return redirect(url_for('my_projects'))
             
         logger.warning(f"Failed User login attempt for email: {email}")
         flash('Invalid email or password.', 'error')
         
-    return render_template('user_login.html')
+    return render_template('user_login.html', preset_role=preset_role)
 
 @app.route('/user/register', methods=['GET', 'POST'])
 def user_register():
@@ -644,27 +767,31 @@ def manage_users():
         return jsonify({'status': 'success', 'data': [u.to_dict() for u in users]})
         
     if request.method == 'POST':
-        data = request.json
-        full_name = data.get('full_name')
-        email = data.get('email')
-        mobile = data.get('mobile')
-        password = data.get('password')
-        role = data.get('role')
-        status = data.get('status', True)
+        data = request.json or {}
+        full_name = str(data.get('full_name', '')).strip()
+        email = str(data.get('email', '')).strip()
+        mobile = str(data.get('mobile', '')).strip()
+        password = str(data.get('password', ''))
+        role = str(data.get('role', 'Staff')).strip()
+        status = bool(data.get('status', True))
         
+        if not full_name or not email or not password:
+            return jsonify({'status': 'error', 'message': 'Full name, email, and password are required'}), 400
+            
         if current_user.role == 'Admin' and role == 'Super Admin':
-            return jsonify({'status': 'error', 'message': 'Permission denied: Cannot create Super Admin'})
+            return jsonify({'status': 'error', 'message': 'Permission denied: Cannot create Super Admin'}), 403
             
         if User.query.filter_by(email=email).first():
-            return jsonify({'status': 'error', 'message': 'Email already exists'})
+            return jsonify({'status': 'error', 'message': 'Email address already registered'}), 400
             
         new_user = User(full_name=full_name, email=email, mobile=mobile, role=role, is_active=status)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
         
+        sync_to_google_sheets('sync_user', new_user.to_dict())
         log_audit('Created User', current_user.email, target_user=email)
-        return jsonify({'status': 'success', 'message': 'User created successfully'})
+        return jsonify({'status': 'success', 'message': f'{role} created successfully', 'data': new_user.to_dict()})
 
 @app.route('/api/super-admin/users/<int:user_id>', methods=['PUT', 'DELETE'])
 @requires_permission('users.limited')
@@ -735,9 +862,12 @@ def get_projects():
 @app.route('/api/projects', methods=['POST'])
 @requires_permission('projects.create')
 def create_project():
-    data = request.json
+    data = request.json or {}
     try:
-        # Generate WBP-YYYYMMDD-XXXX
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'status': 'error', 'message': 'Project name is required'}), 400
+            
         today = datetime.utcnow().strftime('%Y%m%d')
         last_project = Project.query.filter(Project.project_id.like(f"WBP-{today}-%")).order_by(Project.project_id.desc()).first()
         if last_project:
@@ -748,30 +878,41 @@ def create_project():
             
         new_project_id = f"WBP-{today}-{new_num}"
         
+        cust_id_val = data.get('customer_id')
+        if cust_id_val and str(cust_id_val).isdigit():
+            customer_id = int(cust_id_val)
+        else:
+            first_user = User.query.first()
+            customer_id = first_user.id if first_user else current_user.id
+
+        staff_id_val = data.get('assigned_staff_id')
+        assigned_staff_id = int(staff_id_val) if (staff_id_val and str(staff_id_val).isdigit()) else None
+
         start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date() if data.get('start_date') else None
         expected_delivery = datetime.strptime(data.get('expected_delivery'), '%Y-%m-%d').date() if data.get('expected_delivery') else None
         
         new_project = Project(
             project_id=new_project_id,
-            name=data.get('name'),
-            customer_id=data.get('customer_id'),
+            name=name,
+            customer_id=customer_id,
             submission_id=data.get('submission_id'),
             start_date=start_date,
             expected_delivery=expected_delivery,
-            assigned_staff_id=data.get('assigned_staff_id') or None,
+            assigned_staff_id=assigned_staff_id,
             status=data.get('status', 'Not Started'),
             stage=data.get('stage', 'Requirement Gathering'),
-            progress=data.get('progress', 0)
+            progress=int(data.get('progress', 0))
         )
         
         db.session.add(new_project)
         db.session.commit()
+        sync_to_google_sheets('sync_project', new_project.to_dict())
         log_audit('Created Project', current_user.email)
         return jsonify({'status': 'success', 'message': 'Project created successfully', 'data': new_project.to_dict()})
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error creating project: {str(e)}")
-        return jsonify({'status': 'error', 'message': str(e)})
+        return jsonify({'status': 'error', 'message': str(e)}), 400
 
 @app.route('/api/projects/<int:project_id>', methods=['PUT', 'DELETE'])
 @requires_permission('projects.edit')
@@ -1114,15 +1255,26 @@ def manage_tasks():
         if current_user.role not in ['Super Admin', 'Admin', 'Staff']:
             return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
         data = request.json or {}
-        project_id = data.get('project_id')
-        title = data.get('title')
-        if not project_id or not title:
-            return jsonify({'status': 'error', 'message': 'Project ID and title are required'}), 400
+        title = str(data.get('title', '')).strip()
+        if not title:
+            return jsonify({'status': 'error', 'message': 'Task title is required'}), 400
             
+        proj_id_val = data.get('project_id')
+        if proj_id_val and str(proj_id_val).isdigit():
+            project_id = int(proj_id_val)
+        else:
+            first_proj = Project.query.first()
+            if not first_proj:
+                return jsonify({'status': 'error', 'message': 'Please create a Project first before adding tasks'}), 400
+            project_id = first_proj.id
+
+        staff_id_val = data.get('assigned_staff_id')
+        assigned_staff_id = int(staff_id_val) if (staff_id_val and str(staff_id_val).isdigit()) else None
+
         due_date = datetime.strptime(data.get('due_date'), '%Y-%m-%d').date() if data.get('due_date') else None
         task = Task(
             project_id=project_id,
-            assigned_staff_id=data.get('assigned_staff_id'),
+            assigned_staff_id=assigned_staff_id,
             title=title,
             description=data.get('description', ''),
             priority=data.get('priority', 'Normal'),
@@ -1131,6 +1283,7 @@ def manage_tasks():
         )
         db.session.add(task)
         db.session.commit()
+        sync_to_google_sheets('sync_task', task.to_dict())
         log_audit('Created Task', current_user.email)
         return jsonify({'status': 'success', 'message': 'Task created successfully', 'data': task.to_dict()})
 
@@ -1188,20 +1341,30 @@ def manage_websites():
         if current_user.role not in ['Super Admin', 'Admin']:
             return jsonify({'status': 'error', 'message': 'Permission denied'}), 403
         data = request.json or {}
-        name = data.get('name')
-        client_id = data.get('client_id')
-        if not name or not client_id:
-            return jsonify({'status': 'error', 'message': 'Website name and client ID are required'}), 400
+        name = str(data.get('name', '')).strip()
+        if not name:
+            return jsonify({'status': 'error', 'message': 'Website name is required'}), 400
             
+        client_id_val = data.get('client_id')
+        if client_id_val and str(client_id_val).isdigit():
+            client_id = int(client_id_val)
+        else:
+            first_user = User.query.first()
+            client_id = first_user.id if first_user else current_user.id
+
+        proj_id_val = data.get('project_id')
+        project_id = int(proj_id_val) if (proj_id_val and str(proj_id_val).isdigit()) else None
+
         website = Website(
             client_id=client_id,
-            project_id=data.get('project_id'),
+            project_id=project_id,
             name=name,
             domain=data.get('domain', ''),
             status=data.get('status', 'Draft')
         )
         db.session.add(website)
         db.session.commit()
+        sync_to_google_sheets('sync_website', website.to_dict())
         log_audit('Created Website', current_user.email)
         return jsonify({'status': 'success', 'message': 'Website created successfully', 'data': website.to_dict()})
 

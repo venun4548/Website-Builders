@@ -18,5 +18,9 @@ class Config:
     # Password Reset config
     RESET_TOKEN_EXPIRY_MINUTES = 15
 
+    # Admin Access PIN (Two-Step Verification Gate)
+    ADMIN_PORTAL_ACCESS_PIN = os.environ.get('ADMIN_PORTAL_ACCESS_PIN', '7788')
+    ADMIN_PIN_SESSION_MINUTES = 15
+
     # Google Sheets ID for loading dashboard data
     SPREADSHEET_ID = '1BbDho5uGScPbuDxL2nWaNFpwESUsb6CWcY9vJkeYuUk'

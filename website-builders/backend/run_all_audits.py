@@ -49,6 +49,7 @@ class ComprehensiveEnterpriseAudit(unittest.TestCase):
     def test_01_super_admin_full_crud(self):
         print("\n--- [AUDIT 1] Super Admin E2E Operations & Database Persistence ---")
         with self.client:
+            self.client.post('/api/admin/access/verify', json={'pin': '7788'})
             res = self.client.post('/admin/login', data={'email':'super@websitebuilders.com', 'password':'Super@1234', 'role':'Super Admin'}, follow_redirects=True)
             self.assertEqual(res.status_code, 200)
 
@@ -110,6 +111,7 @@ class ComprehensiveEnterpriseAudit(unittest.TestCase):
     def test_02_admin_security_bounds(self):
         print("\n--- [AUDIT 2] Admin Security Guards & Privilege Restrictions ---")
         with self.client:
+            self.client.post('/api/admin/access/verify', json={'pin': '7788'})
             res = self.client.post('/admin/login', data={'email':'admin@websitebuilders.com', 'password':'Admin@1234', 'role':'Admin'}, follow_redirects=True)
             self.assertEqual(res.status_code, 200)
 
@@ -145,6 +147,7 @@ class ComprehensiveEnterpriseAudit(unittest.TestCase):
     def test_03_staff_rbac_and_api_security(self):
         print("\n--- [AUDIT 3] Staff RBAC & Direct URL Security Guards ---")
         with self.client:
+            self.client.post('/api/admin/access/verify', json={'pin': '7788'})
             res = self.client.post('/admin/login', data={'email':'staff@websitebuilders.com', 'password':'Staff@1234', 'role':'Staff'}, follow_redirects=True)
             self.assertEqual(res.status_code, 200)
 

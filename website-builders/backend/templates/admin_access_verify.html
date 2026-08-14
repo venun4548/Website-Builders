@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal Access Verification - Website Builders</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --deep-forest: #14532D;
+      --primary-green: #15803D;
+      --fresh-green: #22C55E;
+      --light-green: #DCFCE7;
+      --page-bg: #F3FAF5;
+      --card-bg: #FFFFFF;
+      --main-text: #183024;
+      --secondary-text: #52635A;
+      --muted-text: #748178;
+      --border-color: #D6E7DB;
+      --input-border: #B8CDBE;
+      --danger: #DC2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+    body {
+      background-color: var(--page-bg);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(34, 197, 94, 0.08), transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(20, 83, 45, 0.08), transparent 45%);
+      color: var(--main-text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .verify-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 10px 30px rgba(20, 83, 45, 0.08);
+      text-align: center;
+    }
+
+    .brand-logo {
+      margin-bottom: 1.25rem;
+    }
+
+    .brand-logo img {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .verify-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--deep-forest);
+      margin-bottom: 0.35rem;
+      letter-spacing: -0.01em;
+    }
+
+    .verify-subtitle {
+      font-size: 0.9rem;
+      color: var(--secondary-text);
+      margin-bottom: 1.75rem;
+    }
+
+    .pin-input-wrap {
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+
+    .pin-input {
+      width: 100%;
+      background-color: #FFFFFF !important;
+      color: var(--main-text) !important;
+      border: 1px solid var(--input-border) !important;
+      border-radius: 8px;
+      padding: 0.75rem 2.5rem 0.75rem 1rem;
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pin-input:focus {
+      border-color: var(--primary-green) !important;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+    }
+
+    .toggle-pin {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-text);
+      cursor: pointer;
+      font-size: 1.05rem;
+    }
+
+    .toggle-pin:hover {
+      color: var(--primary-green);
+    }
+
+    .alert-box {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: left;
+    }
+
+    .alert-error {
+      background: #FEE2E2;
+      color: var(--danger);
+      border: 1px solid #FCA5A5;
+    }
+
+    .alert-success {
+      background: var(--light-green);
+      color: var(--deep-forest);
+      border: 1px solid #A7F3D0;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--primary-green);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      padding: 0.85rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-submit:hover {
+      background: var(--deep-forest);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--secondary-text);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+
+    .btn-back:hover {
+      color: var(--deep-forest);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="verify-card">
+    <div class="brand-logo">
+      <a href="/index.html" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.75rem;">
+        <img src="/images/logo.png" alt="Website Builders Logo">
+        <span style="font-size: 1.4rem; font-weight: 800; color: var(--primary-dark-green); letter-spacing: -0.02em;">Website <span style="color: var(--primary-green);">Builders</span></span>
+      </a>
+    </div>
+
+    <h1 class="verify-title">ADMIN PORTAL ACCESS</h1>
+    <p class="verify-subtitle">Enter your authorized access PIN to continue.</p>
+
+    <div id="alertBox" class="alert-box">
+      <i id="alertIcon" class="fa-solid fa-circle-exclamation"></i>
+      <span id="alertMsg"></span>
+    </div>
+
+    <form id="pinForm" onsubmit="handlePinSubmit(event)">
+      <div class="pin-input-wrap">
+        <input type="password" id="pinInput" class="pin-input" placeholder="Enter Admin Access PIN" required autocomplete="current-password">
+        <i class="fa-regular fa-eye toggle-pin" id="togglePinIcon" onclick="togglePinVisibility()"></i>
+      </div>
+
+      <button type="submit" id="submitBtn" class="btn-submit">
+        <span id="btnText">Continue to Admin Login</span>
+        <i id="btnIcon" class="fa-solid fa-arrow-right"></i>
+      </button>
+    </form>
+
+    <div style="margin-top: 1.25rem;">
+      <a href="/index.html" class="btn-back">
+        <i class="fa-solid fa-arrow-left"></i> Back to Website
+      </a>
+    </div>
+  </div>
+
+  <script>
+    function togglePinVisibility() {
+      const pinInput = document.getElementById('pinInput');
+      const icon = document.getElementById('togglePinIcon');
+      if (pinInput.type === 'password') {
+        pinInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        pinInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+
+    async function handlePinSubmit(e) {
+      e.preventDefault();
+      const pinInput = document.getElementById('pinInput');
+      const alertBox = document.getElementById('alertBox');
+      const alertMsg = document.getElementById('alertMsg');
+      const alertIcon = document.getElementById('alertIcon');
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnIcon = document.getElementById('btnIcon');
+
+      const pin = pinInput.value.trim();
+      if (!pin) return;
+
+      // Loading state
+      submitBtn.disabled = true;
+      btnText.textContent = 'Verifying PIN...';
+      btnIcon.className = 'fa-solid fa-spinner fa-spin';
+      alertBox.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/admin/access/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: pin })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.status === 'success') {
+          // Success state
+          alertBox.className = 'alert-box alert-success';
+          alertIcon.className = 'fa-solid fa-circle-check';
+          alertMsg.textContent = 'Access PIN Verified! Redirecting...';
+          alertBox.style.display = 'flex';
+          
+          btnText.textContent = 'Access Granted';
+          btnIcon.className = 'fa-solid fa-check';
+
+          setTimeout(() => {
+            window.location.href = data.redirect || '/admin/login';
+          }, 600);
+        } else {
+          // Error state
+          alertBox.className = 'alert-box alert-error';
+          alertIcon.className = 'fa-solid fa-circle-exclamation';
+          alertMsg.textContent = data.message || 'Incorrect Admin Access PIN.';
+          alertBox.style.display = 'flex';
+
+          submitBtn.disabled = false;
+          btnText.textContent = 'Continue to Admin Login';
+          btnIcon.className = 'fa-solid fa-arrow-right';
+          pinInput.value = '';
+          pinInput.focus();
+        }
+      } catch (err) {
+        console.error('PIN verification error:', err);
+        alertBox.className = 'alert-box alert-error';
+        alertIcon.className = 'fa-solid fa-triangle-exclamation';
+        alertMsg.textContent = 'Connection error. Please try again.';
+        alertBox.style.display = 'flex';
+
+        submitBtn.disabled = false;
+        btnText.textContent = 'Continue to Admin Login';
+        btnIcon.className = 'fa-solid fa-arrow-right';
+      }
+    }
+  </script>
+</body>
+</html>

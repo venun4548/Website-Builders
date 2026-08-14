@@ -3,45 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Platform Command Center - Enterprise IT Operations</title>
+  <title>Super Admin Command Center - Platform Administration</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     :root {
-      --dark-forest: #052E16;
+      --primary-dark-green: #14532D;
       --deep-forest: #064E3B;
-      --forest-green: #14532D;
-      --primary-green: #15803D;
+      --primary-green: #16A34A;
       --fresh-green: #22C55E;
+      --emerald: #10B981;
       --light-green: #DCFCE7;
-      --very-light-green: #F0FDF4;
-      --page-bg: #F7FAF8;
+      --soft-mint: #D1FAE5;
+      --pale-mint: #ECFDF5;
+      --very-light-bg: #F3FAF5;
       --card-bg: #FFFFFF;
-      --main-text: #14251B;
+      --main-text: #183024;
       --secondary-text: #52635A;
-      --muted-text: #718078;
-      --border-color: #D7E4DA;
-      --input-border: #B8C9BE;
+      --muted-text: #748178;
+      --border-color: #D6E7DB;
+      --input-border: #B8CDBE;
       --success: #16A34A;
-      --warning: #CA8A04;
+      --warning: #D97706;
       --danger: #DC2626;
       --info: #0284C7;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: var(--page-bg); color: var(--main-text); display: flex; min-height: 100vh; font-size: 14px; }
 
-    /* Super Admin Sidebar (Dark Forest / Deep Forest) */
+    body {
+      background-color: var(--very-light-bg);
+      color: var(--main-text);
+      display: flex;
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    /* Left Vertical Sidebar (Light Mint / Soft Visual Language) */
     .sidebar {
       width: 260px;
-      background-color: var(--dark-forest);
-      color: #FFFFFF;
+      background-color: #FFFFFF;
+      border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      z-index: 100;
     }
 
     .sidebar-brand {
@@ -49,29 +59,86 @@
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: #FFFFFF;
+      border-bottom: 1px solid var(--border-color);
+      text-decoration: none;
     }
 
-    .sidebar-brand i { color: var(--fresh-green); font-size: 1.3rem; }
+    .sidebar-brand img {
+      height: 42px;
+      width: auto;
+      object-fit: contain;
+    }
 
-    .sidebar-nav { flex: 1; overflow-y: auto; padding: 1rem 0; }
-    .nav-group-label { padding: 0.75rem 1.5rem 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.45); font-weight: 600; }
-    .nav-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.5rem; color: rgba(255, 255, 255, 0.8); text-decoration: none; font-weight: 500; font-size: 0.9rem; border-left: 3px solid transparent; transition: all 0.15s ease; }
-    .nav-link:hover { background: rgba(255, 255, 255, 0.08); color: #FFFFFF; }
-    .nav-link.active { background: rgba(34, 197, 94, 0.18); color: #FFFFFF; border-left-color: var(--fresh-green); font-weight: 600; }
-    .nav-link i { width: 20px; text-align: center; font-size: 1rem; }
-    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 0;
+    }
+
+    .nav-group-label {
+      padding: 0.85rem 1.5rem 0.35rem;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted-text);
+      font-weight: 700;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 1.5rem;
+      color: var(--secondary-text);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.88rem;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .nav-link:hover {
+      background-color: var(--pale-mint);
+      color: var(--primary-dark-green);
+    }
+
+    .nav-link.active {
+      background-color: var(--light-green);
+      color: #15803D;
+      border-left-color: #15803D;
+      font-weight: 600;
+    }
+
+    .nav-link i {
+      width: 20px;
+      text-align: center;
+      font-size: 1rem;
+      color: var(--secondary-text);
+    }
+
+    .nav-link.active i {
+      color: #15803D;
+    }
+
+    .sidebar-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      background: var(--pale-mint);
+    }
 
     /* App Shell */
-    .app-shell { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .app-shell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
 
+    /* Top Header */
     .top-header {
       background: #FFFFFF;
       border-bottom: 1px solid var(--border-color);
-      padding: 0.85rem 2rem;
+      padding: 1rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -80,91 +147,391 @@
       z-index: 90;
     }
 
-    .breadcrumb { font-size: 0.8rem; color: var(--muted-text); display: flex; align-items: center; gap: 0.4rem; }
-    .page-title { font-size: 1.4rem; font-weight: 700; color: var(--main-text); margin-top: 0.1rem; }
+    .greeting-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--primary-dark-green);
+      letter-spacing: -0.01em;
+    }
 
-    .header-right { display: flex; align-items: center; gap: 1.25rem; }
-    .search-box { position: relative; width: 260px; }
-    .search-box input { background: #FFFFFF !important; color: var(--main-text) !important; border: 1px solid var(--input-border) !important; border-radius: 6px; padding: 0.5rem 0.75rem 0.5rem 2.25rem; font-size: 0.85rem; width: 100%; }
-    .search-box i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted-text); }
+    .greeting-subtitle {
+      font-size: 0.85rem;
+      color: var(--secondary-text);
+      margin-top: 0.15rem;
+    }
 
-    .role-badge { background: var(--very-light-green); color: var(--primary-green); border: 1px solid var(--border-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
-    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--deep-forest); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .search-box {
+      position: relative;
+      width: 280px;
+    }
+
+    .search-box input {
+      background: #FFFFFF !important;
+      color: var(--main-text) !important;
+      border: 1px solid var(--input-border) !important;
+      border-radius: 20px;
+      padding: 0.5rem 1rem 0.5rem 2.5rem;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 0.9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-text);
+    }
+
+    .header-icon-btn {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--pale-mint);
+      border: 1px solid var(--border-color);
+      color: var(--primary-dark-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
+
+    .header-icon-btn:hover {
+      background: var(--light-green);
+    }
+
+    .notification-dot {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .user-profile-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--deep-forest);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--main-text);
+    }
+
+    .user-role-lbl {
+      font-size: 0.75rem;
+      color: var(--secondary-text);
+    }
 
     /* Content Area */
-    .content-container { padding: 2rem; flex: 1; overflow-y: auto; }
+    .content-container {
+      padding: 2rem;
+      flex: 1;
+      overflow-y: auto;
+    }
 
-    /* 8-KPI Area (Template 2 - Image 4 Reference) */
-    .kpi-grid-8 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem; }
-    .kpi-card-white { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 1px 3px rgba(20, 83, 45, 0.04); }
-    .kpi-card-white i { font-size: 1.3rem; color: var(--deep-forest); background: var(--very-light-green); padding: 0.6rem; border-radius: 8px; }
-    .kpi-val { font-size: 1.8rem; font-weight: 700; color: var(--main-text); letter-spacing: -0.02em; }
-    .kpi-lbl { font-size: 0.85rem; font-weight: 500; color: var(--secondary-text); margin-bottom: 0.35rem; }
+    /* KPI Cards Row (4 Top Cards) */
+    .kpi-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .kpi-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(20, 83, 45, 0.03);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(20, 83, 45, 0.06);
+    }
+
+    .kpi-info-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .kpi-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--secondary-text);
+      margin-bottom: 0.35rem;
+    }
+
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--primary-dark-green);
+      line-height: 1.1;
+    }
+
+    .kpi-trend {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--success);
+      margin-top: 0.4rem;
+    }
+
+    .kpi-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--light-green);
+      color: var(--deep-forest);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+    }
 
     /* Cards */
-    .card { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(20, 83, 45, 0.04); }
-    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--page-bg); }
-    .card-title { font-size: 1.1rem; font-weight: 700; color: var(--main-text); }
+    .card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 6px rgba(20, 83, 45, 0.03);
+    }
 
-    /* Filter Bar */
-    .filter-bar { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background: #FFFFFF; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; align-items: center; }
-    .filter-bar input, .filter-bar select { max-width: 200px; margin-bottom: 0; }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--very-light-bg);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary-dark-green);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Quick Actions Bar */
+    .quick-actions-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--primary-green);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: var(--deep-forest);
+    }
+
+    .btn-outline {
+      background: #FFFFFF;
+      border-color: var(--input-border);
+      color: var(--main-text);
+    }
+
+    .btn-outline:hover {
+      background: var(--pale-mint);
+      border-color: var(--primary-green);
+      color: var(--primary-dark-green);
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+    }
 
     /* Tables */
     .table-responsive { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-    th { background: var(--very-light-green); color: var(--forest-green); font-weight: 600; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+    th { background: var(--pale-mint); color: var(--primary-dark-green); font-weight: 700; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
     td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); color: var(--main-text); }
-    tbody tr:hover { background-color: var(--page-bg); }
+    tbody tr:hover { background-color: var(--very-light-bg); }
 
     /* Badges */
-    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-    .badge-success { background: var(--very-light-green); color: var(--success); border: 1px solid var(--light-green); }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-success { background: var(--light-green); color: var(--primary-dark-green); border: 1px solid #A7F3D0; }
     .badge-warning { background: #FEF9C3; color: var(--warning); border: 1px solid #FEF08A; }
     .badge-danger { background: #FEE2E2; color: var(--danger); border: 1px solid #FCA5A5; }
     .badge-info { background: #E0F2FE; color: var(--info); border: 1px solid #BAE6FD; }
 
-    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; text-decoration: none; transition: all 0.15s ease; }
-    .btn-primary { background: var(--primary-green); color: #FFFFFF; }
-    .btn-primary:hover { background: var(--deep-forest); }
-    .btn-outline { background: #FFFFFF; border-color: var(--input-border); color: var(--main-text); }
-    .btn-outline:hover { background: var(--page-bg); }
-    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.78rem; }
-
-    /* Right-Side Person Profile Drawer (Template 5) */
-    .drawer-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 46, 22, 0.4); display: none; z-index: 1000; }
-    .drawer-backdrop.active { display: block; }
-    .drawer { position: fixed; top: 0; right: -450px; width: 420px; height: 100vh; background: #FFFFFF; border-left: 1px solid var(--border-color); box-shadow: -5px 0 25px rgba(0,0,0,0.1); transition: right 0.25s ease; z-index: 1001; display: flex; flex-direction: column; }
-    .drawer.active { right: 0; }
-    .drawer-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--very-light-green); }
-    .drawer-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
-
-    /* Inputs - Explicit White Background */
+    /* Forms High Contrast Rule */
     input, select, textarea {
       background-color: #FFFFFF !important;
       color: var(--main-text) !important;
       border: 1px solid var(--input-border) !important;
-      border-radius: 6px;
-      padding: 0.6rem 0.85rem;
-      font-size: 0.9rem;
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.88rem;
       width: 100%;
       outline: none;
     }
 
+    textarea { min-height: 120px; resize: vertical; }
+
     input:focus, select:focus, textarea:focus {
       border-color: var(--primary-green) !important;
-      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: var(--main-text);
+      font-size: 0.84rem;
+      margin-bottom: 0.35rem;
+    }
+
+    /* Modal Backdrop & Drawer */
+    .modal-backdrop {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(6, 78, 59, 0.4); display: none; z-index: 1000;
+      align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal-card {
+      background: #FFFFFF; border: 1px solid var(--border-color);
+      border-radius: 16px; width: 100%; max-width: 500px; padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12); position: relative;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .modal-title { font-size: 1.2rem; font-weight: 800; color: var(--primary-dark-green); }
+
+    .drawer-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(6, 78, 59, 0.3); display: none; z-index: 1000; }
+    .drawer-backdrop.active { display: block; }
+    .drawer { position: fixed; top: 0; right: -450px; width: 420px; height: 100vh; background: #FFFFFF; border-left: 1px solid var(--border-color); box-shadow: -5px 0 25px rgba(0,0,0,0.08); transition: right 0.25s ease; z-index: 1001; display: flex; flex-direction: column; }
+    .drawer.active { right: 0; }
+    .drawer-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; background: var(--pale-mint); }
+    .drawer-body { padding: 1.5rem; flex: 1; overflow-y: auto; }
+
+    /* Alert Banner */
+    .attention-banner {
+      background: #FEF3C7;
+      border: 1px solid #FCD34D;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .attention-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+    }
+
+    .attention-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #92400E;
+      text-decoration: none;
+    }
+
+    .attention-item:hover { text-decoration: underline; }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+      align-items: center;
+    }
+
+    .filter-bar input, .filter-bar select {
+      max-width: 220px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
+      .kpi-grid-4 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
+  <!-- Left Sidebar (Easy Dash Soft Mint Visual Style) -->
   <aside class="sidebar">
-    <div class="sidebar-brand">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span>Platform Admin</span>
-    </div>
+    <a href="/index.html" class="sidebar-brand" style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem; padding: 1.25rem;">
+      <img src="/images/logo.png" alt="Website Builders Logo" style="height: 38px; width: auto; object-fit: contain;">
+      <span style="font-size: 1.15rem; font-weight: 800; color: #14532D; letter-spacing: -0.02em;">Website <span style="color: #16A34A;">Builders</span></span>
+    </a>
 
     <nav class="sidebar-nav">
       <div class="nav-group-label">PLATFORM</div>
@@ -174,7 +541,7 @@
 
       <div class="nav-group-label">PEOPLE & ACCESS</div>
       <a href="/admin/people" class="nav-link" onclick="switchSection('people', event)">
-        <i class="fa-solid fa-users"></i> People & Access
+        <i class="fa-solid fa-users"></i> All People
       </a>
       <a href="/admin/administrators" class="nav-link" onclick="switchSection('administrators', event)">
         <i class="fa-solid fa-user-gear"></i> Administrators
@@ -185,7 +552,7 @@
       <a href="/admin/roles" class="nav-link" onclick="switchSection('roles', event)">
         <i class="fa-solid fa-key"></i> Roles & Permissions
       </a>
-      <a href="/admin/security" class="nav-link" onclick="switchSection('access-logs', event)">
+      <a href="/admin/access-logs" class="nav-link" onclick="switchSection('audit-logs', event)">
         <i class="fa-solid fa-user-shield"></i> Access Logs
       </a>
 
@@ -240,7 +607,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <a href="/logout" class="btn btn-outline btn-sm" style="width:100%; color:#FFF; border-color:rgba(255,255,255,0.2); justify-content:center;">
+      <a href="/logout" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">
         <i class="fa-solid fa-right-from-bracket"></i> Logout
       </a>
     </div>
@@ -249,95 +616,240 @@
   <!-- App Shell -->
   <div class="app-shell">
     <header class="top-header">
-      <div class="header-left">
-        <div class="breadcrumb">
-          <span>Platform</span> / <span id="section-breadcrumb">Command Center</span>
-        </div>
-        <h1 class="page-title" id="page-heading">Platform Command Center</h1>
+      <div>
+        <h1 class="greeting-title">Hello, {{ current_user.full_name }}</h1>
+        <p class="greeting-subtitle">Welcome back. Here's what's happening across your platform today.</p>
       </div>
 
       <div class="header-right">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search platform records...">
+          <input type="text" id="global-search-input" placeholder="Search people, projects, websites..." oninput="handleGlobalSearch()">
         </div>
 
-        <div class="role-badge">Super Admin</div>
-        <a href="/super-admin/profile" class="avatar">{{ current_user.full_name[:2].upper() }}</a>
+        <a href="/admin/notifications" class="header-icon-btn" title="Notifications">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notification-dot"></span>
+        </a>
+
+        <div class="user-profile-menu" onclick="window.location.href='/super-admin/profile'">
+          <div class="avatar">{{ current_user.full_name[:2].upper() }}</div>
+          <div class="user-info">
+            <span class="user-name">{{ current_user.full_name }}</span>
+            <span class="user-role-lbl">Platform Administrator</span>
+          </div>
+        </div>
       </div>
     </header>
 
     <main class="content-container">
-      
-      <!-- Template 2: Super Admin Command Center (Image 4 Reference) -->
+
+      <!-- Quick Actions Bar -->
+      <div class="quick-actions-bar">
+        <button onclick="openModal('modal-create-admin')" class="btn btn-primary">
+          <i class="fa-solid fa-user-plus"></i> + Create Administrator
+        </button>
+        <button onclick="openModal('modal-create-staff')" class="btn btn-primary">
+          <i class="fa-solid fa-id-badge"></i> + Create Staff
+        </button>
+        <button onclick="openModal('modal-create-project')" class="btn btn-primary">
+          <i class="fa-solid fa-folder-plus"></i> + Create Project
+        </button>
+        <button onclick="openModal('modal-create-website')" class="btn btn-primary">
+          <i class="fa-solid fa-globe"></i> + Create Website
+        </button>
+        <button onclick="openModal('modal-create-task')" class="btn btn-primary">
+          <i class="fa-solid fa-square-plus"></i> + Create Task
+        </button>
+        <button onclick="switchSection('roles', event)" class="btn btn-outline">
+          <i class="fa-solid fa-key"></i> Manage Permissions
+        </button>
+      </div>
+
+      <!-- Attention Required Banner -->
+      <div class="attention-banner">
+        <div style="font-weight:700; color:#92400E; display:flex; align-items:center; gap:0.5rem;">
+          <i class="fa-solid fa-triangle-exclamation"></i> ATTENTION REQUIRED:
+        </div>
+        <div class="attention-items">
+          <a href="#" onclick="switchSection('staff', event)" class="attention-item">
+            <i class="fa-solid fa-circle-exclamation"></i> <span id="alert-overloaded-count">0</span> staff members overloaded
+          </a>
+          <a href="#" onclick="switchSection('tasks', event)" class="attention-item">
+            <i class="fa-solid fa-clock"></i> <span id="alert-overdue-tasks">0</span> tasks overdue
+          </a>
+          <a href="#" onclick="switchSection('projects', event)" class="attention-item">
+            <i class="fa-solid fa-calendar-day"></i> <span id="alert-due-projects">0</span> projects approaching deadline
+          </a>
+          <a href="#" onclick="switchSection('system-health', event)" class="attention-item" style="color:var(--success);">
+            <i class="fa-solid fa-circle-check"></i> System health is normal
+          </a>
+        </div>
+      </div>
+
+      <!-- View Section: Command Center -->
       <div id="sec-command-center" class="view-section">
-        <!-- 8-KPI Area -->
-        <div class="kpi-grid-8">
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">Total People</div><div class="kpi-val" id="kpi-total-people">--</div></div>
-            <i class="fa-solid fa-users"></i>
+
+        <!-- 4 KPI Cards -->
+        <div class="kpi-grid-4">
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">TOTAL PEOPLE</span>
+              <span class="kpi-value" id="kpi-total-people">--</span>
+              <span class="kpi-trend"><i class="fa-solid fa-arrow-trend-up"></i> +12 this month</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-users"></i></div>
           </div>
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">Active Today</div><div class="kpi-val" id="kpi-active-today">--</div></div>
-            <i class="fa-solid fa-user-check"></i>
+
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">ACTIVE TODAY</span>
+              <span class="kpi-value" id="kpi-active-today">--</span>
+              <span class="kpi-trend"><i class="fa-solid fa-circle-check"></i> 75% of total</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-user-check"></i></div>
           </div>
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">Administrators</div><div class="kpi-val" id="kpi-admins">--</div></div>
-            <i class="fa-solid fa-user-shield"></i>
+
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">ACTIVE PROJECTS</span>
+              <span class="kpi-value" id="kpi-active-projects">--</span>
+              <span class="kpi-trend"><i class="fa-solid fa-folder-open"></i> 8 due this week</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-diagram-project"></i></div>
           </div>
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">Staff</div><div class="kpi-val" id="kpi-staff">--</div></div>
-            <i class="fa-solid fa-id-badge"></i>
-          </div>
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">Active Projects</div><div class="kpi-val" id="kpi-projects">--</div></div>
-            <i class="fa-solid fa-folder-open"></i>
-          </div>
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">Open Tasks</div><div class="kpi-val" id="kpi-tasks">--</div></div>
-            <i class="fa-solid fa-list-check"></i>
-          </div>
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">System Health</div><div class="kpi-val" style="color:var(--success);">Healthy</div></div>
-            <i class="fa-solid fa-heart-pulse"></i>
-          </div>
-          <div class="kpi-card-white">
-            <div><div class="kpi-lbl">Unread Messages</div><div class="kpi-val" id="kpi-messages">0</div></div>
-            <i class="fa-solid fa-envelope"></i>
+
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">OPEN TASKS</span>
+              <span class="kpi-value" id="kpi-open-tasks">--</span>
+              <span class="kpi-trend" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> <span id="kpi-overdue-tasks-val">0</span> overdue</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-list-check"></i></div>
           </div>
         </div>
 
-        <!-- Main Analytics & Compact System Health -->
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+        <!-- Main Analytics Chart & Right Side Panel -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+          
+          <!-- Central Analytics Chart -->
           <div class="card" style="margin-bottom:0;">
-            <div class="card-header"><h2 class="card-title">Platform Activity Analytics</h2></div>
-            <p style="color:var(--secondary-text); font-size:0.9rem;">Operational metrics query from database logs (`#064E3B`, `#15803D`, `#22C55E`).</p>
+            <div class="card-header">
+              <h2 class="card-title"><i class="fa-solid fa-chart-line"></i> PLATFORM ACTIVITY</h2>
+              <div style="display:flex; gap:0.4rem;">
+                <button class="btn btn-outline btn-sm" onclick="setChartFilter('daily')">Daily</button>
+                <button class="btn btn-primary btn-sm" onclick="setChartFilter('weekly')">Weekly</button>
+                <button class="btn btn-outline btn-sm" onclick="setChartFilter('monthly')">Monthly</button>
+              </div>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="platformActivityChart"></canvas>
+            </div>
           </div>
 
-          <div class="card" style="margin-bottom:0;">
-            <div class="card-header"><h2 class="card-title">Compact System Health</h2></div>
-            <div style="display:flex; flex-direction:column; gap:0.75rem;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Application Server</span><span class="badge badge-success">● Healthy</span>
+          <!-- Right Side Panel: Platform Status & Recent Activity -->
+          <div style="display:flex; flex-direction:column; gap:1.5rem;">
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-header">
+                <h2 class="card-title"><i class="fa-solid fa-server"></i> PLATFORM STATUS</h2>
               </div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Database Engine</span><span class="badge badge-success">● Healthy</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span>API Gateway</span><span class="badge badge-success">● Healthy</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span>Storage System</span><span class="badge badge-success">● Healthy</span>
+              <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:600;">Application</span><span class="badge badge-success">● Operational</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:600;">Database</span><span class="badge badge-success">● Connected</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:600;">API</span><span class="badge badge-success">● Operational</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:600;">Storage</span><span class="badge badge-success">● Healthy</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-weight:600;">Background Jobs</span><span class="badge badge-success">● Running</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Recent Activity Feed -->
+        <!-- Overviews Grid: People, Projects, Security -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+          
+          <!-- Project Stage Overview -->
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-header">
+              <h2 class="card-title"><i class="fa-solid fa-list-progress"></i> PROJECT OVERVIEW</h2>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-weight:600; font-size:0.85rem; margin-bottom:0.3rem;">
+                  <span>Requirement Gathering & Planning</span><span>4 Projects</span>
+                </div>
+                <div style="background:var(--pale-mint); border-radius:6px; height:8px; overflow:hidden;">
+                  <div style="background:var(--primary-green); width:35%; height:100%;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-weight:600; font-size:0.85rem; margin-bottom:0.3rem;">
+                  <span>In Progress & Development</span><span>14 Projects</span>
+                </div>
+                <div style="background:var(--pale-mint); border-radius:6px; height:8px; overflow:hidden;">
+                  <div style="background:var(--fresh-green); width:72%; height:100%;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-weight:600; font-size:0.85rem; margin-bottom:0.3rem;">
+                  <span>Testing & Review</span><span>6 Projects</span>
+                </div>
+                <div style="background:var(--pale-mint); border-radius:6px; height:8px; overflow:hidden;">
+                  <div style="background:var(--emerald); width:50%; height:100%;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-weight:600; font-size:0.85rem; margin-bottom:0.3rem;">
+                  <span>Completed & Delivered</span><span>18 Projects</span>
+                </div>
+                <div style="background:var(--pale-mint); border-radius:6px; height:8px; overflow:hidden;">
+                  <div style="background:var(--primary-dark-green); width:86%; height:100%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Snapshot -->
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-header">
+              <h2 class="card-title"><i class="fa-solid fa-shield-cat"></i> SECURITY SNAPSHOT</h2>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+              <div style="background:var(--pale-mint); padding:1rem; border-radius:10px;">
+                <span style="font-size:0.8rem; font-weight:600; color:var(--secondary-text);">Successful Logins</span>
+                <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-dark-green);" id="sec-success-logins">186</h3>
+              </div>
+              <div style="background:#FEE2E2; padding:1rem; border-radius:10px;">
+                <span style="font-size:0.8rem; font-weight:600; color:var(--danger);">Failed Logins</span>
+                <h3 style="font-size:1.4rem; font-weight:800; color:var(--danger);" id="sec-failed-logins">3</h3>
+              </div>
+              <div style="background:var(--pale-mint); padding:1rem; border-radius:10px;">
+                <span style="font-size:0.8rem; font-weight:600; color:var(--secondary-text);">Active Sessions</span>
+                <h3 style="font-size:1.4rem; font-weight:800; color:var(--primary-dark-green);" id="sec-active-sessions">14</h3>
+              </div>
+              <div style="background:#FEF9C3; padding:1rem; border-radius:10px;">
+                <span style="font-size:0.8rem; font-weight:600; color:var(--warning);">Permission Changes</span>
+                <h3 style="font-size:1.4rem; font-weight:800; color:var(--warning);" id="sec-permission-changes">2</h3>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Recent Audit Trail Feed -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Recent Security & Activity Feed</h2>
-            <button onclick="switchSection('audit-logs', event)" class="btn btn-outline btn-sm">View Audit Trail</button>
+            <h2 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> RECENT PLATFORM ACTIVITY</h2>
+            <button onclick="switchSection('audit-logs', event)" class="btn btn-outline btn-sm">View Full Audit Log</button>
           </div>
           <div class="table-responsive">
             <table>
@@ -356,20 +868,11 @@
             </table>
           </div>
         </div>
+
       </div>
 
-      <!-- Template 5: Super Admin People & Access (Image 3 Reference) -->
+      <!-- Section: All People -->
       <div id="sec-people" class="view-section" style="display:none;">
-        <div class="kpi-grid-8" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
-          <div class="kpi-card-white"><div><div class="kpi-lbl">Total People</div><div class="kpi-val" id="pop-total">--</div></div></div>
-          <div class="kpi-card-white"><div><div class="kpi-lbl">Active Today</div><div class="kpi-val" id="pop-active">--</div></div></div>
-          <div class="kpi-card-white"><div><div class="kpi-lbl">Inactive</div><div class="kpi-val">0</div></div></div>
-          <div class="kpi-card-white"><div><div class="kpi-lbl">Administrators</div><div class="kpi-val" id="pop-admins">--</div></div></div>
-          <div class="kpi-card-white"><div><div class="kpi-lbl">Staff</div><div class="kpi-val" id="pop-staff">--</div></div></div>
-          <div class="kpi-card-white"><div><div class="kpi-lbl">Suspended</div><div class="kpi-val">0</div></div></div>
-        </div>
-
-        <!-- Search / Filter Bar -->
         <div class="filter-bar">
           <input type="text" placeholder="Search people..." id="people-search" oninput="filterPeopleTable()">
           <select id="people-role-filter" onchange="filterPeopleTable()">
@@ -379,15 +882,10 @@
             <option value="Staff">Staff</option>
             <option value="User">User</option>
           </select>
-          <select id="people-status-filter" onchange="filterPeopleTable()">
-            <option value="">All Account Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Suspended">Suspended</option>
-          </select>
-          <button class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fa-solid fa-user-plus"></i> Add Person</button>
+          <button onclick="openModal('modal-create-admin')" class="btn btn-primary btn-sm" style="margin-left:auto;">
+            <i class="fa-solid fa-user-plus"></i> Add Person
+          </button>
         </div>
-
-        <!-- People Table -->
         <div class="card">
           <div class="table-responsive">
             <table>
@@ -395,16 +893,14 @@
                 <tr>
                   <th>Person</th>
                   <th>Role</th>
-                  <th>Department</th>
                   <th>Account Status</th>
                   <th>Activity Status</th>
                   <th>Last Login</th>
-                  <th>Assigned Work</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="tbl-people-body">
-                <tr><td colspan="8">Loading people directory...</td></tr>
+                <tr><td colspan="6">Loading people directory...</td></tr>
               </tbody>
             </table>
           </div>
@@ -413,8 +909,11 @@
 
       <!-- Section: Administrators -->
       <div id="sec-administrators" class="view-section" style="display:none;">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2 class="card-title">Platform Administrators</h2>
+          <button onclick="openModal('modal-create-admin')" class="btn btn-primary btn-sm">+ Create Administrator</button>
+        </div>
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Platform Administrators</h2></div>
           <div class="table-responsive">
             <table>
               <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th></tr></thead>
@@ -426,22 +925,17 @@
 
       <!-- Section: Staff -->
       <div id="sec-staff" class="view-section" style="display:none;">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2 class="card-title">Staff Members & Workload</h2>
+          <button onclick="openModal('modal-create-staff')" class="btn btn-primary btn-sm">+ Create Staff</button>
+        </div>
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Staff Members</h2></div>
           <div class="table-responsive">
             <table>
-              <thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Status</th></tr></thead>
-              <tbody id="tbl-staff"><tr><td colspan="4">Loading staff members...</td></tr></tbody>
+              <thead><tr><th>Staff Member</th><th>Email</th><th>Projects</th><th>Tasks</th><th>Workload</th><th>Status</th></tr></thead>
+              <tbody id="tbl-staff-workload"><tr><td colspan="6">Loading staff workload...</td></tr></tbody>
             </table>
           </div>
-        </div>
-      </div>
-
-      <!-- Section: Roles & Permissions -->
-      <div id="sec-roles" class="view-section" style="display:none;">
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">Roles & Access Control Matrix</h2></div>
-          <p style="color:var(--secondary-text);">RBAC role privilege definitions across Super Admin, Admin, and Staff.</p>
         </div>
       </div>
 
@@ -460,8 +954,11 @@
 
       <!-- Section: Projects -->
       <div id="sec-projects" class="view-section" style="display:none;">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2 class="card-title">Platform Projects</h2>
+          <button onclick="openModal('modal-create-project')" class="btn btn-primary btn-sm">+ Create Project</button>
+        </div>
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Platform Projects</h2></div>
           <div class="table-responsive">
             <table>
               <thead><tr><th>Project ID</th><th>Name</th><th>Client</th><th>Stage</th><th>Progress</th><th>Status</th></tr></thead>
@@ -473,8 +970,11 @@
 
       <!-- Section: Websites -->
       <div id="sec-websites" class="view-section" style="display:none;">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2 class="card-title">Websites Directory</h2>
+          <button onclick="openModal('modal-create-website')" class="btn btn-primary btn-sm">+ Create Website</button>
+        </div>
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Websites Directory</h2></div>
           <div class="table-responsive">
             <table>
               <thead><tr><th>Website Name</th><th>Domain</th><th>Status</th></tr></thead>
@@ -486,8 +986,11 @@
 
       <!-- Section: Tasks -->
       <div id="sec-tasks" class="view-section" style="display:none;">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2 class="card-title">Tasks Overview</h2>
+          <button onclick="openModal('modal-create-task')" class="btn btn-primary btn-sm">+ Create Task</button>
+        </div>
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Tasks Overview</h2></div>
           <div class="table-responsive">
             <table>
               <thead><tr><th>Task Title</th><th>Assigned Staff</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
@@ -497,22 +1000,14 @@
         </div>
       </div>
 
-      <!-- Section: Analytics -->
-      <div id="sec-analytics" class="view-section" style="display:none;">
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">Platform Analytics</h2></div>
-          <p style="color:var(--secondary-text);">Platform activity analytics query.</p>
-        </div>
-      </div>
-
       <!-- Section: Audit Logs -->
       <div id="sec-audit-logs" class="view-section" style="display:none;">
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Audit Logs</h2></div>
+          <div class="card-header"><h2 class="card-title">Platform Audit Trail</h2></div>
           <div class="table-responsive">
             <table>
-              <thead><tr><th>Timestamp</th><th>Action</th><th>User Email</th><th>Target User</th><th>Status</th></tr></thead>
-              <tbody id="tbl-audit-logs"><tr><td colspan="5">Loading logs...</td></tr></tbody>
+              <thead><tr><th>Timestamp</th><th>Action Event</th><th>User Email</th><th>Target User</th><th>Status</th></tr></thead>
+              <tbody id="tbl-audit-logs"><tr><td colspan="5">Loading audit logs...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -521,43 +1016,39 @@
       <!-- Section: System Health -->
       <div id="sec-system-health" class="view-section" style="display:none;">
         <div class="card">
-          <div class="card-header"><h2 class="card-title">System Health Metrics</h2></div>
-          <p style="color:var(--success); font-weight:700;">● Application, Database, API Gateway, and Storage engines are healthy.</p>
+          <div class="card-header"><h2 class="card-title">Detailed System Health</h2></div>
+          <div style="display:flex; flex-direction:column; gap:1rem;" id="sys-health-details">
+            <p style="color:var(--success); font-weight:700;">● Application server, SQLite Database, Flask REST APIs, and Storage engine are running normally.</p>
+          </div>
         </div>
       </div>
 
-      <!-- Section: Messages -->
-      <div id="sec-messages" class="view-section" style="display:none;">
+      <!-- Section: Roles & Permissions -->
+      <div id="sec-roles" class="view-section" style="display:none;">
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Messages</h2></div>
-          <div id="tbl-messages">Loading messages...</div>
-        </div>
-      </div>
-
-      <!-- Section: Notifications -->
-      <div id="sec-notifications" class="view-section" style="display:none;">
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">Notifications</h2></div>
-          <div id="tbl-notifications">Loading notifications...</div>
-        </div>
-      </div>
-
-      <!-- Section: Settings -->
-      <div id="sec-settings" class="view-section" style="display:none;">
-        <div class="card">
-          <div class="card-header"><h2 class="card-title">Platform Settings</h2></div>
-          <p style="color:var(--secondary-text);">Configure platform system parameters.</p>
+          <div class="card-header"><h2 class="card-title">Role-Based Access Control (RBAC) Matrix</h2></div>
+          <div class="table-responsive">
+            <table>
+              <thead><tr><th>Role</th><th>Permissions Level</th><th>User Scope</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Super Admin</strong></td><td><span class="badge badge-success">All Access</span></td><td>Complete Platform Control</td></tr>
+                <tr><td><strong>Admin</strong></td><td><span class="badge badge-info">Operations & Staff</span></td><td>Clients, Projects, Tasks, Team</td></tr>
+                <tr><td><strong>Staff</strong></td><td><span class="badge badge-warning">Assigned Only</span></td><td>Assigned Projects & Tasks</td></tr>
+                <tr><td><strong>Customer (User)</strong></td><td><span class="badge badge-danger">Own Portal Only</span></td><td>Own Projects & Messages</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
     </main>
   </div>
 
-  <!-- Right-Side Person Profile Drawer (Template 5 - Image 3 Reference) -->
+  <!-- Profile Drawer -->
   <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
   <div class="drawer" id="profile-drawer">
     <div class="drawer-header">
-      <h3 style="font-size:1.1rem; font-weight:700;">Person Profile Details</h3>
+      <h3 style="font-size:1.1rem; font-weight:700;">Person Profile</h3>
       <button onclick="closeDrawer()" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="drawer-body" id="drawer-content">
@@ -565,39 +1056,249 @@
     </div>
   </div>
 
+  <!-- Create Admin Modal -->
+  <div class="modal-backdrop" id="modal-create-admin">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Administrator</h3>
+        <button onclick="closeModal('modal-create-admin')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleCreateUser(event, 'Admin')">
+        <div style="margin-bottom:1rem;">
+          <label>Full Name</label>
+          <input type="text" name="full_name" required placeholder="Administrator Name">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Email Address</label>
+          <input type="email" name="email" required placeholder="admin@websitebuilders.com">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Mobile Number</label>
+          <input type="text" name="mobile" required placeholder="+91 9999999999">
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="Set password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Administrator</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Staff Modal -->
+  <div class="modal-backdrop" id="modal-create-staff">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Staff Member</h3>
+        <button onclick="closeModal('modal-create-staff')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleCreateUser(event, 'Staff')">
+        <div style="margin-bottom:1rem;">
+          <label>Full Name</label>
+          <input type="text" name="full_name" required placeholder="Staff Member Name">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Email Address</label>
+          <input type="email" name="email" required placeholder="staff@websitebuilders.com">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Mobile Number</label>
+          <input type="text" name="mobile" required placeholder="+91 8888888888">
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="Set password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Staff Member</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Project Modal -->
+  <div class="modal-backdrop" id="modal-create-project">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Project</h3>
+        <button onclick="closeModal('modal-create-project')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleCreateProject(event)">
+        <div style="margin-bottom:1rem;">
+          <label>Project Name</label>
+          <input type="text" name="name" required placeholder="Website Redesign">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Client</label>
+          <select name="customer_id" id="modal-project-client-select" required></select>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Assigned Staff</label>
+          <select name="assigned_staff_id" id="modal-project-staff-select"></select>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Stage</label>
+          <select name="stage">
+            <option value="Requirement Gathering">Requirement Gathering</option>
+            <option value="Design Phase">Design Phase</option>
+            <option value="Development">Development</option>
+            <option value="Testing & Review">Testing & Review</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Project</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Website Modal -->
+  <div class="modal-backdrop" id="modal-create-website">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Website</h3>
+        <button onclick="closeModal('modal-create-website')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleCreateWebsite(event)">
+        <div style="margin-bottom:1rem;">
+          <label>Website Name</label>
+          <input type="text" name="name" required placeholder="Corporate Web App">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Domain</label>
+          <input type="text" name="domain" placeholder="example.com">
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Client</label>
+          <select name="client_id" id="modal-website-client-select" required></select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Website</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Task Modal -->
+  <div class="modal-backdrop" id="modal-create-task">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Task</h3>
+        <button onclick="closeModal('modal-create-task')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleCreateTask(event)">
+        <div style="margin-bottom:1rem;">
+          <label>Task Title</label>
+          <input type="text" name="title" required placeholder="Develop Navigation Bar">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Project</label>
+          <select name="project_id" id="modal-task-project-select" required></select>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Assigned Staff</label>
+          <select name="assigned_staff_id" id="modal-task-staff-select"></select>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Priority</label>
+          <select name="priority">
+            <option value="Normal">Normal</option>
+            <option value="High">High</option>
+            <option value="Urgent">Urgent</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Task</button>
+      </form>
+    </div>
+  </div>
+
   <script>
     let rawPeopleData = [];
+    let activityChart = null;
 
-    async function loadData() {
+    async function initDashboard() {
+      setupChart();
+      await loadDashboardData();
+    }
+
+    function setupChart() {
+      const ctx = document.getElementById('platformActivityChart').getContext('2d');
+      activityChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            label: 'Platform Activity',
+            data: [42, 65, 88, 74, 95, 60, 82],
+            borderColor: '#16A34A',
+            backgroundColor: 'rgba(22, 163, 74, 0.12)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#14532D',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#D6E7DB' } },
+            y: { grid: { color: '#D6E7DB' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function setChartFilter(type) {
+      if (!activityChart) return;
+      if (type === 'daily') {
+        activityChart.data.labels = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
+        activityChart.data.datasets[0].data = [12, 28, 45, 60, 52, 40];
+      } else if (type === 'weekly') {
+        activityChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        activityChart.data.datasets[0].data = [42, 65, 88, 74, 95, 60, 82];
+      } else {
+        activityChart.data.labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        activityChart.data.datasets[0].data = [240, 310, 290, 420];
+      }
+      activityChart.update();
+    }
+
+    async function loadDashboardData() {
       try {
         const statsRes = await fetch('/api/stats/super-admin');
         const statsData = await statsRes.json();
-        if(statsData.status === 'success') {
+        if (statsData.status === 'success') {
           const s = statsData.data;
           document.getElementById('kpi-total-people').innerText = s.total_users || 0;
           document.getElementById('kpi-active-today').innerText = s.total_users || 0;
-          document.getElementById('kpi-admins').innerText = s.total_admins || 0;
-          document.getElementById('kpi-staff').innerText = s.total_staff || 0;
-          document.getElementById('kpi-projects').innerText = s.active_projects || 0;
-
-          document.getElementById('pop-total').innerText = s.total_users || 0;
-          document.getElementById('pop-active').innerText = s.total_users || 0;
-          document.getElementById('pop-admins').innerText = s.total_admins || 0;
-          document.getElementById('pop-staff').innerText = s.total_staff || 0;
+          document.getElementById('kpi-active-projects').innerText = s.active_projects || 0;
         }
 
-        const taskRes = await fetch('/api/tasks');
-        const taskData = await taskRes.json();
-        if(taskData.status === 'success') {
-          let openCnt = taskData.data.filter(t => t.status !== 'Completed').length;
-          document.getElementById('kpi-tasks').innerText = openCnt;
+        const tasksRes = await fetch('/api/tasks');
+        const tasksData = await tasksRes.json();
+        if (tasksData.status === 'success') {
+          const openTasks = tasksData.data.filter(t => t.status !== 'Completed');
+          const overdueTasks = tasksData.data.filter(t => t.status === 'Overdue');
+          document.getElementById('kpi-open-tasks').innerText = openTasks.length;
+          document.getElementById('kpi-overdue-tasks-val').innerText = overdueTasks.length;
+          document.getElementById('alert-overdue-tasks').innerText = overdueTasks.length;
+
+          let taskRows = '';
+          tasksData.data.forEach(t => {
+            taskRows += `<tr>
+              <td><strong>${t.title}</strong></td>
+              <td>${t.assigned_staff_name || 'Unassigned'}</td>
+              <td><span class="badge badge-info">${t.priority}</span></td>
+              <td><span class="badge ${t.status === 'Completed' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
+              <td>${t.due_date || 'N/A'}</td>
+            </tr>`;
+          });
+          document.getElementById('tbl-tasks').innerHTML = taskRows || '<tr><td colspan="5">No tasks available.</td></tr>';
         }
 
         const auditRes = await fetch('/api/super-admin/audit-logs');
         const auditData = await auditRes.json();
-        if(auditData.status === 'success') {
+        if (auditData.status === 'success') {
           let rows = '';
-          auditData.data.slice(0, 10).forEach(a => {
+          auditData.data.slice(0, 8).forEach(a => {
             rows += `<tr>
               <td>${new Date(a.timestamp).toLocaleString()}</td>
               <td><strong>${a.action}</strong></td>
@@ -606,22 +1307,86 @@
               <td><span class="badge badge-success">${a.status}</span></td>
             </tr>`;
           });
-          document.getElementById('tbl-cmd-activity').innerHTML = rows;
-          document.getElementById('tbl-audit-logs').innerHTML = rows;
+          document.getElementById('tbl-cmd-activity').innerHTML = rows || '<tr><td colspan="5">No recent audit activity.</td></tr>';
+          document.getElementById('tbl-audit-logs').innerHTML = rows || '<tr><td colspan="5">No audit logs available.</td></tr>';
         }
 
         const usersRes = await fetch('/api/super-admin/users');
         const usersData = await usersRes.json();
-        if(usersData.status === 'success') {
+        if (usersData.status === 'success') {
           rawPeopleData = usersData.data;
           renderPeopleTable(rawPeopleData);
+          populateSelectOptions(rawPeopleData);
+
+          const admins = rawPeopleData.filter(u => u.role === 'Super Admin' || u.role === 'Admin');
+          let adminRows = '';
+          admins.forEach(u => {
+            adminRows += `<tr>
+              <td><strong>${u.full_name}</strong></td>
+              <td>${u.email}</td>
+              <td>${u.role}</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td>${u.last_login ? new Date(u.last_login).toLocaleString() : 'Just now'}</td>
+            </tr>`;
+          });
+          document.getElementById('tbl-administrators').innerHTML = adminRows;
+
+          const clients = rawPeopleData.filter(u => u.role === 'User');
+          let clientRows = '';
+          clients.forEach(c => {
+            clientRows += `<tr>
+              <td><strong>${c.full_name}</strong></td>
+              <td>${c.email}</td>
+              <td>${c.mobile}</td>
+              <td><span class="badge badge-success">Active</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-clients').innerHTML = clientRows || '<tr><td colspan="4">No clients registered.</td></tr>';
         }
+
+        const workloadRes = await fetch('/api/admin/workload');
+        const workloadData = await workloadRes.json();
+        const wlList = (workloadData.status === 'success' && workloadData.data) ? workloadData.data : [];
+        
+        const staffMembers = rawPeopleData.filter(u => u.role === 'Staff');
+        let staffRows = '';
+        let overloadedCount = 0;
+
+        staffMembers.forEach(s => {
+          const w = wlList.find(item => item.email === s.email);
+          const pCount = w ? w.projects_count : 0;
+          const tCount = w ? w.tasks_count : 0;
+          const loadPct = w ? w.load_percentage : 0;
+          const state = w ? w.state : (loadPct > 85 ? 'Overloaded' : 'Balanced');
+
+          if (state === 'Overloaded') overloadedCount++;
+
+          staffRows += `<tr>
+            <td><strong>${s.full_name}</strong></td>
+            <td>${s.email}</td>
+            <td>${pCount} Projects</td>
+            <td>${tCount} Tasks</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="flex:1; background:var(--pale-mint); height:8px; border-radius:4px; overflow:hidden;">
+                  <div style="background:${loadPct > 85 ? 'var(--danger)' : 'var(--primary-green)'}; width:${loadPct}%; height:100%;"></div>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700;">${loadPct}%</span>
+              </div>
+            </td>
+            <td><span class="badge ${s.is_active ? 'badge-success' : 'badge-danger'}">${s.is_active ? 'Active' : 'Suspended'}</span></td>
+          </tr>`;
+        });
+        document.getElementById('tbl-staff-workload').innerHTML = staffRows || '<tr><td colspan="6">No staff members found.</td></tr>';
+        document.getElementById('alert-overloaded-count').innerText = overloadedCount;
 
         const projRes = await fetch('/api/projects');
         const projData = await projRes.json();
-        if(projData.status === 'success') {
+        if (projData.status === 'success') {
           let rows = '';
+          let upcomingDue = 0;
           projData.data.forEach(p => {
+            if (p.status !== 'Completed') upcomingDue++;
             rows += `<tr>
               <td style="font-family:monospace;">${p.project_id}</td>
               <td><strong>${p.name}</strong></td>
@@ -631,63 +1396,109 @@
               <td><span class="badge badge-success">${p.status}</span></td>
             </tr>`;
           });
-          document.getElementById('tbl-projects').innerHTML = rows;
+          document.getElementById('tbl-projects').innerHTML = rows || '<tr><td colspan="6">No projects available.</td></tr>';
+          document.getElementById('alert-due-projects').innerText = upcomingDue;
+          populateProjectSelects(projData.data);
         }
 
-      } catch(err) { console.error('Error loading data:', err); }
+        const webRes = await fetch('/api/websites');
+        const webData = await webRes.json();
+        if (webData.status === 'success') {
+          let rows = '';
+          webData.data.forEach(w => {
+            rows += `<tr>
+              <td><strong>${w.name}</strong></td>
+              <td>${w.domain || '-'}</td>
+              <td><span class="badge badge-success">${w.status}</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-websites').innerHTML = rows || '<tr><td colspan="3">No websites found.</td></tr>';
+        }
+
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+      }
     }
 
     function renderPeopleTable(data) {
       let rows = '';
       data.forEach(u => {
-        const accBadge = u.is_active ? '<span class="badge badge-success">Account: Active</span>' : '<span class="badge badge-danger">Account: Suspended</span>';
+        const statusBadge = u.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Suspended</span>';
         const actBadge = '<span class="badge badge-info">● Online</span>';
         rows += `<tr>
           <td><strong>${u.full_name}</strong><br><small style="color:var(--muted-text)">${u.email}</small></td>
           <td>${u.role}</td>
-          <td>Operations</td>
-          <td>${accBadge}</td>
+          <td>${statusBadge}</td>
           <td>${actBadge}</td>
-          <td>${u.last_login ? new Date(u.last_login).toLocaleString() : 'Today 10:42 AM'}</td>
-          <td>8 Projects</td>
+          <td>${u.last_login ? new Date(u.last_login).toLocaleString() : 'Just now'}</td>
           <td><button class="btn btn-outline btn-sm" onclick='openProfileDrawer(${JSON.stringify(u)})'>View</button></td>
         </tr>`;
       });
-      document.getElementById('tbl-people-body').innerHTML = rows || '<tr><td colspan="8">No records match filter.</td></tr>';
+      document.getElementById('tbl-people-body').innerHTML = rows || '<tr><td colspan="6">No records match filter.</td></tr>';
     }
 
     function filterPeopleTable() {
       const query = document.getElementById('people-search').value.toLowerCase();
       const roleFilter = document.getElementById('people-role-filter').value;
-      const statusFilter = document.getElementById('people-status-filter').value;
-
       const filtered = rawPeopleData.filter(u => {
         const matchesQuery = u.full_name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query);
         const matchesRole = !roleFilter || u.role === roleFilter;
-        const matchesStatus = !statusFilter || (statusFilter === 'Active' ? u.is_active : !u.is_active);
-        return matchesQuery && matchesRole && matchesStatus;
+        return matchesQuery && matchesRole;
       });
-
       renderPeopleTable(filtered);
+    }
+
+    function populateSelectOptions(users) {
+      const clients = users.filter(u => u.role === 'User');
+      const staff = users.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+
+      let clientOpts = (clients.length > 0 ? clients : users).map(c => `<option value="${c.id}">${c.full_name} (${c.role})</option>`).join('');
+      let staffOpts = staff.map(s => `<option value="${s.id}">${s.full_name} (${s.role})</option>`).join('');
+
+      if (document.getElementById('modal-project-client-select')) {
+        document.getElementById('modal-project-client-select').innerHTML = clientOpts;
+      }
+      if (document.getElementById('modal-website-client-select')) {
+        document.getElementById('modal-website-client-select').innerHTML = clientOpts;
+      }
+      if (document.getElementById('modal-project-staff-select')) {
+        document.getElementById('modal-project-staff-select').innerHTML = '<option value="">Unassigned</option>' + staffOpts;
+      }
+      if (document.getElementById('modal-task-staff-select')) {
+        document.getElementById('modal-task-staff-select').innerHTML = '<option value="">Unassigned</option>' + staffOpts;
+      }
+    }
+
+    function populateProjectSelects(projects) {
+      let opts = projects.map(p => `<option value="${p.id}">${p.name} (${p.project_id})</option>`).join('');
+      if (document.getElementById('modal-task-project-select')) {
+        document.getElementById('modal-task-project-select').innerHTML = opts || '<option value="">No projects available</option>';
+      }
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
+    }
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
     }
 
     function openProfileDrawer(person) {
       document.getElementById('drawer-content').innerHTML = `
         <div style="text-align:center; margin-bottom:1.5rem;">
-          <div style="width:60px; height:60px; border-radius:50%; background:var(--deep-forest); color:#FFF; font-size:1.4rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; margin-bottom:0.5rem;">
-            ${person.full_name.substring(0,2).toUpperCase()}
+          <div style="width:64px; height:64px; border-radius:50%; background:var(--deep-forest); color:#FFF; font-size:1.5rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:0.5rem;">
+            ${(person.full_name || 'U').substring(0,2).toUpperCase()}
           </div>
-          <h3 style="font-size:1.2rem; font-weight:700;">${person.full_name}</h3>
+          <h3 style="font-size:1.25rem; font-weight:800; color:var(--primary-dark-green);">${person.full_name}</h3>
           <p style="color:var(--secondary-text); font-size:0.85rem;">${person.email}</p>
         </div>
-
         <div style="display:flex; flex-direction:column; gap:0.85rem;">
-          <div><label>Role</label><div style="font-weight:600;">${person.role}</div></div>
-          <div><label>Department</label><div style="font-weight:600;">Operations</div></div>
+          <div><label>Role</label><div style="font-weight:700;">${person.role}</div></div>
+          <div><label>Mobile Contact</label><div style="font-weight:600;">${person.mobile || 'N/A'}</div></div>
           <div><label>Account Status</label><div>${person.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Suspended</span>'}</div></div>
-          <div><label>Activity Status</label><div><span class="badge badge-info">● Online</span></div></div>
-          <div><label>Last Login</label><div style="font-weight:500;">${person.last_login ? new Date(person.last_login).toLocaleString() : 'Today'}</div></div>
-          <div><label>Mobile Contact</label><div style="font-weight:500;">${person.mobile}</div></div>
+          <div><label>Last Login</label><div style="font-weight:600;">${person.last_login ? new Date(person.last_login).toLocaleString() : 'Just now'}</div></div>
         </div>
       `;
       document.getElementById('drawer-backdrop').classList.add('active');
@@ -700,16 +1511,144 @@
     }
 
     function switchSection(secId, evt) {
-      if(evt) evt.preventDefault();
+      if (evt) evt.preventDefault();
       document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
       const target = document.getElementById('sec-' + secId);
-      if(target) target.style.display = 'block';
+      if (target) target.style.display = 'block';
 
       document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
-      if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+      if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
     }
 
-    document.addEventListener('DOMContentLoaded', loadData);
+    async function handleCreateUser(e, role) {
+      e.preventDefault();
+      const form = e.target;
+      const payload = {
+        full_name: form.full_name.value.trim(),
+        email: form.email.value.trim(),
+        mobile: form.mobile.value.trim(),
+        password: form.password.value,
+        role: role
+      };
+      try {
+        const res = await fetch('/api/super-admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert(`${role} created successfully!`);
+          closeModal(role === 'Admin' ? 'modal-create-admin' : 'modal-create-staff');
+          form.reset();
+          loadDashboardData();
+        } else {
+          alert(data.message || `Error creating ${role}.`);
+        }
+      } catch(err) {
+        console.error(err);
+        alert(`Server error while creating ${role}.`);
+      }
+    }
+
+    async function handleCreateProject(e) {
+      e.preventDefault();
+      const form = e.target;
+      const payload = {
+        name: form.name.value.trim(),
+        customer_id: form.customer_id.value,
+        assigned_staff_id: form.assigned_staff_id.value || null,
+        stage: form.stage.value
+      };
+      try {
+        const res = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert('Project created successfully!');
+          closeModal('modal-create-project');
+          form.reset();
+          loadDashboardData();
+        } else {
+          alert(data.message || 'Error creating project.');
+        }
+      } catch(err) {
+        console.error(err);
+        alert('Server error while creating project.');
+      }
+    }
+
+    async function handleCreateWebsite(e) {
+      e.preventDefault();
+      const form = e.target;
+      const payload = {
+        name: form.name.value.trim(),
+        domain: form.domain.value.trim(),
+        client_id: form.client_id.value
+      };
+      try {
+        const res = await fetch('/api/websites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert('Website created successfully!');
+          closeModal('modal-create-website');
+          form.reset();
+          loadDashboardData();
+        } else {
+          alert(data.message || 'Error creating website.');
+        }
+      } catch(err) {
+        console.error(err);
+        alert('Server error while creating website.');
+      }
+    }
+
+    async function handleCreateTask(e) {
+      e.preventDefault();
+      const form = e.target;
+      const payload = {
+        title: form.title.value.trim(),
+        project_id: form.project_id.value,
+        assigned_staff_id: form.assigned_staff_id.value || null,
+        priority: form.priority.value
+      };
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert('Task created successfully!');
+          closeModal('modal-create-task');
+          form.reset();
+          loadDashboardData();
+        } else {
+          alert(data.message || 'Error creating task.');
+        }
+      } catch(err) {
+        console.error(err);
+        alert('Server error while creating task.');
+      }
+    }
+
+    function handleGlobalSearch() {
+      const q = document.getElementById('global-search-input').value.toLowerCase();
+      if (!q) return;
+      document.getElementById('people-search').value = q;
+      switchSection('people');
+      filterPeopleTable();
+    }
+
+    document.addEventListener('DOMContentLoaded', initDashboard);
   </script>
 </body>
 </html>

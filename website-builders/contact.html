@@ -199,8 +199,9 @@
   <!-- Navbar -->
   <nav class="navbar scrolled">
     <div class="container nav-container">
-      <a href="index.html" class="logo" style="gap: 0;">
-        <img src="images/logo.png" alt="Website Builders Logo" style="height: 45px; width: auto; object-fit: contain;">
+      <a href="index.html" class="logo" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none;">
+        <img src="images/logo.png" alt="Website Builders Logo" style="height: 44px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));">
+        <span style="font-size: 1.4rem; font-weight: 900; color: #FFFFFF; letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.7);">Website <span style="color: #34D399; font-weight: 900;">Builders</span></span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle Menu">
@@ -209,13 +210,22 @@
 
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
-        <li><a href="index.html">About</a></li>
+        <li><a href="index.html#about">About</a></li>
         <li><a href="services.html">Services</a></li>
-        <li><a href="index.html">Portfolio</a></li>
+        <li><a href="index.html#portfolio">Portfolio</a></li>
         <li><a href="contact.html" class="active">Contact</a></li>
         <li><a href="contact.html" class="btn btn-primary">Start Project</a></li>
+        <li class="user-nav-container">
+          <div class="auth-nav-group">
+            <a href="/user/login" class="btn btn-user-login">
+              <i class="fa-solid fa-user"></i> User Login
+            </a>
+            <a href="/admin/access" class="btn btn-admin-login">
+              <i class="fa-solid fa-shield-halved"></i> Admin Login
+            </a>
+          </div>
+        </li>
       </ul>
-      <div class="user-nav" id="user-nav" style="display: none; align-items: center; gap: 1.5rem; background: rgba(30, 41, 59, 0.6); padding: 0.5rem 1.2rem; border-radius: var(--radius-full); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(8px); margin-left: 1.5rem;"></div>
     </div>
   </nav>
 
@@ -577,26 +587,31 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        const res = await fetch('https://website-builders.onrender.com/api/me', {
-          credentials: 'include'
-        });
-        const user = await res.json();
-        if (user.authenticated) {
-          const userNav = document.getElementById('user-nav');
-          if (userNav) {
-            let html = '';
-            html += `<a href="https://website-builders.onrender.com/profile" style="font-weight: 600; font-size: 0.9rem; color: white;"><i class="fa-solid fa-circle-user" style="color: var(--secondary);"></i> Profile</a>`;
-            html += `<a href="https://website-builders.onrender.com/logout" style="font-weight: 600; font-size: 0.9rem; color: #f87171;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>`;
-            
-            userNav.innerHTML = html;
-            userNav.style.display = 'flex';
+        const backendUrl = window.location.origin.includes('5000') || window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? '' : 'https://website-builders.onrender.com';
+        const res = await fetch(`${backendUrl}/api/me`, { credentials: 'include' });
+        if (res.ok) {
+          const user = await res.json();
+          if (user.authenticated) {
+            const userNav = document.getElementById('user-nav');
+            if (userNav) {
+              let dashUrl = `${backendUrl}/my-projects`;
+              if (user.role === 'Super Admin') dashUrl = `${backendUrl}/super-admin`;
+              else if (user.role === 'Admin') dashUrl = `${backendUrl}/admin`;
+              else if (user.role === 'Staff') dashUrl = `${backendUrl}/staff`;
+
+              userNav.innerHTML = `
+                <a href="${dashUrl}" style="font-weight: 600; font-size: 0.9rem; color: white; display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(30, 41, 59, 0.8); padding: 0.5rem 1rem; border-radius: 99px; border: 1px solid rgba(255,255,255,0.12); text-decoration: none;">
+                  <i class="fa-solid fa-circle-user" style="color: var(--secondary);"></i> ${user.full_name || 'Dashboard'}
+                </a>
+                <a href="${backendUrl}/logout" style="font-weight: 600; font-size: 0.85rem; color: #f87171; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+                  <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                </a>
+              `;
+            }
           }
-        } else {
-            // Redirect unauthenticated users to login
-            window.location.href = 'https://website-builders.onrender.com/user/login';
         }
       } catch (err) {
-        console.error('Session state fetch error:', err);
+        console.log('Public session mode:', err.message);
       }
     });
   </script>
