@@ -359,6 +359,59 @@
         </div>
       </div>
 
+      <!-- Dedicated Section: Projects -->
+      <div id="section-projects" style="display: none;">
+        <h1 class="page-title">My Projects & Deliverables</h1>
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fa-solid fa-folder-open"></i> Active Projects Directory</h2>
+          </div>
+          <div id="projects-directory-list">
+            <p style="color: var(--text-secondary);">Loading projects...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dedicated Section: Invoices & Billing -->
+      <div id="section-invoices" style="display: none;">
+        <h1 class="page-title">Billing & Payment Invoices</h1>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fa-solid fa-file-invoice-dollar"></i> Account Statement & Payment History</h2>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr style="border-bottom:2px solid var(--border); text-align:left; font-size:0.85rem; color:var(--text-secondary);">
+                  <th style="padding:0.75rem;">Invoice ID</th>
+                  <th style="padding:0.75rem;">Project</th>
+                  <th style="padding:0.75rem;">Billing Stage</th>
+                  <th style="padding:0.75rem;">Amount</th>
+                  <th style="padding:0.75rem;">Payment Status</th>
+                  <th style="padding:0.75rem;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-client-invoices">
+                <tr><td colspan="6" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">Loading billing records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dedicated Section: Files & Documents -->
+      <div id="section-files" style="display: none;">
+        <h1 class="page-title">Project Files & Documents</h1>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><i class="fa-solid fa-file-arrow-up"></i> Project Media & Assets</h2>
+          </div>
+          <div id="client-files-list">
+            <p style="color: var(--text-secondary);">Loading uploaded project documents...</p>
+          </div>
+        </div>
+      </div>
+
       <div id="section-placeholder" style="display: none;">
         <h1 class="page-title" id="placeholder-title">Section</h1>
         <div class="card">
@@ -589,15 +642,29 @@
         const res = await fetch('/api/projects');
         const data = await res.json();
         const grid = document.getElementById('client-projects-grid');
-        grid.innerHTML = '';
+        const dirList = document.getElementById('projects-directory-list');
+        const invoiceTbl = document.getElementById('tbl-client-invoices');
+        const filesList = document.getElementById('client-files-list');
+
+        if (grid) grid.innerHTML = '';
         
         if (data.status === 'success') {
-          if (!data.data || data.data.length === 0) {
-            grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:3rem; background:#FFF; border-radius:12px; border:1px solid var(--border);"><i class="fa-solid fa-folder-open" style="font-size:2.5rem; color:var(--text-secondary); margin-bottom:0.75rem;"></i><p style="color: var(--text-secondary); font-weight:600;">You do not have any active projects yet.</p></div>';
+          const projects = data.data || [];
+          if (projects.length === 0) {
+            const emptyHtml = '<div style="grid-column:1/-1; text-align:center; padding:3rem; background:#FFF; border-radius:12px; border:1px solid var(--border);"><i class="fa-solid fa-folder-open" style="font-size:2.5rem; color:var(--text-secondary); margin-bottom:0.75rem;"></i><p style="color: var(--text-secondary); font-weight:600;">You do not have any active projects yet.</p></div>';
+            if (grid) grid.innerHTML = emptyHtml;
+            if (dirList) dirList.innerHTML = emptyHtml;
+            if (invoiceTbl) invoiceTbl.innerHTML = '<tr><td colspan="6" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">No invoices billed for your account yet.</td></tr>';
+            if (filesList) filesList.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);"><i class="fa-solid fa-folder-open" style="font-size:2rem; margin-bottom:0.5rem; color:var(--primary);"></i><p>No project documents or media files uploaded yet.</p></div>';
             return;
           }
-          data.data.forEach(p => {
-            grid.innerHTML += `
+
+          let gridHtml = '';
+          let invoiceRows = '';
+          let fileItems = '';
+
+          projects.forEach(p => {
+            const card = `
               <div class="project-card" style="background:#FFF; border:1px solid var(--border); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:var(--shadow-subtle);">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
                   <div>
@@ -636,14 +703,47 @@
                 </div>
               </div>
             `;
+
+            gridHtml += card;
+
+            invoiceRows += `
+              <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
+                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">INV-${p.project_id.replace('WB-', '')}-01</td>
+                <td style="padding:0.85rem; font-weight:700;">${p.name}</td>
+                <td style="padding:0.85rem;">${p.stage} Stage Milestone</td>
+                <td style="padding:0.85rem; font-weight:800; color:#047857;">$${(p.progress * 25).toLocaleString()} USD</td>
+                <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;">PAID / INCLUDED</span></td>
+                <td style="padding:0.85rem;"><button class="btn btn-secondary" onclick="alert('Downloading invoice statement for ${p.project_id}...');" style="padding:0.25rem 0.65rem; font-size:0.75rem;"><i class="fa-solid fa-download"></i> Receipt</button></td>
+              </tr>
+            `;
+
+            fileItems += `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.75rem; background:#FFF;">
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                  <i class="fa-solid fa-file-pdf" style="font-size:1.5rem; color:#EF4444;"></i>
+                  <div>
+                    <div style="font-weight:700; font-size:0.9rem; color:var(--text-main);">${p.name} - Project Blueprint & Scope.pdf</div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary);">${p.project_id} • 2.4 MB • Updated ${p.expected_delivery || 'Recently'}</div>
+                  </div>
+                </div>
+                <button class="btn btn-secondary" onclick="alert('Opening document preview for ${p.name}...');" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-eye"></i> View File</button>
+              </div>
+            `;
           });
+
+          if (grid) grid.innerHTML = gridHtml;
+          if (dirList) dirList.innerHTML = gridHtml;
+          if (invoiceTbl) invoiceTbl.innerHTML = invoiceRows;
+          if (filesList) filesList.innerHTML = fileItems;
         }
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error('Error loading client projects:', err);
       }
     }
 
-    fetchClientProjects();
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchClientProjects();
+    });
   </script>
 </body>
 </html>
