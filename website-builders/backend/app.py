@@ -270,10 +270,70 @@ def page_not_found(e):
         return jsonify({'status': 'error', 'message': 'API endpoint not found'}), 404
     return redirect(url_for('dashboard'))
 
-# Database initialization & Admin Seed
 def init_db():
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            logger.error(f"create_all error: {e}")
+
+        # 1. Seed Accounts FIRST & Commit
+        try:
+            super_admin = User.query.filter_by(email='super@websitebuilders.com').first()
+            if not super_admin:
+                super_admin = User(
+                    full_name='Super Administrator',
+                    email='super@websitebuilders.com',
+                    mobile='+91 0000000000',
+                    role='Super Admin',
+                    is_active=True
+                )
+                db.session.add(super_admin)
+            super_admin.set_password('Super@1234')
+
+            admin = User.query.filter_by(email='admin@websitebuilders.com').first()
+            if not admin:
+                admin = User(
+                    full_name='System Administrator',
+                    email='admin@websitebuilders.com',
+                    mobile='+91 7386204885',
+                    role='Admin',
+                    is_active=True
+                )
+                db.session.add(admin)
+            admin.set_password('Admin@1234')
+                
+            staff = User.query.filter_by(email='staff@websitebuilders.com').first()
+            if not staff:
+                staff = User(
+                    full_name='Staff Member',
+                    email='staff@websitebuilders.com',
+                    mobile='+91 1111111111',
+                    role='Staff',
+                    is_active=True
+                )
+                db.session.add(staff)
+            staff.set_password('Staff@1234')
+
+            normal_user = User.query.filter_by(email='user@websitebuilders.com').first()
+            if not normal_user:
+                normal_user = User(
+                    full_name='Venu Gopal',
+                    email='user@websitebuilders.com',
+                    mobile='+91 7386204885',
+                    role='User',
+                    is_active=True
+                )
+                db.session.add(normal_user)
+            normal_user.set_password('User@1234')
+
+            db.session.commit()
+            logger.info("Database seeded successfully with Super Admin, Admin, Staff, and User roles.")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error seeding accounts: {e}")
+
+        # 2. Legacy schema migration statements
         for col_sql in [
             "ALTER TABLE users ADD COLUMN assigned_staff_id INTEGER REFERENCES users(id)",
             "ALTER TABLE projects ADD COLUMN description TEXT",
@@ -309,61 +369,6 @@ def init_db():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
-
-        # Seed Super Admin
-        super_admin = User.query.filter_by(email='super@websitebuilders.com').first()
-        if not super_admin:
-            super_admin = User(
-                full_name='Super Administrator',
-                email='super@websitebuilders.com',
-                mobile='+91 0000000000',
-                role='Super Admin',
-                is_active=True
-            )
-            db.session.add(super_admin)
-        super_admin.set_password('Super@1234')
-
-        # Seed an Admin if none exists
-        admin = User.query.filter_by(email='admin@websitebuilders.com').first()
-        if not admin:
-            admin = User(
-                full_name='System Administrator',
-                email='admin@websitebuilders.com',
-                mobile='+91 7386204885',
-                role='Admin',
-                is_active=True
-            )
-            db.session.add(admin)
-        admin.set_password('Admin@1234')
-            
-        # Seed a Staff
-        staff = User.query.filter_by(email='staff@websitebuilders.com').first()
-        if not staff:
-            staff = User(
-                full_name='Staff Member',
-                email='staff@websitebuilders.com',
-                mobile='+91 1111111111',
-                role='Staff',
-                is_active=True
-            )
-            db.session.add(staff)
-        staff.set_password('Staff@1234')
-
-        # Seed a User
-        normal_user = User.query.filter_by(email='user@websitebuilders.com').first()
-        if not normal_user:
-            normal_user = User(
-                full_name='Venu Gopal',
-                email='user@websitebuilders.com',
-                mobile='+91 7386204885',
-                role='User',
-                is_active=True
-            )
-            db.session.add(normal_user)
-        normal_user.set_password('User@1234')
-
-        db.session.commit()
-        logger.info("Database seeded successfully with Super Admin, Admin, Staff, and User roles.")
 
 # Ensure database schema & seed users are initialized automatically on app startup
 with app.app_context():
