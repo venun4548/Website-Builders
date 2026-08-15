@@ -125,6 +125,7 @@ function doGet(e){
 
 // ─────────────── USER MANAGEMENT ─────────────────────────────
 function createUser(d){
+  d = d || {};
   if(!d.email||!d.full_name||!d.password||!d.role) return jr('error','Name, email, password and role are required.');
   const email=d.email.trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jr('error','Invalid email format.');
@@ -143,6 +144,7 @@ function createUser(d){
 }
 
 function updateUser(d){
+  d = d || {};
   if(!d.user_id&&!d.email) return jr('error','User ID or email required.');
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
   const row=d.user_id?findRowByValue(sheet,U.ID,d.user_id):findRowByValue(sheet,U.EMAIL,d.email.toLowerCase());
@@ -160,6 +162,7 @@ function updateUser(d){
 }
 
 function setUserStatus(d,status){
+  d = d || {};
   if(!d.user_id&&!d.email) return jr('error','User ID or email required.');
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
   const row=d.user_id?findRowByValue(sheet,U.ID,d.user_id):findRowByValue(sheet,U.EMAIL,d.email.toLowerCase());
@@ -194,6 +197,7 @@ function deleteUser(d){
 }
 
 function resetPassword(d){
+  d = d || {};
   if((!d.user_id&&!d.email)||!d.new_password) return jr('error','User ID/email and new password required.');
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
   const row=d.user_id?findRowByValue(sheet,U.ID,d.user_id):findRowByValue(sheet,U.EMAIL,d.email.toLowerCase());
@@ -209,6 +213,7 @@ function resetPassword(d){
 }
 
 function loginUser(d){
+  d = d || {};
   if(!d.email||!d.password) return jr('error','Email and password required.');
   const email=d.email.trim().toLowerCase();
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
@@ -254,6 +259,7 @@ function userRowToDict(r){
 
 // ─────────────── ENQUIRIES ────────────────────────────────────
 function createEnquiry(d){
+  d = d || {};
   if(!d.email||!d.customer_name) return jr('error','Name and email required.');
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
@@ -267,6 +273,7 @@ function createEnquiry(d){
 }
 
 function updateEnquiry(d){
+  d = d || {};
   if(!d.enquiry_id) return jr('error','Enquiry ID required.');
   const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
   const row=findRowByValue(sheet,E.ID,d.enquiry_id);
@@ -291,6 +298,7 @@ function getEnquiries(p){
 
 // ─────────────── PROJECTS ─────────────────────────────────────
 function createProject(d){
+  d = d || {};
   if(!d.project_name||!d.customer_id) return jr('error','Project name and customer ID required.');
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
@@ -304,6 +312,7 @@ function createProject(d){
 }
 
 function updateProject(d){
+  d = d || {};
   if(!d.project_id) return jr('error','Project ID required.');
   const sheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
   const row=findRowByValue(sheet,P.ID,d.project_id);
@@ -342,6 +351,7 @@ function getProjects(p){
 
 // ─────────────── ASSIGNMENTS ──────────────────────────────────
 function assignStaff(d){
+  d = d || {};
   if(!d.project_id||!d.staff_id) return jr('error','Project ID and Staff ID required.');
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
@@ -354,6 +364,7 @@ function assignStaff(d){
 }
 
 function reassignStaff(d){
+  d = d || {};
   if(!d.project_id||!d.new_staff_id) return jr('error','Project ID and new Staff ID required.');
   const sheet=getOrCreateSheet(SHEETS.ASSIGNMENTS,HEADERS.ProjectAssignments);
   const now=getNow();const last=sheet.getLastRow();
@@ -377,6 +388,7 @@ function getAssignments(p){
 
 // ─────────────── PROJECT UPDATES ──────────────────────────────
 function addProjectUpdate(d){
+  d = d || {};
   if(!d.project_id) return jr('error','Project ID required.');
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
@@ -400,6 +412,7 @@ function getProjectUpdates(p){
 
 // ─────────────── MESSAGES ─────────────────────────────────────
 function sendMessage(d){
+  d = d || {};
   if(!d.body&&!d.message) return jr('error','Message body required.');
   if(!d.sender_id) return jr('error','Sender ID required.');
   const lock=LockService.getScriptLock();lock.waitLock(15000);
@@ -470,6 +483,7 @@ function getConversationThread(p){
 }
 
 function markMessageRead(d){
+  d = d || {};
   const sheet=getOrCreateSheet(SHEETS.MESSAGES,HEADERS.Messages);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',{message:'No messages.'});
@@ -505,6 +519,7 @@ function msgRowToDict(r){
 
 // ─────────────── ACTIVITY LOGS ────────────────────────────────
 function logActivity(d){
+  d = d || {};
   try{
     const sheet=getOrCreateSheet(SHEETS.ACTIVITY,HEADERS.ActivityLogs);
     const now=getNow();const actId=generateId('ACT',SHEETS.ACTIVITY,AL.ID);

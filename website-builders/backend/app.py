@@ -182,6 +182,7 @@ def contact():
 
 # ─── Contact Form (proxies to GAS) ───────────────────────────
 @app.route('/api/contact', methods=['POST'])
+@app.route('/api/enquiry', methods=['POST'])
 def contact_form():
     data = request.get_json(silent=True) or request.form.to_dict()
     result = call_gas('createEnquiry', {
@@ -193,8 +194,17 @@ def contact_form():
         'source_page'  : data.get('sourcePage', 'Contact Page')
     })
     if result.get('status') == 'success':
-        return jsonify({'success': True, 'submissionId': result['data'].get('id', '')})
-    return jsonify({'success': False, 'error': result.get('message', 'Submission failed.')}), 400
+        return jsonify({
+            'status': 'success',
+            'success': True, 
+            'submission_id': result['data'].get('id', '')
+        })
+    return jsonify({
+        'status': 'error',
+        'success': False, 
+        'error': result.get('message', 'Submission failed.'),
+        'message': result.get('message', 'Submission failed.')
+    }), 400
 
 # ─── Login Redirect ──────────────────────────────────────────
 @app.route('/login')
