@@ -1,6 +1,8 @@
 
 import os
 import uuid
+import urllib
+import traceback
 import requests
 import logging
 from datetime import datetime, timedelta
@@ -38,6 +40,15 @@ if os.environ.get('RENDER'):
 # Initialize extensions
 db.init_app(app)
 bcrypt = Bcrypt(app)
+
+# Ensure database tables and seed accounts are created automatically on WSGI / Serverless startup
+with app.app_context():
+    try:
+        db.create_all()
+        if not User.query.filter_by(email='super@websitebuilders.com').first():
+            init_db()
+    except Exception as e:
+        logger.error(f"Error initializing database schema on startup: {str(e)}")
 
 # In-memory IP Rate Limiter
 RATE_LIMIT_TRACKER = {}  # ip -> list of datetimes
@@ -125,7 +136,11 @@ def sync_to_google_sheets(action, data):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except Exception as e:
+        logger.error(f"load_user error: {str(e)}")
+        return None
 
 def role_required(*roles):
     def wrapper(fn):
