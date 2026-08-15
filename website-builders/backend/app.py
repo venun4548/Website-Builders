@@ -212,6 +212,19 @@ def add_security_headers(response):
         response.headers['Pragma'] = 'no-cache'
     return response
 
+@app.errorhandler(500)
+def internal_server_error(e):
+    logger.error(f"Internal Server Error (500) on {request.path}: {str(e)}")
+    if request.path.startswith('/api/'):
+        return jsonify({'status': 'error', 'message': 'Internal Server Error', 'details': str(e)}), 500
+    return "<h1>500 Internal Server Error</h1><p>An unexpected server error occurred. Please refresh or try again.</p>", 500
+
+@app.errorhandler(404)
+def page_not_found(e):
+    if request.path.startswith('/api/'):
+        return jsonify({'status': 'error', 'message': 'API endpoint not found'}), 404
+    return redirect(url_for('dashboard'))
+
 # Database initialization & Admin Seed
 def init_db():
     with app.app_context():
@@ -221,6 +234,13 @@ def init_db():
             "ALTER TABLE projects ADD COLUMN description TEXT",
             "ALTER TABLE projects ADD COLUMN address VARCHAR(255)",
             "ALTER TABLE projects ADD COLUMN latest_update TEXT",
+            "ALTER TABLE projects ADD COLUMN project_id VARCHAR(50)",
+            "ALTER TABLE projects ADD COLUMN stage VARCHAR(50) DEFAULT 'Requirement'",
+            "ALTER TABLE projects ADD COLUMN progress INTEGER DEFAULT 10",
+            "ALTER TABLE projects ADD COLUMN submission_id VARCHAR(100)",
+            "ALTER TABLE enquiries ADD COLUMN enquiry_id VARCHAR(50)",
+            "ALTER TABLE enquiries ADD COLUMN assigned_staff_id INTEGER REFERENCES users(id)",
+            "ALTER TABLE enquiries ADD COLUMN converted_project_id VARCHAR(50)",
             "ALTER TABLE staff_assignments ADD COLUMN assigned_by_id INTEGER REFERENCES users(id)",
             "ALTER TABLE staff_assignments ADD COLUMN unassigned_at DATETIME",
             "ALTER TABLE staff_assignments ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE'",
