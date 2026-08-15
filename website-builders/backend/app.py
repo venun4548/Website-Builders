@@ -307,14 +307,14 @@ def admin_access():
         pin = request.form.get('pin', '').strip()
         if not check_pin_rate_limit(ip):
             flash('Too many incorrect PIN attempts. Try again in 15 minutes.', 'error')
-            return render_template('admin_access.html')
+            return render_template('admin_access_verify.html')
         record_pin_attempt(ip)
         if pin == app.config['ADMIN_PORTAL_ACCESS_PIN']:
             session['admin_pin_verified'] = True
             session['admin_pin_time']     = datetime.utcnow().isoformat()
             return redirect(url_for('admin_login'))
         flash('Incorrect PIN.', 'error')
-    return render_template('admin_access.html')
+    return render_template('admin_access_verify.html')
 
 def pin_verified():
     if not session.get('admin_pin_verified'):
