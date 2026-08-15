@@ -449,9 +449,13 @@ def admin_access_verify_api():
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if current_user.is_authenticated:
+        if request.is_json:
+            return jsonify({'status': 'success', 'redirect': url_for('dashboard')})
         return redirect(url_for('dashboard'))
         
     if not is_admin_access_verified():
+        if request.is_json:
+            return jsonify({'status': 'error', 'message': 'Admin Access PIN required', 'redirect': url_for('admin_access_page')}), 403
         flash('Please enter the Admin Access PIN to continue.', 'error')
         return redirect(url_for('admin_access_page'))
 
@@ -459,43 +463,63 @@ def admin_login():
 
     if request.method == 'POST':
         if not check_login_rate_limit(request.remote_addr):
+            if request.is_json:
+                return jsonify({'status': 'error', 'message': 'Too many login attempts. Please wait a minute and try again.'}), 429
             flash('Too many login attempts. Please wait a minute and try again.', 'error')
             return render_template('admin_login.html', preset_role=preset_role), 429
 
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        selected_role = request.form.get('role', '').strip()
-        remember = True if request.form.get('remember') else False
+        if request.is_json:
+            req_data = request.get_json() or {}
+            email = str(req_data.get('email', '')).strip().lower()
+            password = str(req_data.get('password', ''))
+            selected_role = str(req_data.get('role', '')).strip()
+            remember = bool(req_data.get('remember', False))
+        else:
+            email = request.form.get('email', '').strip().lower()
+            password = request.form.get('password', '')
+            selected_role = request.form.get('role', '').strip()
+            remember = True if request.form.get('remember') else False
         
         user = User.query.filter_by(email=email).first()
         
         if user and user.is_active and user.check_password(password):
             if user.role == 'User':
                 log_audit("Unauthorized Admin Portal Access Attempt", user.email, status="Denied")
+                if request.is_json:
+                    return jsonify({'status': 'error', 'message': 'Access Denied: Customer accounts cannot access the Admin Portal.'}), 403
                 flash('Access Denied: Customer accounts cannot access the Admin Portal.', 'error')
                 return render_template('admin_login.html', preset_role=selected_role)
 
             if selected_role and user.role != selected_role:
-                # If role mismatched, check if Super Admin logging in as Admin
                 if not (user.role == 'Super Admin' and selected_role == 'Admin'):
+                    if request.is_json:
+                        return jsonify({'status': 'error', 'message': f'Invalid credentials for the selected role ({selected_role}).'}), 400
                     flash(f'Invalid credentials for the selected role ({selected_role}).', 'error')
                     return render_template('admin_login.html', preset_role=selected_role)
 
-            user.last_login = datetime.utcnow()
-            db.session.commit()
+            try:
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
             login_user(user, remember=remember)
             log_audit("Logged in", user.email)
             logger.info(f"{user.role} login successful: {email}")
             
-            if user.role == 'Super Admin':
-                return redirect(url_for('super_admin_dashboard'))
-            elif user.role == 'Admin':
-                return redirect(url_for('admin_dashboard'))
-            elif user.role == 'Staff':
-                return redirect(url_for('staff_dashboard'))
-            return redirect(url_for('my_projects'))
+            target_url = url_for('my_projects')
+            if user.role == 'Super Admin': target_url = url_for('super_admin_dashboard')
+            elif user.role == 'Admin': target_url = url_for('admin_dashboard')
+            elif user.role == 'Staff': target_url = url_for('staff_dashboard')
+
+            if request.is_json:
+                return jsonify({'status': 'success', 'message': 'Login successful', 'redirect': target_url, 'data': user.to_dict()})
+
+            return redirect(target_url)
             
         logger.warning(f"Failed login attempt for email: {email}")
+        if request.is_json:
+            return jsonify({'status': 'error', 'message': 'Invalid email or password.'}), 401
         flash('Invalid email or password.', 'error')
         
     return render_template('admin_login.html', preset_role=preset_role)
@@ -503,42 +527,61 @@ def admin_login():
 @app.route('/user/login', methods=['GET', 'POST'])
 def user_login():
     if current_user.is_authenticated:
+        if request.is_json:
+            return jsonify({'status': 'success', 'redirect': url_for('dashboard')})
         return redirect(url_for('dashboard'))
         
     preset_role = request.args.get('role', 'User')
 
     if request.method == 'POST':
         if not check_login_rate_limit(request.remote_addr):
+            if request.is_json:
+                return jsonify({'status': 'error', 'message': 'Too many login attempts. Please wait a minute and try again.'}), 429
             flash('Too many login attempts. Please wait a minute and try again.', 'error')
             return render_template('user_login.html', preset_role=preset_role), 429
 
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        selected_role = request.form.get('role', '').strip()
-        remember = True if request.form.get('remember') else False
+        if request.is_json:
+            req_data = request.get_json() or {}
+            email = str(req_data.get('email', '')).strip().lower()
+            password = str(req_data.get('password', ''))
+            remember = bool(req_data.get('remember', False))
+        else:
+            email = request.form.get('email', '').strip().lower()
+            password = request.form.get('password', '')
+            remember = True if request.form.get('remember') else False
         
         user = User.query.filter_by(email=email).first()
         
         if user and user.is_active and user.check_password(password):
             if user.role in ['Super Admin', 'Admin', 'Staff']:
+                if request.is_json:
+                    return jsonify({'status': 'error', 'message': 'Administrative accounts must log in via the Admin Portal.'}), 403
                 flash('Notice: Administrative accounts must log in via the Admin Portal.', 'error')
                 return render_template('user_login.html', preset_role='User')
 
-            user.last_login = datetime.utcnow()
-            db.session.commit()
+            try:
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
             login_user(user, remember=remember)
             log_audit("Logged in", user.email)
             logger.info(f"{user.role} login successful: {email}")
             
-            if user.role == 'Super Admin':
-                return redirect(url_for('super_admin_dashboard'))
-            elif user.role == 'Admin':
-                return redirect(url_for('admin_dashboard'))
-            elif user.role == 'Staff':
-                return redirect(url_for('staff_dashboard'))
-            return redirect(url_for('my_projects'))
+            target_url = url_for('my_projects')
+            if user.role == 'Super Admin': target_url = url_for('super_admin_dashboard')
+            elif user.role == 'Admin': target_url = url_for('admin_dashboard')
+            elif user.role == 'Staff': target_url = url_for('staff_dashboard')
+
+            if request.is_json:
+                return jsonify({'status': 'success', 'message': 'Login successful', 'redirect': target_url, 'data': user.to_dict()})
+
+            return redirect(target_url)
             
         logger.warning(f"Failed User login attempt for email: {email}")
+        if request.is_json:
+            return jsonify({'status': 'error', 'message': 'Invalid email or password.'}), 401
         flash('Invalid email or password.', 'error')
         
     return render_template('user_login.html', preset_role=preset_role)
@@ -991,23 +1034,61 @@ def get_users():
 
 # --- Super Admin User Management & Control System ---
 
+def format_datetime_safe(val):
+    if not val:
+        return 'N/A'
+    if isinstance(val, str):
+        return val
+    try:
+        return val.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        return str(val)
+
 def enrich_user_dict(u):
     user_dict = u.to_dict()
-    assigned_projects = Project.query.filter_by(assigned_staff_id=u.id).all()
-    user_dict['assigned_projects_count'] = len(assigned_projects)
-    user_dict['completed_projects_count'] = len([p for p in assigned_projects if p.status == 'Completed'])
-    user_dict['messages_sent_count'] = Message.query.filter_by(sender_id=u.id).count()
-    user_dict['enquiries_handled_count'] = Enquiry.query.filter_by(assigned_staff_id=u.id).count()
+    try:
+        assigned_projects = Project.query.filter_by(assigned_staff_id=u.id).all()
+        user_dict['assigned_projects_count'] = len(assigned_projects)
+        user_dict['completed_projects_count'] = len([p for p in assigned_projects if getattr(p, 'status', '') == 'Completed'])
+    except Exception:
+        user_dict['assigned_projects_count'] = 0
+        user_dict['completed_projects_count'] = 0
+
+    try:
+        user_dict['messages_sent_count'] = Message.query.filter_by(sender_id=u.id).count()
+    except Exception:
+        user_dict['messages_sent_count'] = 0
+
+    try:
+        user_dict['enquiries_handled_count'] = Enquiry.query.filter_by(assigned_staff_id=u.id).count()
+    except Exception:
+        user_dict['enquiries_handled_count'] = 0
     
-    last_log = AuditLog.query.filter(
-        (AuditLog.user_email == u.email) | (AuditLog.target_user == u.email)
-    ).order_by(AuditLog.timestamp.desc()).first()
+    try:
+        last_log = AuditLog.query.filter(
+            (AuditLog.user_email == u.email) | (AuditLog.target_user == u.email)
+        ).order_by(AuditLog.timestamp.desc()).first()
+    except Exception:
+        last_log = None
     
     user_dict['last_action'] = last_log.action if last_log else ('Logged in' if u.last_login else 'Created')
-    user_dict['last_activity'] = last_log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if last_log and last_log.timestamp else (u.last_login.strftime('%Y-%m-%d %H:%M:%S') if u.last_login else (u.created_at.strftime('%Y-%m-%d %H:%M:%S') if u.created_at else 'N/A'))
-    user_dict['activity_count'] = AuditLog.query.filter(
-        (AuditLog.user_email == u.email) | (AuditLog.target_user == u.email)
-    ).count()
+    
+    if last_log and getattr(last_log, 'timestamp', None):
+        user_dict['last_activity'] = format_datetime_safe(last_log.timestamp)
+    elif getattr(u, 'last_login', None):
+        user_dict['last_activity'] = format_datetime_safe(u.last_login)
+    elif getattr(u, 'created_at', None):
+        user_dict['last_activity'] = format_datetime_safe(u.created_at)
+    else:
+        user_dict['last_activity'] = 'N/A'
+
+    try:
+        user_dict['activity_count'] = AuditLog.query.filter(
+            (AuditLog.user_email == u.email) | (AuditLog.target_user == u.email)
+        ).count()
+    except Exception:
+        user_dict['activity_count'] = 0
+
     return user_dict
 
 @app.route('/api/super-admin/users', methods=['GET', 'POST'])
