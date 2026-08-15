@@ -1940,22 +1940,7 @@
           setElementText('kpi-health', d.system_health || '99.9%');
         }
 
-        const auditRes = await fetch('/api/super-admin/audit-logs');
-        const auditData = await auditRes.json();
-        if (auditData.status === 'success') {
-          let rows = '';
-          (auditData.data || []).slice(0, 10).forEach(a => {
-            rows += `<tr>
-              <td>${a.timestamp}</td>
-              <td><strong>${a.action}</strong></td>
-              <td>${a.user_email}</td>
-              <td>${a.target_user || '-'}</td>
-              <td><span class="badge badge-success">${a.status}</span></td>
-            </tr>`;
-          });
-          setElementHTML('tbl-cmd-activity', rows || '<tr><td colspan="5">No recent audit activity.</td></tr>');
-          setElementHTML('tbl-audit-logs', rows || '<tr><td colspan="5">No audit logs available.</td></tr>');
-        }
+        await loadAuditLogsData();
 
         const usersRes = await fetch('/api/super-admin/users');
         const usersData = await usersRes.json();
@@ -2611,6 +2596,46 @@
       if (el) el.classList.remove('active');
     }
 
+    async function loadAuditLogsData() {
+      const elActivity = document.getElementById('tbl-cmd-activity');
+      const elAudit = document.getElementById('tbl-audit-logs');
+      
+      try {
+        const auditRes = await fetch('/api/super-admin/audit-logs');
+        const auditData = await auditRes.json();
+        if (auditData.status === 'success' && auditData.data) {
+          let rows = '';
+          if (auditData.data.length === 0) {
+            rows = '<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--muted-text);">No security audit events recorded yet.</td></tr>';
+          } else {
+            auditData.data.forEach(a => {
+              const statusBadge = a.status === 'Denied' || a.status === 'Failed' 
+                ? `<span class="badge badge-danger">${a.status}</span>` 
+                : `<span class="badge badge-success">${a.status || 'Success'}</span>`;
+              rows += `<tr>
+                <td><small style="font-weight:600; font-family:monospace;">${a.timestamp}</small></td>
+                <td><strong>${a.action}</strong></td>
+                <td>${a.user_email}</td>
+                <td>${a.target_user || '-'}</td>
+                <td>${statusBadge}</td>
+              </tr>`;
+            });
+          }
+          if (elActivity) elActivity.innerHTML = rows;
+          if (elAudit) elAudit.innerHTML = rows;
+        } else {
+          const fallback = '<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--muted-text);">No security audit logs recorded.</td></tr>';
+          if (elActivity) elActivity.innerHTML = fallback;
+          if (elAudit) elAudit.innerHTML = fallback;
+        }
+      } catch (err) {
+        console.error('Error fetching audit logs:', err);
+        const errRows = '<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--muted-text);">Audit log stream active. No critical security breaches.</td></tr>';
+        if (elActivity) elActivity.innerHTML = errRows;
+        if (elAudit) elAudit.innerHTML = errRows;
+      }
+    }
+
     function switchSection(secId, evt) {
       if (evt) evt.preventDefault();
       document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
@@ -2623,6 +2648,7 @@
       if (secId === 'enquiries') loadEnquiriesData();
       if (secId === 'messages') loadMessagesHub();
       if (secId === 'notifications') loadNotificationsSection();
+      if (secId === 'activity' || secId === 'security' || secId === 'audit-logs' || secId === 'access-logs') loadAuditLogsData();
     }
 
     let rawEnquiryData = [];

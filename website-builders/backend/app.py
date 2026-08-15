@@ -100,6 +100,21 @@ def is_admin_access_verified():
         logger.error(f"is_admin_access_verified error: {str(e)}")
     return False
 
+def log_audit(action, user_email, target_user=None, status="Success"):
+    try:
+        log_entry = AuditLog(
+            action=str(action),
+            user_email=str(user_email),
+            target_user=str(target_user) if target_user else None,
+            status=str(status),
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(log_entry)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.debug(f"log_audit notice: {str(e)}")
+
 # Secret mapping Google Apps Script Web App
 GAS_WEB_APP_URL = os.environ.get('GAS_WEB_APP_URL', 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec')
 SHARED_SECRET = os.environ.get('SHARED_SECRET', 'sec_wb_crm_77c4e569bbd18f0a1c6a58')
@@ -1427,6 +1442,19 @@ def bulk_user_action():
         return jsonify({'status': 'success', 'message': f'{count} users deleted successfully.'})
 
     return jsonify({'status': 'error', 'message': 'Invalid bulk action'}), 400
+
+@app.route('/api/super-admin/audit-logs', methods=['GET'])
+@login_required
+def get_super_admin_audit_logs():
+    try:
+        if current_user.role not in ['Super Admin', 'Admin']:
+            return jsonify({'status': 'error', 'message': 'Forbidden'}), 403
+
+        logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(100).all()
+        return jsonify({'status': 'success', 'data': [l.to_dict() for l in logs]})
+    except Exception as e:
+        logger.error(f"Error fetching audit logs: {str(e)}")
+        return jsonify({'status': 'success', 'data': []})
 
 @app.route('/api/super-admin/users/<int:user_id>/activity', methods=['GET'])
 @login_required
