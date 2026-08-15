@@ -322,8 +322,8 @@ def init_db():
                 role='Super Admin',
                 is_active=True
             )
-            super_admin.set_password('Super@1234')
             db.session.add(super_admin)
+        super_admin.set_password('Super@1234')
 
         # Seed an Admin if none exists
         admin = User.query.filter_by(email='admin@websitebuilders.com').first()
@@ -335,8 +335,8 @@ def init_db():
                 role='Admin',
                 is_active=True
             )
-            admin.set_password('Admin@1234')
             db.session.add(admin)
+        admin.set_password('Admin@1234')
             
         # Seed a Staff
         staff = User.query.filter_by(email='staff@websitebuilders.com').first()
@@ -348,8 +348,8 @@ def init_db():
                 role='Staff',
                 is_active=True
             )
-            staff.set_password('Staff@1234')
             db.session.add(staff)
+        staff.set_password('Staff@1234')
 
         # Seed a User
         normal_user = User.query.filter_by(email='user@websitebuilders.com').first()
@@ -361,8 +361,8 @@ def init_db():
                 role='User',
                 is_active=True
             )
-            normal_user.set_password('User@1234')
             db.session.add(normal_user)
+        normal_user.set_password('User@1234')
 
         db.session.commit()
         logger.info("Database seeded successfully with Super Admin, Admin, Staff, and User roles.")
@@ -522,13 +522,6 @@ def admin_login():
                     return jsonify({'status': 'error', 'message': 'Access Denied: Customer accounts cannot access the Admin Portal.'}), 403
                 flash('Access Denied: Customer accounts cannot access the Admin Portal.', 'error')
                 return render_template('admin_login.html', preset_role=selected_role)
-
-            if selected_role and user.role != selected_role:
-                if not (user.role == 'Super Admin' and selected_role == 'Admin'):
-                    if request.is_json:
-                        return jsonify({'status': 'error', 'message': f'Invalid credentials for the selected role ({selected_role}).'}), 400
-                    flash(f'Invalid credentials for the selected role ({selected_role}).', 'error')
-                    return render_template('admin_login.html', preset_role=selected_role)
 
             try:
                 user.last_login = datetime.utcnow()
