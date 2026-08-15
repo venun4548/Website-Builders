@@ -342,21 +342,27 @@ def user_logout():
     return redirect(url_for('user_login'))
 
 # ─── Admin Portal Access (PIN Gate) ──────────────────────────
-@app.route('/admin/access', methods=['GET', 'POST'])
+@app.route('/admin/access', methods=['GET'])
 def admin_access():
-    if request.method == 'POST':
-        ip  = request.remote_addr or '0.0.0.0'
-        pin = request.form.get('pin', '').strip()
-        if not check_pin_rate_limit(ip):
-            flash('Too many incorrect PIN attempts. Try again in 15 minutes.', 'error')
-            return render_template('admin_access_verify.html')
-        record_pin_attempt(ip)
-        if pin == app.config['ADMIN_PORTAL_ACCESS_PIN']:
-            session['admin_pin_verified'] = True
-            session['admin_pin_time']     = datetime.utcnow().isoformat()
-            return redirect(url_for('admin_login'))
-        flash('Incorrect PIN.', 'error')
     return render_template('admin_access_verify.html')
+
+@app.route('/api/admin/access/verify', methods=['POST'])
+def api_admin_access_verify():
+    data = request.get_json(silent=True) or {}
+    pin = str(data.get('pin', '')).strip()
+    ip = request.remote_addr or '0.0.0.0'
+    
+    if not check_pin_rate_limit(ip):
+        return jsonify({'status': 'error', 'message': 'Too many incorrect PIN attempts. Try again in 15 minutes.'}), 429
+        
+    record_pin_attempt(ip)
+    
+    if pin == app.config['ADMIN_PORTAL_ACCESS_PIN']:
+        session['admin_pin_verified'] = True
+        session['admin_pin_time']     = datetime.utcnow().isoformat()
+        return jsonify({'status': 'success', 'redirect': url_for('admin_login')})
+        
+    return jsonify({'status': 'error', 'message': 'Incorrect PIN.'}), 401
 
 def pin_verified():
     if not session.get('admin_pin_verified'):
