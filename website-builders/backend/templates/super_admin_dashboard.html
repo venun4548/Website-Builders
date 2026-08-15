@@ -3051,7 +3051,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch(err) {
+          alert('Server error: ' + (text.substring(0, 150) || 'Invalid response received.'));
+          return;
+        }
+
         if (res.ok && data.status === 'success') {
           alert('Project created successfully!');
           closeModal('modal-create-project');
@@ -3080,7 +3088,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch(err) {
+          alert('Server error: ' + (text.substring(0, 150) || 'Invalid response received.'));
+          return;
+        }
+
         if (res.ok && data.status === 'success') {
           alert('Website created successfully!');
           closeModal('modal-create-website');
