@@ -2047,6 +2047,31 @@
           setElementHTML('tbl-websites', rows || '<tr><td colspan="3">No websites found.</td></tr>');
         }
 
+        const tasksRes = await fetch('/api/tasks');
+        const tasksData = await tasksRes.json();
+        if (tasksData.status === 'success') {
+          let rows = '';
+          let openTaskCount = 0;
+          let overdueTaskCount = 0;
+          (tasksData.data || []).forEach(t => {
+            if (t.status !== 'Completed') openTaskCount++;
+            if (t.is_overdue) overdueTaskCount++;
+            const pClass = t.priority === 'Urgent' ? 'badge-danger' : (t.priority === 'High' ? 'badge-warning' : 'badge-info');
+            const sClass = t.status === 'Completed' ? 'badge-success' : 'badge-info';
+            rows += `<tr>
+              <td><strong>${t.title}</strong></td>
+              <td>${t.assigned_staff_name || 'Unassigned'}</td>
+              <td><span class="badge ${pClass}">${t.priority || 'Normal'}</span></td>
+              <td><span class="badge ${sClass}">${t.status || 'Pending'}</span></td>
+              <td>${t.due_date || 'N/A'}</td>
+            </tr>`;
+          });
+          setElementHTML('tbl-tasks', rows || '<tr><td colspan="5">No tasks available.</td></tr>');
+          setElementText('kpi-open-tasks', openTaskCount);
+          setElementText('kpi-overdue-tasks-val', overdueTaskCount);
+          setElementText('alert-overdue-tasks', overdueTaskCount);
+        }
+
       } catch (err) {
         console.error('Error loading dashboard data:', err);
       }
