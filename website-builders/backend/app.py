@@ -92,9 +92,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'admin_login'
 
-# Secret mapping Google Apps Script Web App
-GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec'
-SHARED_SECRET = 'sec_wb_crm_77c4e569bbd18f0a1c6a58'
+# Google Apps Script Web App URL & Shared Secret (reads from env vars or defaults)
+GAS_WEB_APP_URL = os.environ.get('GAS_WEB_APP_URL', 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec')
+SHARED_SECRET = os.environ.get('SHARED_SECRET', 'sec_wb_crm_77c4e569bbd18f0a1c6a58')
 
 def sync_to_google_sheets(action, data):
     def _send():
