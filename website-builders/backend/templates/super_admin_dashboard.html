@@ -1820,56 +1820,6 @@
       activityChart.update();
     }
 
-    async function loadDashboardData() {
-      try {
-        const statsRes = await fetch('/api/stats/super-admin');
-        const statsData = await statsRes.json();
-        if (statsData.status === 'success') {
-          const s = statsData.data;
-          document.getElementById('kpi-total-people').innerText = s.total_users || 0;
-          document.getElementById('kpi-active-today').innerText = s.total_users || 0;
-          document.getElementById('kpi-active-projects').innerText = s.active_projects || 0;
-        }
-
-        const tasksRes = await fetch('/api/tasks');
-        const tasksData = await tasksRes.json();
-        if (tasksData.status === 'success') {
-          const openTasks = tasksData.data.filter(t => t.status !== 'Completed');
-          const overdueTasks = tasksData.data.filter(t => t.status === 'Overdue');
-          document.getElementById('kpi-open-tasks').innerText = openTasks.length;
-          document.getElementById('kpi-overdue-tasks-val').innerText = overdueTasks.length;
-          document.getElementById('alert-overdue-tasks').innerText = overdueTasks.length;
-
-          let taskRows = '';
-          tasksData.data.forEach(t => {
-            taskRows += `<tr>
-              <td><strong>${t.title}</strong></td>
-              <td>${t.assigned_staff_name || 'Unassigned'}</td>
-              <td><span class="badge badge-info">${t.priority}</span></td>
-              <td><span class="badge ${t.status === 'Completed' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
-              <td>${t.due_date || 'N/A'}</td>
-            </tr>`;
-          });
-          document.getElementById('tbl-tasks').innerHTML = taskRows || '<tr><td colspan="5">No tasks available.</td></tr>';
-        }
-
-        const auditRes = await fetch('/api/super-admin/audit-logs');
-        const auditData = await auditRes.json();
-        if (auditData.status === 'success') {
-          let rows = '';
-          auditData.data.slice(0, 8).forEach(a => {
-            rows += `<tr>
-              <td>${new Date(a.timestamp).toLocaleString()}</td>
-              <td><strong>${a.action}</strong></td>
-              <td>${a.user_email}</td>
-              <td>${a.target_user || '-'}</td>
-              <td><span class="badge badge-success">${a.status}</span></td>
-            </tr>`;
-          });
-          document.getElementById('tbl-cmd-activity').innerHTML = rows || '<tr><td colspan="5">No recent audit activity.</td></tr>';
-          document.getElementById('tbl-audit-logs').innerHTML = rows || '<tr><td colspan="5">No audit logs available.</td></tr>';
-        }
-
     let rawPeopleData = [];
     let currentTab = 'all';
     let selectedUserIds = new Set();
