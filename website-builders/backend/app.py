@@ -537,12 +537,25 @@ def admin_login():
         
         user = User.query.filter_by(email=email).first()
         
-        if user and user.is_active and user.check_password(password):
+        if user:
+            if not user.is_active:
+                if request.is_json:
+                    return jsonify({'status': 'error', 'message': 'Account is inactive. Please contact Super Admin.'}), 403
+                flash('Account is inactive. Please contact Super Admin.', 'error')
+                return render_template('admin_login.html', preset_role=selected_role)
+
+            if not user.check_password(password):
+                logger.warning(f"Failed admin login password attempt for email: {email}")
+                if request.is_json:
+                    return jsonify({'status': 'error', 'message': 'Incorrect password.'}), 401
+                flash('Incorrect password. Please check your password or contact Super Admin to reset it.', 'error')
+                return render_template('admin_login.html', preset_role=selected_role)
+
             if user.role == 'User':
                 log_audit("Unauthorized Admin Portal Access Attempt", user.email, status="Denied")
                 if request.is_json:
-                    return jsonify({'status': 'error', 'message': 'Access Denied: Customer accounts cannot access the Admin Portal.'}), 403
-                flash('Access Denied: Customer accounts cannot access the Admin Portal.', 'error')
+                    return jsonify({'status': 'error', 'message': 'Access Denied: Client accounts must log in via Client Login at /user/login.'}), 403
+                flash('Access Denied: Client accounts must log in via Client Login at /user/login.', 'error')
                 return render_template('admin_login.html', preset_role=selected_role)
 
             try:
@@ -565,10 +578,10 @@ def admin_login():
 
             return redirect(target_url)
             
-        logger.warning(f"Failed login attempt for email: {email}")
+        logger.warning(f"Failed login attempt for unknown email: {email}")
         if request.is_json:
-            return jsonify({'status': 'error', 'message': 'Invalid email or password.'}), 401
-        flash('Invalid email or password.', 'error')
+            return jsonify({'status': 'error', 'message': 'No account found with this email address.'}), 401
+        flash('No account found with this email address. Please check your email or ask Super Admin to register your account.', 'error')
         
     return render_template('admin_login.html', preset_role=preset_role)
 
@@ -600,11 +613,24 @@ def user_login():
         
         user = User.query.filter_by(email=email).first()
         
-        if user and user.is_active and user.check_password(password):
+        if user:
+            if not user.is_active:
+                if request.is_json:
+                    return jsonify({'status': 'error', 'message': 'Account is inactive. Please contact support.'}), 403
+                flash('Account is inactive. Please contact support.', 'error')
+                return render_template('user_login.html', preset_role=preset_role)
+
+            if not user.check_password(password):
+                logger.warning(f"Failed user login password attempt for email: {email}")
+                if request.is_json:
+                    return jsonify({'status': 'error', 'message': 'Incorrect password.'}), 401
+                flash('Incorrect password. Please check your password or use Forgot Password to reset it.', 'error')
+                return render_template('user_login.html', preset_role=preset_role)
+
             if user.role in ['Super Admin', 'Admin', 'Staff']:
                 if request.is_json:
-                    return jsonify({'status': 'error', 'message': 'Administrative accounts must log in via the Admin Portal.'}), 403
-                flash('Notice: Administrative accounts must log in via the Admin Portal.', 'error')
+                    return jsonify({'status': 'error', 'message': 'Administrative accounts must log in via the Admin Portal at /admin/login.'}), 403
+                flash('Notice: Administrative accounts must log in via the Admin Portal at /admin/login.', 'error')
                 return render_template('user_login.html', preset_role='User')
 
             try:
@@ -627,10 +653,10 @@ def user_login():
 
             return redirect(target_url)
             
-        logger.warning(f"Failed User login attempt for email: {email}")
+        logger.warning(f"Failed User login attempt for unknown email: {email}")
         if request.is_json:
-            return jsonify({'status': 'error', 'message': 'Invalid email or password.'}), 401
-        flash('Invalid email or password.', 'error')
+            return jsonify({'status': 'error', 'message': 'No account found with this email address.'}), 401
+        flash('No account found with this email address. Please register an account or check the email entered.', 'error')
         
     return render_template('user_login.html', preset_role=preset_role)
 
