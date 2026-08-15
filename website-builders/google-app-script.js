@@ -278,7 +278,7 @@ function createEnquiry(d){
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
     const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
-    const enqId=generateSheet1Id(sheet);
+    const enqId=generateEnquiryId(sheet);
     const followUpDate=new Date();followUpDate.setDate(followUpDate.getDate()+3);
     const followUpDateStr=Utilities.formatDate(followUpDate,CONFIG.TIMEZONE,'dd-MMM-yyyy');
     
