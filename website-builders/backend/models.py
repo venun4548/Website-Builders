@@ -1,9 +1,17 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
+
+IST_OFFSET = timedelta(hours=5, minutes=30)
+
+def format_datetime_ist(dt, fmt="%d-%m-%Y %H:%M:%S"):
+    if not dt:
+        return None
+    ist_dt = dt + IST_OFFSET
+    return ist_dt.strftime(fmt)
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -49,8 +57,8 @@ class User(db.Model, UserMixin):
             'is_active': self.is_active,
             'assigned_staff_id': self.assigned_staff_id,
             'assigned_staff_name': self.assigned_staff.full_name if self.assigned_staff else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None
+            'created_at': format_datetime_ist(self.created_at),
+            'last_login': format_datetime_ist(self.last_login)
         }
 
 class PasswordResetToken(db.Model):
@@ -79,8 +87,8 @@ class AuditLog(db.Model):
             'action': self.action,
             'user_email': self.user_email,
             'target_user': self.target_user,
-            'timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S') if self.timestamp else None,
-            'iso_timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'timestamp': format_datetime_ist(self.timestamp, "%d-%m-%Y %H:%M:%S"),
+            'iso_timestamp': format_datetime_ist(self.timestamp),
             'status': self.status
         }
 
@@ -231,12 +239,12 @@ class Message(db.Model):
 
             'status': self.status or ('READ' if self.is_read else 'SENT'),
             'is_read': self.is_read,
-            'read_at': read_at_str,
+            'read_at': format_datetime_ist(self.read_at) if self.read_at else '',
 
-            'created_date': created_dt.strftime("%d-%m-%Y"),
-            'created_time': created_dt.strftime("%H:%M:%S"),
-            'timestamp': created_dt.strftime("%d-%m-%Y %H:%M:%S"),
-            'last_updated': (self.updated_at or created_dt).strftime("%d-%m-%Y %H:%M:%S")
+            'created_date': format_datetime_ist(created_dt, "%d-%m-%Y"),
+            'created_time': format_datetime_ist(created_dt, "%H:%M:%S"),
+            'timestamp': format_datetime_ist(created_dt, "%d-%m-%Y %H:%M:%S"),
+            'last_updated': format_datetime_ist(self.updated_at or created_dt, "%d-%m-%Y %H:%M:%S")
         }
 
 class Website(db.Model):
