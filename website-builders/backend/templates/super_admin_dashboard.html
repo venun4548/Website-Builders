@@ -45,6 +45,9 @@
 
     /* Left Vertical Sidebar (Light Mint / Soft Visual Language) */
     .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
       width: 260px;
       background-color: #FFFFFF;
       border-right: 1px solid var(--border-color);
@@ -519,7 +522,7 @@
     }
     @media (max-width: 768px) {
       body { flex-direction: column; }
-      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); }
+      .sidebar { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border-color); }
       .kpi-grid-4 { grid-template-columns: 1fr; }
     }
   </style>
