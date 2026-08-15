@@ -1,25 +1,27 @@
 {
-  "rewrites": [
-    { "source": "/user/:path*", "destination": "https://website-builders.onrender.com/user/:path*" },
-    { "source": "/user", "destination": "https://website-builders.onrender.com/user" },
-    { "source": "/admin/:path*", "destination": "https://website-builders.onrender.com/admin/:path*" },
-    { "source": "/admin", "destination": "https://website-builders.onrender.com/admin" },
-    { "source": "/super-admin/:path*", "destination": "https://website-builders.onrender.com/super-admin/:path*" },
-    { "source": "/super-admin", "destination": "https://website-builders.onrender.com/super-admin" },
-    { "source": "/staff/:path*", "destination": "https://website-builders.onrender.com/staff/:path*" },
-    { "source": "/staff", "destination": "https://website-builders.onrender.com/staff" },
-    { "source": "/customer/:path*", "destination": "https://website-builders.onrender.com/customer/:path*" },
-    { "source": "/api/:path*", "destination": "https://website-builders.onrender.com/api/:path*" },
-    { "source": "/login", "destination": "https://website-builders.onrender.com/login" },
-    { "source": "/logout", "destination": "https://website-builders.onrender.com/logout" },
-    { "source": "/dashboard", "destination": "https://website-builders.onrender.com/dashboard" },
-    { "source": "/my-projects", "destination": "https://website-builders.onrender.com/my-projects" },
-    { "source": "/profile", "destination": "https://website-builders.onrender.com/profile" },
-    { "source": "/edit-profile", "destination": "https://website-builders.onrender.com/edit-profile" },
-    { "source": "/change-password", "destination": "https://website-builders.onrender.com/change-password" },
-    { "source": "/forgot-password", "destination": "https://website-builders.onrender.com/forgot-password" },
-    { "source": "/reset-password/:path*", "destination": "https://website-builders.onrender.com/reset-password/:path*" },
-    { "source": "/uploads/:path*", "destination": "https://website-builders.onrender.com/uploads/:path*" },
-    { "source": "/(.*)", "destination": "/website-builders/$1" }
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "website-builders/*.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(css|js|images|webfonts)/(.*)",
+      "dest": "/website-builders/$1/$2"
+    },
+    {
+      "src": "/(index|services|contact).html",
+      "dest": "/website-builders/$1.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
   ]
 }
