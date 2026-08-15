@@ -12,7 +12,7 @@ from flask_cors import CORS
 
 from functools import wraps
 from config import Config
-from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate, Notification, ProjectFile, Website, Task, SystemSetting, EnquiryState, Message, StaffAssignment, Enquiry, ProjectTimeline, ProjectRemark
+from models import db, User, PasswordResetToken, AuditLog, Project, ProjectUpdate, Notification, ProjectFile, Website, Task, SystemSetting, Message, StaffAssignment, Enquiry, ProjectTimeline, ProjectRemark
 
 # Setup Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -952,14 +952,14 @@ def enrich_user_dict(u):
     user_dict['assigned_projects_count'] = len(assigned_projects)
     user_dict['completed_projects_count'] = len([p for p in assigned_projects if p.status == 'Completed'])
     user_dict['messages_sent_count'] = Message.query.filter_by(sender_id=u.id).count()
-    user_dict['enquiries_handled_count'] = EnquiryState.query.filter_by(assigned_staff_id=u.id).count()
+    user_dict['enquiries_handled_count'] = Enquiry.query.filter_by(assigned_staff_id=u.id).count()
     
     last_log = AuditLog.query.filter(
         (AuditLog.user_email == u.email) | (AuditLog.target_user == u.email)
     ).order_by(AuditLog.timestamp.desc()).first()
     
     user_dict['last_action'] = last_log.action if last_log else ('Logged in' if u.last_login else 'Created')
-    user_dict['last_activity'] = last_log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if last_log and last_log.timestamp else (u.last_login.strftime('%Y-%m-%d %H:%M:%S') if u.last_login else u.created_at.strftime('%Y-%m-%d %H:%M:%S'))
+    user_dict['last_activity'] = last_log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if last_log and last_log.timestamp else (u.last_login.strftime('%Y-%m-%d %H:%M:%S') if u.last_login else (u.created_at.strftime('%Y-%m-%d %H:%M:%S') if u.created_at else 'N/A'))
     user_dict['activity_count'] = AuditLog.query.filter(
         (AuditLog.user_email == u.email) | (AuditLog.target_user == u.email)
     ).count()
@@ -977,16 +977,17 @@ def manage_users():
         return jsonify({'status': 'success', 'data': enriched_users})
 
     if request.method == 'POST':
-        if current_user.role != 'Super Admin':
-            return jsonify({'status': 'error', 'message': 'Permission denied: Only Super Admin can create users'}), 403
-
         data = request.json or {}
+        role = str(data.get('role', 'Staff')).strip()
+
+        if current_user.role == 'Admin' and role in ['Super Admin', 'Admin']:
+            return jsonify({'status': 'error', 'message': 'Permission denied: Admins can only create Staff and Customer accounts'}), 403
+
         full_name = str(data.get('full_name', '')).strip()
         email = str(data.get('email', '')).strip().lower()
         mobile = str(data.get('mobile', '')).strip()
         password = str(data.get('password', ''))
         confirm_password = str(data.get('confirm_password', ''))
-        role = str(data.get('role', 'Staff')).strip()
         is_active = bool(data.get('status', True))
 
         if not full_name or not email or not password:
@@ -1076,11 +1077,11 @@ def manage_user_by_id(user_id):
         return jsonify({'status': 'success', 'message': 'User updated successfully', 'data': enrich_user_dict(target_user)})
 
     if request.method == 'DELETE':
-        if current_user.role != 'Super Admin':
-            return jsonify({'status': 'error', 'message': 'Permission denied: Only Super Admin can delete users'}), 403
+        if current_user.role == 'Admin' and target_user.role in ['Super Admin', 'Admin']:
+            return jsonify({'status': 'error', 'message': 'Permission denied: Admins cannot delete Admin or Super Admin accounts'}), 403
 
         if target_user.id == current_user.id:
-            return jsonify({'status': 'error', 'message': 'Cannot delete your own logged-in Super Admin account'}), 400
+            return jsonify({'status': 'error', 'message': 'Cannot delete your own logged-in account'}), 400
 
         # Check project dependencies
         assigned_projects = Project.query.filter_by(assigned_staff_id=target_user.id).all()
@@ -1107,7 +1108,7 @@ def manage_user_by_id(user_id):
             p.assigned_staff_id = None
         for t in Task.query.filter_by(assigned_staff_id=target_user.id).all():
             t.assigned_staff_id = None
-        for e in EnquiryState.query.filter_by(assigned_staff_id=target_user.id).all():
+        for e in Enquiry.query.filter_by(assigned_staff_id=target_user.id).all():
             e.assigned_staff_id = None
 
         user_email = target_user.email
@@ -1213,7 +1214,7 @@ def bulk_user_action():
                     p.assigned_staff_id = reassign_staff.id if reassign_staff else None
             for t in Task.query.filter_by(assigned_staff_id=u.id).all():
                 t.assigned_staff_id = reassign_staff.id if reassign_staff else None
-            for e in EnquiryState.query.filter_by(assigned_staff_id=u.id).all():
+            for e in Enquiry.query.filter_by(assigned_staff_id=u.id).all():
                 e.assigned_staff_id = reassign_staff.id if reassign_staff else None
 
             email = u.email

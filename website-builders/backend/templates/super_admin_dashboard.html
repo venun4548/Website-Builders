@@ -996,6 +996,9 @@
             <button onclick="openModal('modal-create-staff')" class="btn btn-primary btn-sm">
               <i class="fa-solid fa-user-gear"></i> + Create Staff
             </button>
+            <button onclick="openModal('modal-create-customer')" class="btn btn-primary btn-sm" style="background:var(--emerald);">
+              <i class="fa-solid fa-user-tag"></i> + Create Customer
+            </button>
           </div>
         </div>
 
@@ -1388,6 +1391,39 @@
           <input type="password" name="confirm_password" required placeholder="Confirm password">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-check"></i> Create Staff Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Customer Modal -->
+  <div class="modal-backdrop" id="modal-create-customer">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-user-tag"></i> Create Customer Account</h3>
+        <button onclick="closeModal('modal-create-customer')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleCreateUser(event, 'User')">
+        <div style="margin-bottom:1rem;">
+          <label>Full Name</label>
+          <input type="text" name="full_name" required placeholder="Customer Full Name">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Email Address</label>
+          <input type="email" name="email" required placeholder="client@example.com">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Mobile Number</label>
+          <input type="text" name="mobile" required placeholder="+91 7777777777">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="Set password">
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Confirm Password</label>
+          <input type="password" name="confirm_password" required placeholder="Confirm password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; background:var(--emerald);"><i class="fa-solid fa-check"></i> Create Customer Account</button>
       </form>
     </div>
   </div>
@@ -2203,7 +2239,7 @@
         const data = await res.json();
         if (res.ok && data.status === 'success') {
           alert(data.message || `${role} account created successfully!`);
-          closeModal(role === 'Admin' ? 'modal-create-admin' : 'modal-create-staff');
+          closeModal(role === 'Admin' ? 'modal-create-admin' : (role === 'User' ? 'modal-create-customer' : 'modal-create-staff'));
           form.reset();
           loadDashboardData();
         } else {
