@@ -1,8 +1,14 @@
 import os
 
+# Serverless / Cloud environment check for Vercel/Render read-only filesystems
+if 'VERCEL' in os.environ or 'RENDER' in os.environ or os.environ.get('VERCEL_ENV') or os.environ.get('SERVERLESS'):
+    default_db = 'sqlite:////tmp/database.db'
+else:
+    default_db = 'sqlite:///database.db'
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'de34f56a29bc718de11e9f45b6ccba9a2245fb0a')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', default_db)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Session options
