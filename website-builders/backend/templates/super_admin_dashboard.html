@@ -1820,6 +1820,16 @@
       activityChart.update();
     }
 
+    function setElementText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.innerText = text;
+    }
+
+    function setElementHTML(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+
     let currentTab = 'all';
     let selectedUserIds = new Set();
     let targetDeleteUserId = null;
@@ -1830,10 +1840,11 @@
         const stats = await statsRes.json();
         if (stats.status === 'success' && stats.data) {
           const d = stats.data;
-          document.getElementById('kpi-total-revenue').innerText = '$' + (d.total_revenue || 0).toLocaleString();
-          document.getElementById('kpi-active-projects').innerText = d.active_projects || 0;
-          document.getElementById('kpi-total-people').innerText = d.total_people || 0;
-          document.getElementById('kpi-health').innerText = d.system_health || '99.9%';
+          setElementText('kpi-total-people', d.total_people || d.total_users || 0);
+          setElementText('kpi-active-today', d.total_people || d.total_users || 0);
+          setElementText('kpi-active-projects', d.active_projects || 0);
+          setElementText('kpi-total-revenue', '$' + (d.total_revenue || 0).toLocaleString());
+          setElementText('kpi-health', d.system_health || '99.9%');
         }
 
         const auditRes = await fetch('/api/super-admin/audit-logs');
@@ -1849,8 +1860,8 @@
               <td><span class="badge badge-success">${a.status}</span></td>
             </tr>`;
           });
-          document.getElementById('tbl-cmd-activity').innerHTML = rows || '<tr><td colspan="5">No recent audit activity.</td></tr>';
-          document.getElementById('tbl-audit-logs').innerHTML = rows || '<tr><td colspan="5">No audit logs available.</td></tr>';
+          setElementHTML('tbl-cmd-activity', rows || '<tr><td colspan="5">No recent audit activity.</td></tr>');
+          setElementHTML('tbl-audit-logs', rows || '<tr><td colspan="5">No audit logs available.</td></tr>');
         }
 
         const usersRes = await fetch('/api/super-admin/users');
@@ -1872,7 +1883,7 @@
               <td>${u.last_login || u.created_at || 'N/A'}</td>
             </tr>`;
           });
-          document.getElementById('tbl-administrators').innerHTML = adminRows || '<tr><td colspan="5">No administrators.</td></tr>';
+          setElementHTML('tbl-administrators', adminRows || '<tr><td colspan="5">No administrators.</td></tr>');
 
           const clients = rawPeopleData.filter(u => u.role === 'User');
           let clientRows = '';
@@ -1884,7 +1895,7 @@
               <td><span class="badge ${c.is_active ? 'badge-success' : 'badge-danger'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
             </tr>`;
           });
-          document.getElementById('tbl-clients').innerHTML = clientRows || '<tr><td colspan="4">No clients registered.</td></tr>';
+          setElementHTML('tbl-clients', clientRows || '<tr><td colspan="4">No clients registered.</td></tr>');
         }
 
         const workloadRes = await fetch('/api/admin/workload');
@@ -1920,8 +1931,8 @@
             <td><span class="badge ${s.is_active ? 'badge-success' : 'badge-danger'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
           </tr>`;
         });
-        document.getElementById('tbl-staff-workload').innerHTML = staffRows || '<tr><td colspan="6">No staff members found.</td></tr>';
-        document.getElementById('alert-overloaded-count').innerText = overloadedCount;
+        setElementHTML('tbl-staff-workload', staffRows || '<tr><td colspan="6">No staff members found.</td></tr>');
+        setElementText('alert-overloaded-count', overloadedCount);
 
         const projRes = await fetch('/api/projects');
         const projData = await projRes.json();
@@ -1939,8 +1950,8 @@
               <td><span class="badge badge-success">${p.status}</span></td>
             </tr>`;
           });
-          document.getElementById('tbl-projects').innerHTML = rows || '<tr><td colspan="6">No projects available.</td></tr>';
-          document.getElementById('alert-due-projects').innerText = upcomingDue;
+          setElementHTML('tbl-projects', rows || '<tr><td colspan="6">No projects available.</td></tr>');
+          setElementText('alert-due-projects', upcomingDue);
           populateProjectSelects(projData.data || []);
         }
 
@@ -1955,7 +1966,7 @@
               <td><span class="badge badge-success">${w.status}</span></td>
             </tr>`;
           });
-          document.getElementById('tbl-websites').innerHTML = rows || '<tr><td colspan="3">No websites found.</td></tr>';
+          setElementHTML('tbl-websites', rows || '<tr><td colspan="3">No websites found.</td></tr>');
         }
 
       } catch (err) {
@@ -1969,10 +1980,10 @@
       const staffCount = rawPeopleData.filter(u => u.role === 'Staff').length;
       const customersCount = rawPeopleData.filter(u => u.role === 'User').length;
 
-      document.getElementById('count-user-all').innerText = allCount;
-      document.getElementById('count-user-admins').innerText = adminsCount;
-      document.getElementById('count-user-staff').innerText = staffCount;
-      document.getElementById('count-user-customers').innerText = customersCount;
+      setElementText('count-user-all', allCount);
+      setElementText('count-user-admins', adminsCount);
+      setElementText('count-user-staff', staffCount);
+      setElementText('count-user-customers', customersCount);
     }
 
     function switchUserTab(tabName) {
