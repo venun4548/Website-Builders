@@ -212,12 +212,37 @@ def add_security_headers(response):
         response.headers['Pragma'] = 'no-cache'
     return response
 
+@app.errorhandler(Exception)
 @app.errorhandler(500)
 def internal_server_error(e):
-    logger.error(f"Internal Server Error (500) on {request.path}: {str(e)}")
+    orig_e = getattr(e, 'original_exception', e)
+    err_trace = traceback.format_exc()
+    logger.error(f"Internal Server Error (500) on {request.method} {request.path}: {str(orig_e)}\n{err_trace}")
+    
+    try:
+        with open('backend/error.log', 'a', encoding='utf-8') as f:
+            f.write(f"\n[{datetime.utcnow().isoformat()}] HTTP 500 on {request.method} {request.path}\nUser: {current_user.email if current_user.is_authenticated else 'Guest'}\nError: {str(orig_e)}\nTraceback:\n{err_trace}\n{'-'*60}\n")
+    except Exception:
+        pass
+
     if request.path.startswith('/api/'):
-        return jsonify({'status': 'error', 'message': 'Internal Server Error', 'details': str(e)}), 500
-    return "<h1>500 Internal Server Error</h1><p>An unexpected server error occurred. Please refresh or try again.</p>", 500
+        return jsonify({'status': 'error', 'message': f'Internal Server Error: {str(orig_e)}'}), 500
+    
+    return f"""
+    <div style="font-family:'Inter',sans-serif; padding:2rem; max-width:800px; margin:3rem auto; border:1px solid #FCA5A5; background:#FEF2F2; border-radius:16px; color:#991B1B; box-shadow:0 10px 25px rgba(220,38,38,0.08);">
+      <h2 style="margin-top:0; font-size:1.5rem; display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-triangle-exclamation"></i> 500 Internal Server Error</h2>
+      <p style="margin-bottom:0.5rem;">An unhandled server exception occurred while processing your request.</p>
+      <div style="background:#FFF; padding:1rem; border-radius:8px; border:1px solid #FECACA; margin:1rem 0;">
+        <p style="margin:0 0 0.4rem 0;"><strong>Request:</strong> <code>{request.method} {request.path}</code></p>
+        <p style="margin:0;"><strong>Error:</strong> <code style="color:#DC2626;">{str(orig_e)}</code></p>
+      </div>
+      <details style="margin-top:1rem; cursor:pointer;">
+        <summary style="font-weight:700; color:#B91C1C;">Click to inspect detailed stack trace</summary>
+        <pre style="background:#1E293B; color:#F8FAFC; padding:1rem; border-radius:8px; overflow-x:auto; font-size:0.82rem; margin-top:0.5rem; line-height:1.4;">{err_trace}</pre>
+      </details>
+      <p style="margin-bottom:0; margin-top:1.5rem;"><a href="javascript:history.back()" style="color:#1D4ED8; font-weight:bold; text-decoration:none;">← Go Back</a> | <a href="/dashboard" style="color:#1D4ED8; font-weight:bold; text-decoration:none;">Return to Dashboard</a></p>
+    </div>
+    """, 500
 
 @app.errorhandler(404)
 def page_not_found(e):
