@@ -214,15 +214,17 @@ def login_redirect():
 # ─── User (Client) Login ─────────────────────────────────────
 @app.route('/user/login', methods=['GET', 'POST'])
 def user_login():
-    if current_user.is_authenticated and current_user.is_user():
+    if current_user.is_authenticated:
         return redirect(url_for('customer_dashboard'))
+
     if request.method == 'POST':
-        ip    = request.remote_addr or '0.0.0.0'
+        ip = request.remote_addr or '0.0.0.0'
         email = (request.form.get('email') or '').strip().lower()
-        pwd   = request.form.get('password', '')
+        pwd = request.form.get('password', '')
         if not check_login_rate_limit(ip):
-            flash('Too many login attempts. Try again in a minute.', 'error')
+            flash('Too many login attempts. Please try again later.', 'error')
             return render_template('user_login.html')
+
         result = call_gas('loginUser', {'email': email, 'password': pwd})
         if result.get('status') == 'success':
             ud = result['data']
@@ -236,6 +238,60 @@ def user_login():
             return redirect(url_for('customer_dashboard'))
         flash(result.get('message', 'Invalid credentials.'), 'error')
     return render_template('user_login.html')
+
+# ─── User (Client) Registration ──────────────────────────────
+@app.route('/user/register', methods=['GET', 'POST'])
+def user_register():
+    if current_user.is_authenticated:
+        return redirect(url_for('customer_dashboard'))
+        
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        mobile = request.form.get('mobile', '').strip()
+        password = request.form.get('password', '')
+        
+        result = call_gas('createUser', {
+            'full_name': full_name,
+            'email': email,
+            'mobile': mobile,
+            'password': password,
+            'role': 'User'
+        })
+        
+        if result.get('status') == 'success':
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('user_login'))
+        else:
+            flash(result.get('message', 'Registration failed.'), 'error')
+            
+    return render_template('user_register.html')
+
+# ─── Admin/Staff Registration ────────────────────────────────
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        mobile = request.form.get('mobile', '').strip()
+        password = request.form.get('password', '')
+        role = request.form.get('role', 'Staff')
+        
+        result = call_gas('createUser', {
+            'full_name': full_name,
+            'email': email,
+            'mobile': mobile,
+            'password': password,
+            'role': role
+        })
+        
+        if result.get('status') == 'success':
+            flash(f'{role} account created successfully! Please log in.', 'success')
+            return redirect(url_for('admin_login'))
+        else:
+            flash(result.get('message', 'Registration failed.'), 'error')
+            
+    return render_template('register.html')
 
 @app.route('/user/logout')
 @login_required
