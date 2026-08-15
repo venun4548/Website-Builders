@@ -6,7 +6,7 @@
       "use": "@vercel/python"
     },
     {
-      "src": "website-builders/*.html",
+      "src": "website-builders/**",
       "use": "@vercel/static"
     }
   ],
@@ -28,8 +28,20 @@
       "dest": "/website-builders/contact.html"
     },
     {
-      "src": "/(css|js|images|webfonts)/(.*)",
-      "dest": "/website-builders/$1/$2"
+      "src": "/css/(.*)",
+      "dest": "/website-builders/css/$1"
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "/website-builders/js/$1"
+    },
+    {
+      "src": "/images/(.*)",
+      "dest": "/website-builders/images/$1"
+    },
+    {
+      "src": "/webfonts/(.*)",
+      "dest": "/website-builders/webfonts/$1"
     },
     {
       "src": "/(.*)",
