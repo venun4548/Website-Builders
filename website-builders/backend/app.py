@@ -37,7 +37,7 @@ if os.environ.get('RENDER') or os.environ.get('VERCEL'):
 bcrypt = Bcrypt(app)
 
 login_manager = LoginManager(app)
-login_manager.login_view = 'login_redirect'
+login_manager.login_view = 'login'
 
 # ─── GAS Proxy Helpers ────────────────────────────────────────
 GAS_URL    = Config.GAS_URL
@@ -102,7 +102,7 @@ def load_user(user_id):
 def unauthorized():
     if request.path.startswith('/api/'):
         return jsonify({'success': False, 'error': 'Authentication required.'}), 401
-    return redirect(url_for('login_redirect'))
+    return redirect(url_for('login'))
 
 # ─── Rate Limiting (in-memory) ────────────────────────────────
 RATE_LIMIT_TRACKER: dict = {}
@@ -136,7 +136,7 @@ def role_required(*roles):
                 if request.path.startswith('/api/'):
                     return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
                 flash('Access denied.', 'error')
-                return redirect(url_for('login_redirect'))
+                return redirect(url_for('login'))
             return f(*args, **kwargs)
         return decorated
     return decorator
@@ -208,8 +208,50 @@ def contact_form():
 
 # ─── Login Redirect ──────────────────────────────────────────
 @app.route('/login')
-def login_redirect():
+def login():
     return redirect('/user/login')
+
+@app.route('/logout')
+@login_required
+def logout():
+    _do_logout()
+    return redirect(url_for('login'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    role = current_user.role.lower()
+    if 'super' in role:
+        return redirect(url_for('super_admin_dashboard'))
+    elif 'admin' in role:
+        return redirect(url_for('admin_dashboard'))
+    elif 'staff' in role:
+        return redirect(url_for('staff_dashboard'))
+    else:
+        return redirect(url_for('customer_dashboard'))
+
+# Stubs for missing profile endpoints referenced in templates
+@app.route('/profile/edit', methods=['POST'])
+@login_required
+def edit_profile():
+    flash('Profile update not implemented in proxy version yet.', 'info')
+    return redirect(url_for('profile'))
+
+@app.route('/profile/password', methods=['POST'])
+@login_required
+def change_password():
+    flash('Password change not implemented in proxy version yet.', 'info')
+    return redirect(url_for('profile'))
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    flash('Forgot password not implemented in proxy version yet.', 'info')
+    return redirect(url_for('login'))
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    flash('Reset password not implemented in proxy version yet.', 'info')
+    return redirect(url_for('login'))
 
 # ─── User (Client) Login ─────────────────────────────────────
 @app.route('/user/login', methods=['GET', 'POST'])
@@ -398,14 +440,14 @@ def staff_logout():
 @login_required
 def super_admin_dashboard():
     if current_user.role != 'Super Admin':
-        return redirect(url_for('login_redirect'))
+        return redirect(url_for('login'))
     return render_template('super_admin_dashboard.html', user=current_user)
 
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
     if current_user.role not in ('Admin', 'Super Admin'):
-        return redirect(url_for('login_redirect'))
+        return redirect(url_for('login'))
     if current_user.role == 'Super Admin':
         return redirect(url_for('super_admin_dashboard'))
     return render_template('admin_dashboard.html', user=current_user)
@@ -414,7 +456,7 @@ def admin_dashboard():
 @login_required
 def staff_dashboard():
     if current_user.role not in ('Staff', 'Admin', 'Super Admin'):
-        return redirect(url_for('login_redirect'))
+        return redirect(url_for('login'))
     return render_template('staff_dashboard.html', user=current_user)
 
 @app.route('/user/dashboard')
@@ -422,6 +464,19 @@ def staff_dashboard():
 @login_required
 def customer_dashboard():
     return render_template('customer_dashboard.html', user=current_user)
+
+@app.route('/profile')
+@login_required
+def profile():
+    role = current_user.role.lower()
+    if 'super' in role:
+        return render_template('super_admin_profile.html', user=current_user)
+    elif 'admin' in role:
+        return render_template('admin_profile.html', user=current_user)
+    elif 'staff' in role:
+        return render_template('staff_profile.html', user=current_user)
+    else:
+        return render_template('customer_profile.html', user=current_user)
 
 # ─── API: Current User ────────────────────────────────────────
 @app.route('/api/me')
