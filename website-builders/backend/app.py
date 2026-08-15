@@ -41,12 +41,10 @@ if os.environ.get('RENDER'):
 db.init_app(app)
 bcrypt = Bcrypt(app)
 
-# Ensure database tables and seed accounts are created automatically on WSGI / Serverless startup
+# Ensure database tables are created automatically on WSGI / Serverless startup
 with app.app_context():
     try:
         db.create_all()
-        if not User.query.filter_by(email='super@websitebuilders.com').first():
-            init_db()
     except Exception as e:
         logger.error(f"Error initializing database schema on startup: {str(e)}")
 
@@ -366,6 +364,13 @@ def init_db():
 
         db.session.commit()
         logger.info("Database seeded successfully with Super Admin, Admin, Staff, and User roles.")
+
+# Ensure database schema & seed users are initialized automatically on app startup
+with app.app_context():
+    try:
+        init_db()
+    except Exception as e:
+        logger.error(f"Error initializing database schema on startup: {str(e)}")
 
 def generate_unique_project_id():
     year = datetime.utcnow().strftime('%Y')
