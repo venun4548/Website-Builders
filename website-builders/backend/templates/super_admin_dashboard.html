@@ -1314,6 +1314,99 @@
         </div>
       </div>
 
+      <!-- View Section: Activity Monitoring -->
+      <div id="sec-activity" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Real-Time Activity Monitoring</h2>
+              <p style="color:var(--secondary-text); font-size:0.88rem;">Live stream of user actions, login events, and administrative activities across the platform.</p>
+            </div>
+            <button onclick="loadDashboardData()" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Refresh Activity Stream</button>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>User / Admin</th>
+                  <th>Target Entity</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-cmd-activity">
+                <tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--muted-text);">Loading platform activities...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Section: Access & Security -->
+      <div id="sec-security" class="view-section" style="display:none;">
+        <div class="kpi-grid-4">
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">TWO-STEP PIN GATE</span>
+              <span class="kpi-value" style="color:var(--primary-green);">VERIFIED</span>
+              <span class="kpi-trend"><i class="fa-solid fa-shield-check"></i> Access PIN: 7788 Active</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-key"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">AUTH RATE LIMITER</span>
+              <span class="kpi-value">NORMAL</span>
+              <span class="kpi-trend"><i class="fa-solid fa-circle-check"></i> Brute-force protection enabled</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-gauge-high"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">PASSWORD HASHING</span>
+              <span class="kpi-value">PBKDF2</span>
+              <span class="kpi-trend"><i class="fa-solid fa-lock"></i> Dual SHA256 / Bcrypt validation</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-shield-halved"></i></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">ACTIVE AUDIT EVENT LOG</span>
+              <span class="kpi-value">ACTIVE</span>
+              <span class="kpi-trend"><i class="fa-solid fa-clipboard-list"></i> Real-time logging enabled</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-user-shield"></i></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title"><i class="fa-solid fa-shield-halved"></i> Access & Security Audit Logs</h2>
+              <p style="color:var(--secondary-text); font-size:0.88rem;">Detailed audit trails of administrative logins, PIN verifications, and role assignments.</p>
+            </div>
+            <button onclick="loadDashboardData()" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Refresh Security Audit</button>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>Performed By</th>
+                  <th>Target User</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-audit-logs">
+                <tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--muted-text);">Loading security audit logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
