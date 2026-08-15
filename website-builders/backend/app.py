@@ -383,11 +383,19 @@ def generate_unique_enquiry_id():
 
 @app.route('/')
 def index():
-    return app.send_static_file('index.html')
+    try:
+        return app.send_static_file('index.html')
+    except Exception:
+        root_dir = os.path.abspath(os.path.join(app.root_path, '..'))
+        return send_from_directory(root_dir, 'index.html')
 
 @app.route('/index.html')
 def home():
-    return app.send_static_file('index.html')
+    try:
+        return app.send_static_file('index.html')
+    except Exception:
+        root_dir = os.path.abspath(os.path.join(app.root_path, '..'))
+        return send_from_directory(root_dir, 'index.html')
 
 @app.route('/services.html')
 def services_page():

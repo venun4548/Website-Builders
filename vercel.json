@@ -12,12 +12,24 @@
   ],
   "routes": [
     {
-      "src": "/(css|js|images|webfonts)/(.*)",
-      "dest": "/website-builders/$1/$2"
+      "src": "/",
+      "dest": "/website-builders/index.html"
     },
     {
-      "src": "/(index|services|contact).html",
-      "dest": "/website-builders/$1.html"
+      "src": "/index.html",
+      "dest": "/website-builders/index.html"
+    },
+    {
+      "src": "/services.html",
+      "dest": "/website-builders/services.html"
+    },
+    {
+      "src": "/contact.html",
+      "dest": "/website-builders/contact.html"
+    },
+    {
+      "src": "/(css|js|images|webfonts)/(.*)",
+      "dest": "/website-builders/$1/$2"
     },
     {
       "src": "/(.*)",
