@@ -2282,8 +2282,16 @@ def mark_notification_read(notif_id):
     return jsonify({'status': 'success'})
 
 # --- File Management API ---
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+if 'VERCEL' in os.environ or 'RENDER' in os.environ or os.environ.get('VERCEL_ENV') or os.environ.get('SERVERLESS'):
+    UPLOAD_FOLDER = '/tmp/uploads'
+else:
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except Exception as e:
+    logger.warning(f"Could not create UPLOAD_FOLDER {UPLOAD_FOLDER}: {str(e)}")
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/api/projects/<int:project_id>/files', methods=['GET', 'POST'])
