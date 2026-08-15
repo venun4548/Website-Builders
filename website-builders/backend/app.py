@@ -2467,6 +2467,7 @@ def manage_clients():
         client.set_password(password)
         db.session.add(client)
         db.session.commit()
+        sync_to_google_sheets('sync_user', client.to_dict())
         log_audit('Created Client', current_user.email, target_user=email)
         return jsonify({'status': 'success', 'message': 'Client created successfully', 'data': client.to_dict()})
 
