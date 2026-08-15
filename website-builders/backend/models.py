@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from flask_bcrypt import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -23,13 +23,19 @@ class User(db.Model, UserMixin):
     assigned_staff = db.relationship('User', remote_side=[id], foreign_keys=[assigned_staff_id], backref=db.backref('assigned_clients', lazy='dynamic'))
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password).decode('utf-8')
+        self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         if not self.password_hash or not password:
             return False
         try:
-            return check_password_hash(self.password_hash, password)
+            if check_password_hash(self.password_hash, password):
+                return True
+        except Exception:
+            pass
+        try:
+            from flask_bcrypt import check_password_hash as bcrypt_check
+            return bcrypt_check(self.password_hash, password)
         except Exception:
             return False
 
