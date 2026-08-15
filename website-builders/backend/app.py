@@ -106,7 +106,19 @@ SHARED_SECRET = os.environ.get('SHARED_SECRET', 'sec_wb_crm_77c4e569bbd18f0a1c6a
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'admin_login'
+login_manager.login_view = 'user_login'
+
+@login_manager.unauthorized_handler
+def custom_unauthorized():
+    if request.path.startswith('/api/'):
+        return jsonify({'status': 'error', 'message': 'Authentication required.'}), 401
+    
+    if request.path.startswith('/admin') or request.path.startswith('/super-admin') or request.path.startswith('/staff'):
+        flash('Please log in to access the Admin Portal.', 'error')
+        return redirect(url_for('admin_login', next=request.path))
+    
+    flash('Please log in to access your account.', 'info')
+    return redirect(url_for('user_login', next=request.path))
 
 # Google Apps Script Web App URL & Shared Secret (reads from env vars or defaults)
 GAS_WEB_APP_URL = os.environ.get('GAS_WEB_APP_URL', 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec')
