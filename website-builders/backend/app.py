@@ -1,5 +1,6 @@
 
 import os
+import json
 import uuid
 import urllib
 import traceback
@@ -140,24 +141,21 @@ GAS_WEB_APP_URL = os.environ.get('GAS_WEB_APP_URL', 'https://script.google.com/m
 SHARED_SECRET = os.environ.get('SHARED_SECRET', 'sec_wb_crm_77c4e569bbd18f0a1c6a58')
 
 def sync_to_google_sheets(action, data):
-    def _send():
-        try:
-            import urllib.parse
-            import urllib.request
-            params = {
-                'token': SHARED_SECRET,
-                'action': action,
-                'data': json.dumps(data)
-            }
-            encoded_data = urllib.parse.urlencode(params).encode('utf-8')
-            req = urllib.request.Request(GAS_WEB_APP_URL, data=encoded_data, method='POST')
-            with urllib.request.urlopen(req, timeout=4) as resp:
-                pass
-        except Exception as e:
-            logger.debug(f"Google Sheets background sync notice: {str(e)}")
-
-    import threading
-    threading.Thread(target=_send, daemon=True).start()
+    try:
+        import urllib.parse
+        import urllib.request
+        params = {
+            'token': SHARED_SECRET,
+            'action': action,
+            'data': json.dumps(data)
+        }
+        encoded_data = urllib.parse.urlencode(params).encode('utf-8')
+        req = urllib.request.Request(GAS_WEB_APP_URL, data=encoded_data, method='POST')
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            resp_body = resp.read().decode('utf-8')
+            logger.info(f"Google Sheets sync [{action}] status: {resp.status} - {resp_body[:100]}")
+    except Exception as e:
+        logger.warning(f"Google Sheets sync notice [{action}]: {str(e)}")
 
 @login_manager.user_loader
 def load_user(user_id):
