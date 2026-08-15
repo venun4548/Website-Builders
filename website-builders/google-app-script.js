@@ -29,7 +29,7 @@ const SHEETS = {
 // Column indexes (1-based)
 const U={ID:1,NAME:2,EMAIL:3,MOBILE:4,PASS:5,ROLE:6,STATUS:7,CREATED_DATE:8,CREATED_TIME:9,LAST_LOGIN_DATE:10,LAST_LOGIN_TIME:11,LAST_ACT_DATE:12,LAST_ACT_TIME:13,UPD_DATE:14,UPD_TIME:15,ASSIGNED_STAFF:16,TOTAL:16};
 const M={ID:1,CONV_ID:2,SENDER_ID:3,SENDER_NAME:4,SENDER_ROLE:5,RECV_ID:6,RECV_NAME:7,RECV_ROLE:8,RECIP_TYPE:9,MSG_TYPE:10,PROJ_ID:11,CUST_ID:12,SUBJECT:13,BODY:14,ATTACH:15,STATUS:16,READ_AT:17,CREATED_DATE:18,CREATED_TIME:19,UPDATED:20,TOTAL:20};
-const E={ID:1,CUST_ID:2,CUST_NAME:3,EMAIL:4,MOBILE:5,ADDRESS:6,MESSAGE:7,STATUS:8,PROJ_ID:9,CREATED_DATE:10,CREATED_TIME:11,UPD_DATE:12,UPD_TIME:13,TOTAL:13};
+const E={SUBMISSION_ID:1,TIMESTAMP:2,CUSTOMER_NAME:3,EMAIL:4,MOBILE_NUMBER:5,ADDRESS:6,MESSAGE:7,EMAIL_STATUS:8,EMAIL_SENT_AT:9,OWNER_NOTIF_STAT:10,OWNER_NOTIF_TIME:11,TICKET_STATUS:12,ASSIGNED_TO:13,FOLLOWUP_DATE:14,FOLLOWUP_STATUS:15,SOURCE_PAGE:16,REMARKS:17,CUST_ID:18,PROJ_ID:19,TOTAL:19};
 const P={ID:1,CUST_ID:2,CUST_NAME:3,PROJ_NAME:4,DESC:5,STAGE:6,PROGRESS:7,DELIVERY:8,STATUS:9,CREATED_BY:10,CREATED_DATE:11,CREATED_TIME:12,UPD_DATE:13,UPD_TIME:14,LATEST_UPDATE:15,TOTAL:15};
 const A={ID:1,PROJ_ID:2,STAFF_ID:3,STAFF_NAME:4,ASSIGNED_BY:5,ASSIGNED_DATE:6,ASSIGNED_TIME:7,UNASSIGNED_DATE:8,STATUS:9,TOTAL:9};
 const PU={ID:1,PROJ_ID:2,STAFF_ID:3,STAFF_NAME:4,STAGE:5,PROGRESS:6,TEXT:7,REMARK:8,CREATED_DATE:9,CREATED_TIME:10,TOTAL:10};
@@ -38,18 +38,32 @@ const AL={ID:1,USER_ID:2,USER_NAME:3,ROLE:4,ACTION:5,RELATED_ID:6,DESC:7,DATE:8,
 const HEADERS={
   Users:['User ID','Full Name','Email','Mobile Number','Password Hash','Role','Status','Created Date','Created Time','Last Login Date','Last Login Time','Last Activity Date','Last Activity Time','Updated Date','Updated Time','Assigned Staff ID'],
   Messages:['Message ID','Conversation ID','Sender ID','Sender Name','Sender Role','Receiver ID','Receiver Name','Receiver Role','Recipient Type','Message Type','Project ID','Customer ID','Subject','Message','Attachment URL','Status','Read At','Created Date','Created Time','Last Updated'],
-  Enquiries:['Enquiry ID','Customer ID','Customer Name','Email','Mobile','Address','Message','Status','Project ID','Created Date','Created Time','Updated Date','Updated Time'],
+  Enquiries:['Submission ID','Timestamp','Customer Name','Email','Mobile Number','Address','Message','Email Status','Email Sent At','Owner Notification Status','Owner Notification Time','Ticket Status','Assigned To','Followup Date','Followup Status','Source Page','Remarks','Customer ID','Project ID'],
   Projects:['Project ID','Customer ID','Customer Name','Project Name','Description','Current Stage','Progress','Expected Delivery Date','Status','Created By','Created Date','Created Time','Updated Date','Updated Time','Latest Update'],
   ProjectAssignments:['Assignment ID','Project ID','Staff ID','Staff Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Status'],
   ProjectUpdates:['Update ID','Project ID','Staff ID','Staff Name','Stage','Progress','Update Text','Remark','Created Date','Created Time'],
   ActivityLogs:['Activity ID','User ID','User Name','Role','Action','Related ID','Description','Date','Time','Status']
 };
 
-// ─────────────── SETUP ────────────────────────────────────────
 function initialSetup(){
   Logger.log('Initializing Website Builders Sheets...');
   Object.keys(HEADERS).forEach(n=>{getOrCreateSheet(n,HEADERS[n]);Logger.log('Sheet ready: '+n);});
   Logger.log('All 7 sheets initialized.');
+}
+
+function upgradeEnquiriesSheet(){
+  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet1 = ss.getSheetByName('Sheet1');
+  if(sheet1){
+    sheet1.setName('Enquiries');
+    Logger.log('Renamed Sheet1 to Enquiries.');
+  }
+  const enq = ss.getSheetByName('Enquiries');
+  if(enq){
+    enq.getRange('R1').setValue('Customer ID').setBackground('#0f172a').setFontColor('#ffffff').setFontWeight('bold');
+    enq.getRange('S1').setValue('Project ID').setBackground('#0f172a').setFontColor('#ffffff').setFontWeight('bold');
+    Logger.log('Added Customer ID and Project ID columns.');
+  }
 }
 
 function seedSuperAdmin(){
@@ -264,8 +278,32 @@ function createEnquiry(d){
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
     const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
-    const now=getNow();const enqId=generateId('ENQ',SHEETS.ENQUIRIES,E.ID);
-    sheet.appendRow([enqId,d.customer_id||'',d.customer_name.trim(),d.email.trim().toLowerCase(),(d.mobile||'').trim(),(d.address||'').trim(),(d.message||'').trim(),'New',d.project_id||'',now.date,now.time,'','']);
+    const enqId=generateSheet1Id(sheet);
+    const followUpDate=new Date();followUpDate.setDate(followUpDate.getDate()+3);
+    const followUpDateStr=Utilities.formatDate(followUpDate,CONFIG.TIMEZONE,'dd-MMM-yyyy');
+    
+    const newRow=[];
+    newRow[E.SUBMISSION_ID-1]=enqId;
+    newRow[E.TIMESTAMP-1]=Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'dd-MMM-yyyy hh:mm:ss a');
+    newRow[E.CUSTOMER_NAME-1]=d.customer_name.trim();
+    newRow[E.EMAIL-1]=d.email.trim().toLowerCase();
+    newRow[E.MOBILE_NUMBER-1]=(d.mobile||'').trim();
+    newRow[E.ADDRESS-1]=(d.address||'').trim();
+    newRow[E.MESSAGE-1]=(d.message||'').trim();
+    newRow[E.EMAIL_STATUS-1]='Pending';
+    newRow[E.EMAIL_SENT_AT-1]='';
+    newRow[E.OWNER_NOTIF_STAT-1]='Pending';
+    newRow[E.OWNER_NOTIF_TIME-1]='';
+    newRow[E.TICKET_STATUS-1]='New';
+    newRow[E.ASSIGNED_TO-1]='';
+    newRow[E.FOLLOWUP_DATE-1]=followUpDateStr;
+    newRow[E.FOLLOWUP_STATUS-1]='Pending';
+    newRow[E.SOURCE_PAGE-1]=d.source_page||'';
+    newRow[E.REMARKS-1]='';
+    newRow[E.CUST_ID-1]=d.customer_id||'';
+    newRow[E.PROJ_ID-1]=d.project_id||'';
+
+    sheet.appendRow(newRow);
     logActivity({userId:d.customer_id||'',userName:d.customer_name,role:'User',action:'ENQUIRY_CREATED',relatedId:enqId,description:'New enquiry',status:'SUCCESS'});
     try{sendOwnerEnquiryEmail(enqId,d.customer_name,d.email,d.mobile,d.address,d.message);}catch(e){}
     return jr('success',{id:enqId,enquiry_id:enqId,message:'Enquiry created.'});
@@ -276,13 +314,10 @@ function updateEnquiry(d){
   d = d || {};
   if(!d.enquiry_id) return jr('error','Enquiry ID required.');
   const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
-  const row=findRowByValue(sheet,E.ID,d.enquiry_id);
+  const row=findRowByValue(sheet,E.SUBMISSION_ID,d.enquiry_id);
   if(row<0) return jr('error','Enquiry not found.');
-  const now=getNow();
-  if(d.status)     sheet.getRange(row,E.STATUS).setValue(d.status);
+  if(d.status)     sheet.getRange(row,E.TICKET_STATUS).setValue(d.status);
   if(d.project_id) sheet.getRange(row,E.PROJ_ID).setValue(d.project_id);
-  sheet.getRange(row,E.UPD_DATE).setValue(now.date);
-  sheet.getRange(row,E.UPD_TIME).setValue(now.time);
   return jr('success',{message:'Enquiry updated.'});
 }
 
@@ -290,7 +325,20 @@ function getEnquiries(p){
   const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',[]);
-  let list=sheet.getRange(2,1,last-1,E.TOTAL).getValues().map(r=>({enquiry_id:String(r[E.ID-1]),id:String(r[E.ID-1]),customer_id:String(r[E.CUST_ID-1]),customer_name:String(r[E.CUST_NAME-1]),name:String(r[E.CUST_NAME-1]),email:String(r[E.EMAIL-1]),mobile:String(r[E.MOBILE-1]),address:String(r[E.ADDRESS-1]),message:String(r[E.MESSAGE-1]),status:String(r[E.STATUS-1]),project_id:String(r[E.PROJ_ID-1]),created_at:String(r[E.CREATED_DATE-1])+' '+String(r[E.CREATED_TIME-1]),updated_at:String(r[E.UPD_DATE-1])+' '+String(r[E.UPD_TIME-1])})).filter(e=>e.enquiry_id);
+  let list=sheet.getRange(2,1,last-1,E.TOTAL).getValues().map(r=>({
+    enquiry_id:String(r[E.SUBMISSION_ID-1]),
+    id:String(r[E.SUBMISSION_ID-1]),
+    customer_id:String(r[E.CUST_ID-1]),
+    customer_name:String(r[E.CUSTOMER_NAME-1]),
+    name:String(r[E.CUSTOMER_NAME-1]),
+    email:String(r[E.EMAIL-1]),
+    mobile:String(r[E.MOBILE_NUMBER-1]),
+    address:String(r[E.ADDRESS-1]),
+    message:String(r[E.MESSAGE-1]),
+    status:String(r[E.TICKET_STATUS-1]),
+    project_id:String(r[E.PROJ_ID-1]),
+    created_at:String(r[E.TIMESTAMP-1])
+  })).filter(e=>e.enquiry_id);
   if(p.customer_id) list=list.filter(e=>e.customer_id===p.customer_id);
   if(p.status)      list=list.filter(e=>e.status.toLowerCase()===p.status.toLowerCase());
   return jr('success',list);
@@ -546,7 +594,7 @@ function getStats(p){
   if(uL>=2){us.getRange(2,1,uL-1,U.TOTAL).getValues().forEach(r=>{const role=String(r[U.ROLE-1]);const st=String(r[U.STATUS-1]).toUpperCase();if(!role)return;tu++;if(role==='Admin')ta++;else if(role==='Staff')ts++;else if(role==='User')tc++;if(st==='ACTIVE')au++;else iu++;});}
   let te=0,ne=0;
   const es=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);const eL=es.getLastRow();
-  if(eL>=2){es.getRange(2,1,eL-1,E.TOTAL).getValues().forEach(r=>{te++;if(String(r[E.STATUS-1])==='New')ne++;});}
+  if(eL>=2){es.getRange(2,1,eL-1,E.TOTAL).getValues().forEach(r=>{te++;if(String(r[E.TICKET_STATUS-1])==='New')ne++;});}
   let tp=0,ap=0,pp=0;
   const ps=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);const pL=ps.getLastRow();
   if(pL>=2){ps.getRange(2,1,pL-1,P.TOTAL).getValues().forEach(r=>{tp++;const st=String(r[P.STATUS-1]).toLowerCase();if(st==='active')ap++;else if(st==='pending')pp++;});}
@@ -560,13 +608,7 @@ function getStats(p){
 }
 
 // ─────────────── CONTACT FORM ─────────────────────────────────
-// Sheet1 = original mail-automation sheet (NEVER modified by initialSetup)
-// Enquiries = new CRM copy for the dashboard
-// Both receive every public contact form submission.
-
-// Legacy column map for Sheet1 (matches the original spreadsheet exactly)
-const COL={SUBMISSION_ID:1,TIMESTAMP:2,CUSTOMER_NAME:3,EMAIL:4,MOBILE_NUMBER:5,ADDRESS:6,MESSAGE:7,EMAIL_STATUS:8,EMAIL_SENT_AT:9,OWNER_NOTIF_STAT:10,OWNER_NOTIF_TIME:11,TICKET_STATUS:12,ASSIGNED_TO:13,FOLLOWUP_DATE:14,FOLLOWUP_STATUS:15,SOURCE_PAGE:16,REMARKS:17};
-
+// Unified Enquiries sheet handling (legacy mail automation + CRM)
 function handleContactForm(params){
   const lock=LockService.getScriptLock();
   try{lock.waitLock(15000);}catch(err){return jr('error','Server busy.');}
@@ -580,58 +622,63 @@ function handleContactForm(params){
     if(!name||!email||!mobile||!message) return jr('error','All required fields must be completed.');
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jr('error','Invalid email address format.');
 
-    const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-    // ── Write to Sheet1 (original mail-automation sheet) ─────────
-    // Uses the same column layout as the original script — Sheet1 is NOT touched elsewhere.
-    const sheet1=ss.getSheetByName('Sheet1')||ss.getSheets()[0];
-    const submissionId=generateSheet1Id(sheet1);
+    const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
+    const submissionId=generateEnquiryId(sheet);
     const timestampStr=Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'dd-MMM-yyyy hh:mm:ss a');
     const followUpDate=new Date();followUpDate.setDate(followUpDate.getDate()+3);
     const followUpDateStr=Utilities.formatDate(followUpDate,CONFIG.TIMEZONE,'dd-MMM-yyyy');
 
     const newRow=[];
-    newRow[COL.SUBMISSION_ID-1]=submissionId;
-    newRow[COL.TIMESTAMP-1]=timestampStr;
-    newRow[COL.CUSTOMER_NAME-1]=name;
-    newRow[COL.EMAIL-1]=email;
-    newRow[COL.MOBILE_NUMBER-1]=mobile;
-    newRow[COL.ADDRESS-1]=address;
-    newRow[COL.MESSAGE-1]=message;
-    newRow[COL.EMAIL_STATUS-1]='Pending';
-    newRow[COL.EMAIL_SENT_AT-1]='';
-    newRow[COL.OWNER_NOTIF_STAT-1]='Pending';
-    newRow[COL.OWNER_NOTIF_TIME-1]='';
-    newRow[COL.TICKET_STATUS-1]='New';
-    newRow[COL.ASSIGNED_TO-1]='';
-    newRow[COL.FOLLOWUP_DATE-1]=followUpDateStr;
-    newRow[COL.FOLLOWUP_STATUS-1]='Pending';
-    newRow[COL.SOURCE_PAGE-1]=source;
-    newRow[COL.REMARKS-1]='';
-    sheet1.appendRow(newRow);
-    const rowIndex=sheet1.getLastRow();
+    newRow[E.SUBMISSION_ID-1]=submissionId;
+    newRow[E.TIMESTAMP-1]=timestampStr;
+    newRow[E.CUSTOMER_NAME-1]=name;
+    newRow[E.EMAIL-1]=email;
+    newRow[E.MOBILE_NUMBER-1]=mobile;
+    newRow[E.ADDRESS-1]=address;
+    newRow[E.MESSAGE-1]=message;
+    newRow[E.EMAIL_STATUS-1]='Pending';
+    newRow[E.EMAIL_SENT_AT-1]='';
+    newRow[E.OWNER_NOTIF_STAT-1]='Pending';
+    newRow[E.OWNER_NOTIF_TIME-1]='';
+    newRow[E.TICKET_STATUS-1]='New';
+    newRow[E.ASSIGNED_TO-1]='';
+    newRow[E.FOLLOWUP_DATE-1]=followUpDateStr;
+    newRow[E.FOLLOWUP_STATUS-1]='Pending';
+    newRow[E.SOURCE_PAGE-1]=source;
+    newRow[E.REMARKS-1]='';
+    newRow[E.CUST_ID-1]='';
+    newRow[E.PROJ_ID-1]='';
+    
+    sheet.appendRow(newRow);
+    const rowIndex=sheet.getLastRow();
 
-    // Send owner notification email and update Sheet1 status
+    // Send owner notification email
     let ownerStatus='Sent',ownerTime='',remarks='';
     try{
       sendOwnerEnquiryEmail(submissionId,name,email,mobile,address,message);
       ownerTime=Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'dd-MMM-yyyy hh:mm:ss a');
     }catch(err){ownerStatus='Failed';remarks='Owner email failed: '+err.toString();}
-    sheet1.getRange(rowIndex,COL.OWNER_NOTIF_STAT).setValue(ownerStatus);
-    if(ownerTime) sheet1.getRange(rowIndex,COL.OWNER_NOTIF_TIME).setValue(ownerTime);
-    if(remarks)   sheet1.getRange(rowIndex,COL.REMARKS).setValue(remarks);
-
-    // ── Also write to Enquiries sheet (CRM copy) ─────────────────
-    try{
-      const eSheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
-      const now=getNow();const enqId=generateId('ENQ',SHEETS.ENQUIRIES,E.ID);
-      eSheet.appendRow([enqId,'',name,email,mobile,address,message,'New','',now.date,now.time,'','']);
-    }catch(err){Logger.log('Enquiries write failed (non-fatal): '+err.toString());}
+    sheet.getRange(rowIndex,E.OWNER_NOTIF_STAT).setValue(ownerStatus);
+    if(ownerTime) sheet.getRange(rowIndex,E.OWNER_NOTIF_TIME).setValue(ownerTime);
+    if(remarks)   sheet.getRange(rowIndex,E.REMARKS).setValue(remarks);
 
     lock.releaseLock();
     const trigger=ScriptApp.newTrigger('sendScheduledCustomerEmail').timeBased().after(CONFIG.DELAY_MINUTES*60*1000).create();
     PropertiesService.getScriptProperties().setProperty('trigger_'+trigger.getUniqueId(),JSON.stringify({name,email,enqId:submissionId,message}));
     return jr('success',{message:'Enquiry submitted successfully.',submissionId});
   }catch(err){if(lock.hasLock())lock.releaseLock();return jr('error','Submission failed: '+err.toString());}
+}
+
+function generateEnquiryId(sheet){
+  const today=new Date();
+  const yyyymmdd=Utilities.formatDate(today,CONFIG.TIMEZONE,'yyyyMMdd');
+  const prefix='WB-'+yyyymmdd+'-';
+  const lastRow=sheet.getLastRow();let maxSeq=0;
+  if(lastRow>1){
+    const ids=sheet.getRange(2,E.SUBMISSION_ID,lastRow-1,1).getValues();
+    ids.forEach(r=>{const id=String(r[0]);if(id.startsWith(prefix)){const n=parseInt(id.substring(prefix.length),10);if(!isNaN(n)&&n>maxSeq)maxSeq=n;}});
+  }
+  return prefix+('0000'+(maxSeq+1)).slice(-4);
 }
 
 function sendScheduledCustomerEmail(e){
