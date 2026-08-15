@@ -1824,25 +1824,28 @@ def is_staff_assigned_to_client(staff_id, client_id):
     return False
 
 def is_conversation_accessible_by_user(conv_id, user):
-    if user.role == 'Super Admin':
+    if user.role in ['Super Admin', 'Admin']:
         return True
     msgs = Message.query.filter_by(conversation_id=conv_id).all()
     if not msgs:
         return False
+    user_id_str = str(user.id)
     for m in msgs:
-        if m.sender_id == user.id or m.receiver_id == user.id:
+        if str(m.sender_id) == user_id_str or str(m.receiver_id) == user_id_str:
             return True
-        if m.customer_id == user.id:
+        if m.customer_id and str(m.customer_id) == user_id_str:
+            return True
+        if user.role == 'Staff':
+            if m.receiver_role in ['Staff', 'TEAM'] or m.recipient_type == 'TEAM':
+                return True
+            if is_staff_assigned_to_client(user.id, m.sender_id) or is_staff_assigned_to_client(user.id, m.customer_id):
+                return True
+        if user.role == 'User' and (str(m.customer_id) == user_id_str or str(m.receiver_id) == user_id_str or str(m.sender_id) == user_id_str):
             return True
         if m.project_id:
             proj = Project.query.filter((Project.project_id == m.project_id) | (Project.id == m.project_id)).first()
-            if proj:
-                if user.role == 'Admin':
-                    return True
-                if proj.assigned_staff_id == user.id or proj.customer_id == user.id:
-                    return True
-        if user.role in ['Admin', 'Staff'] and m.recipient_type == 'TEAM':
-            return True
+            if proj and (proj.assigned_staff_id == user.id or proj.customer_id == user.id):
+                return True
     return False
 
 # --- Messaging API Endpoints ---
