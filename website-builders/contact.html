@@ -528,33 +528,31 @@
         return;
       }
 
-      // Check script URL is configured
-      if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE') {
-        showError('⚠ The form backend is not configured yet. Please deploy the Google Apps Script first.');
-        return;
-      }
-
-      // Loading state
       submitBtn.classList.add('loading');
       submitBtn.disabled = true;
 
-      const formData = new FormData(form);
+      const payload = {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        mobile: form.mobile.value.trim(),
+        address: form.address.value.trim(),
+        message: form.message.value.trim()
+      };
 
       try {
-        const response = await fetch(SCRIPT_URL, {
+        const response = await fetch('/api/enquiry', {
           method: 'POST',
-          body: formData
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
 
         const result = await response.json();
 
-        if (result.status === 'success') {
-          // Display Submission ID
+        if (response.ok && result.status === 'success') {
           const displaySubId = document.getElementById('display-sub-id');
-          if (displaySubId && result.data && result.data.submissionId) {
-            displaySubId.textContent = result.data.submissionId;
+          if (displaySubId) {
+            displaySubId.textContent = result.enquiry_id || result.submission_id || 'ENQ-RECEIVED';
           }
-          // Show success
           formState.style.display = 'none';
           successState.classList.add('show');
           successState.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -516,6 +517,90 @@
       max-width: 220px;
     }
 
+    /* User Management Tabs & Bulk Bar */
+    .user-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .user-tab-btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      background: transparent;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--secondary-text);
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .user-tab-btn:hover { background: var(--pale-mint); color: var(--primary-dark-green); }
+    .user-tab-btn.active { background: var(--light-green); color: #15803D; }
+    .user-tab-count {
+      background: rgba(22, 163, 74, 0.15);
+      color: var(--primary-dark-green);
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      font-weight: 800;
+    }
+
+    .bulk-actions-bar {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .user-avatar-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--deep-forest);
+      color: #FFFFFF;
+      font-size: 0.85rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .action-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: #FFFFFF;
+      color: var(--secondary-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.85rem;
+    }
+    .btn-icon:hover { background: var(--pale-mint); color: var(--primary-dark-green); border-color: var(--emerald); }
+    .btn-icon.btn-danger:hover { background: #FEE2E2; color: #DC2626; border-color: #FCA5A5; }
+    .btn-icon.btn-warning:hover { background: #FEF3C7; color: #D97706; border-color: #FCD34D; }
+
+    .modal-card-lg { max-width: 850px; }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -560,6 +645,9 @@
       </a>
 
       <div class="nav-group-label">OPERATIONS</div>
+      <a href="/admin/enquiries" class="nav-link" onclick="switchSection('enquiries', event)">
+        <i class="fa-solid fa-inbox"></i> Customer Enquiries
+      </a>
       <a href="/admin/clients" class="nav-link" onclick="switchSection('clients', event)">
         <i class="fa-solid fa-building"></i> Clients
       </a>
@@ -874,36 +962,83 @@
 
       </div>
 
-      <!-- Section: All People -->
+      <!-- Section: User Control & Monitoring System -->
       <div id="sec-people" class="view-section" style="display:none;">
-        <div class="filter-bar">
-          <input type="text" placeholder="Search people..." id="people-search" oninput="filterPeopleTable()">
-          <select id="people-role-filter" onchange="filterPeopleTable()">
-            <option value="">All Roles</option>
-            <option value="Super Admin">Super Admin</option>
-            <option value="Admin">Admin</option>
-            <option value="Staff">Staff</option>
-            <option value="User">User</option>
-          </select>
-          <button onclick="openModal('modal-create-admin')" class="btn btn-primary btn-sm" style="margin-left:auto;">
-            <i class="fa-solid fa-user-plus"></i> Add Person
+        
+        <!-- User Control Tabs -->
+        <div class="user-tabs">
+          <button class="user-tab-btn active" id="tab-btn-all" onclick="switchUserTab('all')">
+            <i class="fa-solid fa-users"></i> ALL USERS <span class="user-tab-count" id="count-user-all">0</span>
+          </button>
+          <button class="user-tab-btn" id="tab-btn-admins" onclick="switchUserTab('admins')">
+            <i class="fa-solid fa-user-shield"></i> ADMINS <span class="user-tab-count" id="count-user-admins">0</span>
+          </button>
+          <button class="user-tab-btn" id="tab-btn-staff" onclick="switchUserTab('staff')">
+            <i class="fa-solid fa-user-gear"></i> STAFF <span class="user-tab-count" id="count-user-staff">0</span>
+          </button>
+          <button class="user-tab-btn" id="tab-btn-customers" onclick="switchUserTab('customers')">
+            <i class="fa-solid fa-user-tag"></i> CUSTOMERS <span class="user-tab-count" id="count-user-customers">0</span>
           </button>
         </div>
+
+        <!-- Filter & Action Toolbar -->
+        <div class="filter-bar">
+          <input type="text" placeholder="Search name, email, mobile, ID..." id="people-search" oninput="filterPeopleTable()">
+          <select id="people-status-filter" onchange="filterPeopleTable()">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <div style="margin-left:auto; display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button onclick="openModal('modal-create-admin')" class="btn btn-primary btn-sm">
+              <i class="fa-solid fa-user-shield"></i> + Create Admin
+            </button>
+            <button onclick="openModal('modal-create-staff')" class="btn btn-primary btn-sm">
+              <i class="fa-solid fa-user-gear"></i> + Create Staff
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Action Bar -->
+        <div class="bulk-actions-bar" id="bulk-actions-bar" style="display:none;">
+          <div style="font-weight:700; color:var(--primary-dark-green); display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-check-double"></i> <span id="bulk-selected-count">0</span> users selected
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button onclick="handleBulkAction('activate')" class="btn btn-outline btn-sm" style="background:#FFF; color:#16A34A; border-color:#16A34A;">
+              <i class="fa-solid fa-user-check"></i> Activate Selected
+            </button>
+            <button onclick="handleBulkAction('deactivate')" class="btn btn-outline btn-sm" style="background:#FFF; color:#D97706; border-color:#D97706;">
+              <i class="fa-solid fa-user-xmark"></i> Deactivate Selected
+            </button>
+            <button onclick="handleBulkAction('delete')" class="btn btn-outline btn-sm" style="background:#FFF; color:#DC2626; border-color:#DC2626;">
+              <i class="fa-solid fa-trash"></i> Delete Selected
+            </button>
+          </div>
+        </div>
+
+        <!-- User Table Card -->
         <div class="card">
           <div class="table-responsive">
             <table>
               <thead>
                 <tr>
-                  <th>Person</th>
+                  <th style="width:40px; text-align:center;">
+                    <input type="checkbox" id="chk-select-all" onclick="toggleSelectAllUsers(this)">
+                  </th>
+                  <th>User ID</th>
+                  <th>Profile</th>
+                  <th>Mobile Number</th>
                   <th>Role</th>
-                  <th>Account Status</th>
-                  <th>Activity Status</th>
+                  <th>Status</th>
                   <th>Last Login</th>
-                  <th>Actions</th>
+                  <th>Created Date</th>
+                  <th>Last Activity</th>
+                  <th style="text-align:right;">Actions</th>
                 </tr>
               </thead>
               <tbody id="tbl-people-body">
-                <tr><td colspan="6">Loading people directory...</td></tr>
+                <tr><td colspan="10">Loading user directory...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1044,6 +1179,138 @@
         </div>
       </div>
 
+      <!-- Section: Messages -->
+      <div id="sec-messages" class="view-section" style="display:none;">
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div style="display:grid; grid-template-columns:280px 1fr; height:580px;">
+            <div style="border-right:1px solid var(--border-color); background:#FAFAFA; display:flex; flex-direction:column;">
+              <div style="padding:1rem; border-bottom:1px solid var(--border-color); font-weight:800; color:var(--primary-dark-green);">
+                <i class="fa-solid fa-comments"></i> Conversations
+              </div>
+              <div id="chat-contacts-list" style="flex:1; overflow-y:auto;">
+                <p style="padding:1rem; color:var(--muted-text);">Loading contacts...</p>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; background:#FFF;">
+              <div style="padding:1rem; border-bottom:1px solid var(--border-color); font-weight:800; color:var(--primary-dark-green);" id="chat-target-name">
+                Select a conversation
+              </div>
+              <div id="chat-messages-body" style="flex:1; padding:1.25rem; overflow-y:auto;">
+                <div style="text-align:center; padding:3rem; color:var(--muted-text);">
+                  <i class="fa-solid fa-envelope-open-text" style="font-size:2.5rem; margin-bottom:0.75rem; color:var(--primary-green);"></i>
+                  <p style="font-weight:700;">Select a contact from the left panel to view conversation thread.</p>
+                </div>
+              </div>
+              <form onsubmit="sendMessageFromHub(event)" style="padding:1rem; border-top:1px solid var(--border-color); display:flex; gap:0.75rem;">
+                <input type="text" id="chat-input-text" placeholder="Type your message..." style="flex:1; padding:0.65rem 1rem; border-radius:8px; border:1px solid var(--border-color);" required>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Notifications -->
+      <div id="sec-notifications" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="card-title"><i class="fa-solid fa-bell"></i> System Notifications</h2>
+            <button onclick="markAllNotificationsRead()" class="btn btn-outline btn-sm"><i class="fa-solid fa-check-double"></i> Mark All as Read</button>
+          </div>
+          <div id="tbl-notifications-list">
+            <p style="text-align:center; padding:2rem; color:var(--muted-text);">Loading notifications...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Analytics & Reports -->
+      <div id="sec-analytics" class="view-section" style="display:none;">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="card-title"><i class="fa-solid fa-chart-pie"></i> Platform Analytics & System Reports</h2>
+            <div style="display:flex; gap:0.5rem;">
+              <button onclick="exportUsersCSV()" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-csv"></i> Export Users CSV</button>
+              <button onclick="exportAuditLogsCSV()" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-csv"></i> Export Audit Logs CSV</button>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1.25rem;">
+            <div style="background:var(--pale-mint); padding:1.25rem; border-radius:12px; text-align:center;">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--muted-text); text-transform:uppercase;">System Health</div>
+              <div style="font-size:1.75rem; font-weight:900; color:var(--primary-dark-green); margin-top:0.35rem;">99.9% Operational</div>
+            </div>
+            <div style="background:var(--pale-mint); padding:1.25rem; border-radius:12px; text-align:center;">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--muted-text); text-transform:uppercase;">User Retention</div>
+              <div style="font-size:1.75rem; font-weight:900; color:var(--fresh-green); margin-top:0.35rem;">98.4%</div>
+            </div>
+            <div style="background:var(--pale-mint); padding:1.25rem; border-radius:12px; text-align:center;">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--muted-text); text-transform:uppercase;">API Latency</div>
+              <div style="font-size:1.75rem; font-weight:900; color:var(--info); margin-top:0.35rem;">24 ms</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Enquiries -->
+      <div id="sec-enquiries" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="card-title"><i class="fa-solid fa-inbox"></i> Customer Enquiries Management</h2>
+            <div style="display:flex; gap:0.5rem;">
+              <input type="text" id="enquiry-search-input" placeholder="Search enquiry ID, name, email..." oninput="filterEnquiriesTable()" style="padding:0.45rem 0.85rem; border-radius:6px; border:1px solid var(--border-color); font-size:0.85rem;">
+              <select id="enquiry-status-filter" onchange="filterEnquiriesTable()" style="padding:0.45rem 0.85rem; border-radius:6px; border:1px solid var(--border-color); font-size:0.85rem;">
+                <option value="">All Statuses</option>
+                <option value="NEW">NEW</option>
+                <option value="CONTACTED">CONTACTED</option>
+                <option value="FOLLOW-UP">FOLLOW-UP</option>
+                <option value="CONVERTED">CONVERTED</option>
+                <option value="CLOSED">CLOSED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Enquiry ID</th>
+                  <th>Customer Name</th>
+                  <th>Contact Info</th>
+                  <th>Message Preview</th>
+                  <th>Status</th>
+                  <th>Assigned Staff</th>
+                  <th>Converted Project</th>
+                  <th>Submitted At</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-enquiries-body">
+                <tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--muted-text);">Loading enquiries...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Platform Settings -->
+      <div id="sec-settings" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title"><i class="fa-solid fa-sliders"></i> Platform Settings</h2></div>
+          <form onsubmit="alert('Platform Settings saved successfully!'); return false;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
+              <div>
+                <label style="font-weight:700; display:block; margin-bottom:0.4rem;">Business Name</label>
+                <input type="text" value="Website Builders" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+              </div>
+              <div>
+                <label style="font-weight:700; display:block; margin-bottom:0.4rem;">Support Email</label>
+                <input type="email" value="venun4548@gmail.com" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Platform Settings</button>
+          </form>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -1063,7 +1330,7 @@
   <div class="modal-backdrop" id="modal-create-admin">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">Create Administrator</h3>
+        <h3 class="modal-title"><i class="fa-solid fa-user-shield"></i> Create Administrator</h3>
         <button onclick="closeModal('modal-create-admin')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form onsubmit="handleCreateUser(event, 'Admin')">
@@ -1079,11 +1346,15 @@
           <label>Mobile Number</label>
           <input type="text" name="mobile" required placeholder="+91 9999999999">
         </div>
-        <div style="margin-bottom:1.5rem;">
+        <div style="margin-bottom:1rem;">
           <label>Password</label>
-          <input type="password" name="password" required placeholder="Set password">
+          <input type="password" name="password" required placeholder="Set strong password">
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">Create Administrator</button>
+        <div style="margin-bottom:1.5rem;">
+          <label>Confirm Password</label>
+          <input type="password" name="confirm_password" required placeholder="Confirm password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-check"></i> Create Administrator Account</button>
       </form>
     </div>
   </div>
@@ -1092,7 +1363,7 @@
   <div class="modal-backdrop" id="modal-create-staff">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">Create Staff Member</h3>
+        <h3 class="modal-title"><i class="fa-solid fa-user-gear"></i> Create Staff Member</h3>
         <button onclick="closeModal('modal-create-staff')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form onsubmit="handleCreateUser(event, 'Staff')">
@@ -1108,12 +1379,119 @@
           <label>Mobile Number</label>
           <input type="text" name="mobile" required placeholder="+91 8888888888">
         </div>
-        <div style="margin-bottom:1.5rem;">
+        <div style="margin-bottom:1rem;">
           <label>Password</label>
           <input type="password" name="password" required placeholder="Set password">
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">Create Staff Member</button>
+        <div style="margin-bottom:1.5rem;">
+          <label>Confirm Password</label>
+          <input type="password" name="confirm_password" required placeholder="Confirm password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-check"></i> Create Staff Account</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal-backdrop" id="modal-edit-user">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-user-pen"></i> Edit User Account</h3>
+        <button onclick="closeModal('modal-edit-user')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleEditUser(event)">
+        <input type="hidden" name="user_id" id="edit-user-id">
+        <div style="margin-bottom:1rem;">
+          <label>Full Name</label>
+          <input type="text" name="full_name" id="edit-user-fullname" required>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Email Address</label>
+          <input type="email" name="email" id="edit-user-email" required>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Mobile Number</label>
+          <input type="text" name="mobile" id="edit-user-mobile" required>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Role</label>
+          <select name="role" id="edit-user-role">
+            <option value="Super Admin">Super Admin</option>
+            <option value="Admin">Admin</option>
+            <option value="Staff">Staff</option>
+            <option value="User">Customer (User)</option>
+          </select>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Account Status</label>
+          <select name="status" id="edit-user-status">
+            <option value="true">ACTIVE</option>
+            <option value="false">INACTIVE</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-save"></i> Save User Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reset Password Modal -->
+  <div class="modal-backdrop" id="modal-reset-password">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-key"></i> Reset User Password</h3>
+        <button onclick="closeModal('modal-reset-password')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleResetPassword(event)">
+        <input type="hidden" name="user_id" id="reset-pass-user-id">
+        <div style="margin-bottom:1rem; background:var(--pale-mint); padding:0.75rem 1rem; border-radius:8px; font-weight:700;" id="reset-pass-target-name">
+          User: --
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>New Password</label>
+          <input type="password" name="password" required placeholder="Enter new password">
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label>Confirm Password</label>
+          <input type="password" name="confirm_password" required placeholder="Confirm new password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-shield-halved"></i> Update Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- User Details & Monitoring Modal -->
+  <div class="modal-backdrop" id="modal-user-details">
+    <div class="modal-card modal-card-lg" style="max-height:90vh; overflow-y:auto;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-chart-line"></i> User Monitoring & Details</h3>
+        <button onclick="closeModal('modal-user-details')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="user-details-content">
+        <p style="text-align:center; padding:2rem;">Loading user details...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Dependencies Delete Warning Modal -->
+  <div class="modal-backdrop" id="modal-delete-warning">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Active Projects Warning</h3>
+        <button onclick="closeModal('modal-delete-warning')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div style="margin-bottom:1.25rem;">
+        <p id="delete-warning-message" style="margin-bottom:1rem; font-weight:600; color:var(--main-text);">
+          This user has active assigned projects. Reassign them before deletion to prevent orphaned projects.
+        </p>
+        <label>Reassign Projects To:</label>
+        <select id="delete-reassign-staff-select" style="width:100%; margin-top:0.35rem;"></select>
+      </div>
+      <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <button onclick="closeModal('modal-delete-warning')" class="btn btn-outline">Cancel</button>
+        <button onclick="executeReassignAndDelete()" class="btn btn-primary" style="background:var(--danger); border-color:var(--danger);">
+          <i class="fa-solid fa-trash"></i> Reassign & Delete User
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1206,6 +1584,148 @@
           </select>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;">Create Task</button>
+      </form>
+    </div>
+  <!-- Modal: Assign Staff to Client -->
+  <div class="modal-backdrop" id="modal-assign-staff">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-user-plus"></i> Assign Client to Staff / Team Member</h3>
+        <button onclick="closeModal('modal-assign-staff')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleAssignStaff(event)">
+        <input type="hidden" id="assign-staff-client-id">
+        <div style="margin-bottom:1.25rem;">
+          <label style="font-weight:700; display:block; margin-bottom:0.4rem;">Target Client</label>
+          <div id="assign-staff-client-name" style="padding:0.75rem; background:var(--pale-mint); border-radius:8px; font-weight:700; color:var(--primary-dark-green);">Select a Client</div>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label style="font-weight:700; display:block; margin-bottom:0.4rem;">Assign Staff / Team Member</label>
+          <select id="assign-staff-select" class="form-control" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+            <option value="">-- Unassigned --</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-assign-staff')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Assignment</button>
+        </div>
+      </form>
+    </div>
+  <!-- Modal: View Enquiry Details -->
+  <div class="modal-backdrop" id="modal-enquiry-details">
+    <div class="modal-card" style="max-width:650px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-file-lines"></i> Enquiry Details & Status</h3>
+        <button onclick="closeModal('modal-enquiry-details')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleUpdateEnquiryStatus(event)">
+        <input type="hidden" id="enquiry-detail-id">
+        <div style="background:var(--pale-mint); padding:1rem; border-radius:8px; margin-bottom:1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:1.1rem; color:var(--primary-dark-green);" id="enquiry-detail-code">#ENQ-2026-0001</strong>
+            <span class="badge badge-info" id="enquiry-detail-status-badge">NEW</span>
+          </div>
+          <div style="margin-top:0.5rem; font-size:0.9rem; color:var(--secondary-text);" id="enquiry-detail-customer">Customer: John Doe (john@example.com)</div>
+          <div style="font-size:0.85rem; color:var(--muted-text);" id="enquiry-detail-mobile">Mobile: +91 9876543210</div>
+          <div style="font-size:0.85rem; color:var(--muted-text);" id="enquiry-detail-address">Address: Tirupathi, AP</div>
+        </div>
+        
+        <div style="margin-bottom:1.25rem;">
+          <label style="font-weight:700; display:block; margin-bottom:0.4rem;">Customer Message</label>
+          <div id="enquiry-detail-message" style="padding:0.85rem; background:#F8FAFC; border:1px solid var(--border-color); border-radius:8px; font-size:0.9rem; line-height:1.5;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.25rem;">
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:0.4rem;">Enquiry Status</label>
+            <select id="enquiry-detail-status-select" class="form-control" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--border-color);">
+              <option value="NEW">NEW</option>
+              <option value="CONTACTED">CONTACTED</option>
+              <option value="FOLLOW-UP">FOLLOW-UP</option>
+              <option value="CONVERTED">CONVERTED</option>
+              <option value="CLOSED">CLOSED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:0.4rem;">Assign Staff</label>
+            <select id="enquiry-detail-staff-select" class="form-control" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--border-color);">
+              <option value="">-- Unassigned --</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+          <button type="button" class="btn btn-primary" onclick="triggerConvertFromDetail()"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert to Project</button>
+          <div style="display:flex; gap:0.5rem;">
+            <button type="button" class="btn btn-outline" onclick="closeModal('modal-enquiry-details')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Update Enquiry</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Convert Enquiry to Project -->
+  <div class="modal-backdrop" id="modal-convert-enquiry">
+    <div class="modal-card" style="max-width:650px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert Enquiry into Project</h3>
+        <button onclick="closeModal('modal-convert-enquiry')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleConvertEnquirySubmit(event)">
+        <input type="hidden" id="convert-enquiry-id">
+        <div style="margin-bottom:1rem; background:var(--pale-mint); padding:0.85rem; border-radius:8px;">
+          <strong style="color:var(--primary-dark-green);" id="convert-enquiry-code-label">Enquiry: ENQ-2026-0001</strong>
+          <div style="font-size:0.85rem; color:var(--secondary-text);" id="convert-customer-info">Customer: --</div>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+          <label style="font-weight:700; display:block; margin-bottom:0.35rem;">Project Name *</label>
+          <input type="text" id="convert-project-name" required placeholder="Business Website Development" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+        </div>
+
+        <div style="margin-bottom:1rem;">
+          <label style="font-weight:700; display:block; margin-bottom:0.35rem;">Project Description</label>
+          <textarea id="convert-project-desc" rows="3" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);"></textarea>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:0.35rem;">Initial Stage</label>
+            <select id="convert-project-stage" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+              <option value="Requirement">Requirement (10%)</option>
+              <option value="Planning">Planning (20%)</option>
+              <option value="UI Design">UI Design (35%)</option>
+              <option value="Development">Development (60%)</option>
+              <option value="Testing">Testing (80%)</option>
+              <option value="Deployment">Deployment (95%)</option>
+              <option value="Support">Support (100%)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:0.35rem;">Initial Progress %</label>
+            <input type="number" id="convert-project-progress" min="0" max="100" value="10" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:0.35rem;">Expected Delivery Date</label>
+            <input type="date" id="convert-project-delivery" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+          </div>
+          <div>
+            <label style="font-weight:700; display:block; margin-bottom:0.35rem;">Assigned Staff</label>
+            <select id="convert-project-staff" style="width:100%; padding:0.65rem; border-radius:8px; border:1px solid var(--border-color);">
+              <option value="">-- Select Staff --</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-convert-enquiry')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check-double"></i> Create Project (Generate WB ID)</button>
+        </div>
       </form>
     </div>
   </div>
@@ -1314,11 +1834,50 @@
           document.getElementById('tbl-audit-logs').innerHTML = rows || '<tr><td colspan="5">No audit logs available.</td></tr>';
         }
 
+    let rawPeopleData = [];
+    let currentTab = 'all';
+    let selectedUserIds = new Set();
+    let targetDeleteUserId = null;
+
+    async function initDashboard() {
+      await loadDashboardData();
+    }
+
+    async function loadDashboardData() {
+      try {
+        const statsRes = await fetch('/api/stats/super-admin');
+        const stats = await statsRes.json();
+        if (stats.status === 'success' && stats.data) {
+          const d = stats.data;
+          document.getElementById('kpi-total-revenue').innerText = '$' + (d.total_revenue || 0).toLocaleString();
+          document.getElementById('kpi-active-projects').innerText = d.active_projects || 0;
+          document.getElementById('kpi-total-people').innerText = d.total_people || 0;
+          document.getElementById('kpi-health').innerText = d.system_health || '99.9%';
+        }
+
+        const auditRes = await fetch('/api/super-admin/audit-logs');
+        const auditData = await auditRes.json();
+        if (auditData.status === 'success') {
+          let rows = '';
+          (auditData.data || []).slice(0, 10).forEach(a => {
+            rows += `<tr>
+              <td>${a.timestamp}</td>
+              <td><strong>${a.action}</strong></td>
+              <td>${a.user_email}</td>
+              <td>${a.target_user || '-'}</td>
+              <td><span class="badge badge-success">${a.status}</span></td>
+            </tr>`;
+          });
+          document.getElementById('tbl-cmd-activity').innerHTML = rows || '<tr><td colspan="5">No recent audit activity.</td></tr>';
+          document.getElementById('tbl-audit-logs').innerHTML = rows || '<tr><td colspan="5">No audit logs available.</td></tr>';
+        }
+
         const usersRes = await fetch('/api/super-admin/users');
         const usersData = await usersRes.json();
         if (usersData.status === 'success') {
-          rawPeopleData = usersData.data;
-          renderPeopleTable(rawPeopleData);
+          rawPeopleData = usersData.data || [];
+          updateTabCounts();
+          filterPeopleTable();
           populateSelectOptions(rawPeopleData);
 
           const admins = rawPeopleData.filter(u => u.role === 'Super Admin' || u.role === 'Admin');
@@ -1328,11 +1887,11 @@
               <td><strong>${u.full_name}</strong></td>
               <td>${u.email}</td>
               <td>${u.role}</td>
-              <td><span class="badge badge-success">Active</span></td>
-              <td>${u.last_login ? new Date(u.last_login).toLocaleString() : 'Just now'}</td>
+              <td><span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+              <td>${u.last_login || u.created_at || 'N/A'}</td>
             </tr>`;
           });
-          document.getElementById('tbl-administrators').innerHTML = adminRows;
+          document.getElementById('tbl-administrators').innerHTML = adminRows || '<tr><td colspan="5">No administrators.</td></tr>';
 
           const clients = rawPeopleData.filter(u => u.role === 'User');
           let clientRows = '';
@@ -1340,8 +1899,8 @@
             clientRows += `<tr>
               <td><strong>${c.full_name}</strong></td>
               <td>${c.email}</td>
-              <td>${c.mobile}</td>
-              <td><span class="badge badge-success">Active</span></td>
+              <td>${c.mobile || 'N/A'}</td>
+              <td><span class="badge ${c.is_active ? 'badge-success' : 'badge-danger'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
             </tr>`;
           });
           document.getElementById('tbl-clients').innerHTML = clientRows || '<tr><td colspan="4">No clients registered.</td></tr>';
@@ -1377,7 +1936,7 @@
                 <span style="font-size:0.78rem; font-weight:700;">${loadPct}%</span>
               </div>
             </td>
-            <td><span class="badge ${s.is_active ? 'badge-success' : 'badge-danger'}">${s.is_active ? 'Active' : 'Suspended'}</span></td>
+            <td><span class="badge ${s.is_active ? 'badge-success' : 'badge-danger'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
           </tr>`;
         });
         document.getElementById('tbl-staff-workload').innerHTML = staffRows || '<tr><td colspan="6">No staff members found.</td></tr>';
@@ -1388,7 +1947,7 @@
         if (projData.status === 'success') {
           let rows = '';
           let upcomingDue = 0;
-          projData.data.forEach(p => {
+          (projData.data || []).forEach(p => {
             if (p.status !== 'Completed') upcomingDue++;
             rows += `<tr>
               <td style="font-family:monospace;">${p.project_id}</td>
@@ -1401,14 +1960,14 @@
           });
           document.getElementById('tbl-projects').innerHTML = rows || '<tr><td colspan="6">No projects available.</td></tr>';
           document.getElementById('alert-due-projects').innerText = upcomingDue;
-          populateProjectSelects(projData.data);
+          populateProjectSelects(projData.data || []);
         }
 
         const webRes = await fetch('/api/websites');
         const webData = await webRes.json();
         if (webData.status === 'success') {
           let rows = '';
-          webData.data.forEach(w => {
+          (webData.data || []).forEach(w => {
             rows += `<tr>
               <td><strong>${w.name}</strong></td>
               <td>${w.domain || '-'}</td>
@@ -1423,32 +1982,511 @@
       }
     }
 
+    function updateTabCounts() {
+      const allCount = rawPeopleData.length;
+      const adminsCount = rawPeopleData.filter(u => u.role === 'Super Admin' || u.role === 'Admin').length;
+      const staffCount = rawPeopleData.filter(u => u.role === 'Staff').length;
+      const customersCount = rawPeopleData.filter(u => u.role === 'User').length;
+
+      document.getElementById('count-user-all').innerText = allCount;
+      document.getElementById('count-user-admins').innerText = adminsCount;
+      document.getElementById('count-user-staff').innerText = staffCount;
+      document.getElementById('count-user-customers').innerText = customersCount;
+    }
+
+    function switchUserTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.user-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      if (activeBtn) activeBtn.classList.add('active');
+      filterPeopleTable();
+    }
+
     function renderPeopleTable(data) {
       let rows = '';
+      if (!data || data.length === 0) {
+        document.getElementById('tbl-people-body').innerHTML = '<tr><td colspan="11" style="text-align:center; padding:2rem; color:var(--muted-text);">No user records found matching criteria.</td></tr>';
+        return;
+      }
+
       data.forEach(u => {
-        const statusBadge = u.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Suspended</span>';
-        const actBadge = '<span class="badge badge-info">● Online</span>';
-        rows += `<tr>
-          <td><strong>${u.full_name}</strong><br><small style="color:var(--muted-text)">${u.email}</small></td>
-          <td>${u.role}</td>
+        const isChecked = selectedUserIds.has(u.id) ? 'checked' : '';
+        const initials = (u.full_name || 'U').substring(0, 2).toUpperCase();
+        const roleClass = u.role === 'Super Admin' ? 'badge-danger' : (u.role === 'Admin' ? 'badge-info' : (u.role === 'Staff' ? 'badge-success' : 'badge-warning'));
+        const statusBadge = u.is_active ? '<span class="badge badge-success">ACTIVE</span>' : '<span class="badge badge-danger">INACTIVE</span>';
+        const formattedCreated = u.created_at ? u.created_at.split('T')[0] : 'N/A';
+        const assignedStaffBadge = u.assigned_staff_name ? `<span class="badge badge-info"><i class="fa-solid fa-user-check"></i> ${u.assigned_staff_name}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">Unassigned</span>';
+
+        rows += `
+        <tr>
+          <td style="text-align:center;">
+            <input type="checkbox" class="chk-user-row" data-id="${u.id}" ${isChecked} onclick="toggleUserCheckbox(${u.id}, this)">
+          </td>
+          <td style="font-family:monospace; font-weight:700;">#USR-${String(u.id).padStart(3, '0')}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <div class="user-avatar-circle">${initials}</div>
+              <div>
+                <strong style="color:var(--primary-dark-green);">${u.full_name}</strong>
+                <div style="font-size:0.8rem; color:var(--secondary-text);">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td>${u.mobile || 'N/A'}</td>
+          <td><span class="badge ${roleClass}">${u.role}</span></td>
           <td>${statusBadge}</td>
-          <td>${actBadge}</td>
-          <td>${u.last_login ? new Date(u.last_login).toLocaleString() : 'Just now'}</td>
-          <td><button class="btn btn-outline btn-sm" onclick='openProfileDrawer(${JSON.stringify(u)})'>View</button></td>
+          <td>${assignedStaffBadge}</td>
+          <td>${u.last_login || 'Never'}</td>
+          <td>${formattedCreated}</td>
+          <td><small style="font-weight:600; color:var(--secondary-text);">${u.last_activity || u.last_action || 'Active'}</small></td>
+          <td style="text-align:right;">
+            <div class="action-btn-group" style="justify-content:flex-end;">
+              <button class="btn-icon" onclick="openAssignStaffModal(${u.id})" title="Assign Staff / Team Member">
+                <i class="fa-solid fa-user-plus"></i>
+              </button>
+              <button class="btn-icon" onclick="viewUserDetails(${u.id})" title="User Details & Real-Time Monitoring">
+                <i class="fa-solid fa-chart-line"></i>
+              </button>
+              <button class="btn-icon" onclick="openEditUserModal(${u.id})" title="Edit User">
+                <i class="fa-solid fa-user-pen"></i>
+              </button>
+              <button class="btn-icon" onclick="openResetPasswordModal(${u.id})" title="Reset Password">
+                <i class="fa-solid fa-key"></i>
+              </button>
+              <button class="btn-icon ${u.is_active ? 'btn-warning' : ''}" onclick="toggleUserStatus(${u.id}, ${u.is_active})" title="${u.is_active ? 'Deactivate User' : 'Activate User'}">
+                <i class="fa-solid ${u.is_active ? 'fa-user-slash' : 'fa-user-check'}"></i>
+              </button>
+              <button class="btn-icon btn-danger" onclick="confirmDeleteUser(${u.id})" title="Delete User">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </td>
         </tr>`;
       });
-      document.getElementById('tbl-people-body').innerHTML = rows || '<tr><td colspan="6">No records match filter.</td></tr>';
+      document.getElementById('tbl-people-body').innerHTML = rows;
+      updateSelectAllCheckboxState();
     }
 
     function filterPeopleTable() {
-      const query = document.getElementById('people-search').value.toLowerCase();
-      const roleFilter = document.getElementById('people-role-filter').value;
+      const searchVal = document.getElementById('people-search').value.toLowerCase().trim();
+      const statusVal = document.getElementById('people-status-filter').value;
+
       const filtered = rawPeopleData.filter(u => {
-        const matchesQuery = u.full_name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query);
-        const matchesRole = !roleFilter || u.role === roleFilter;
-        return matchesQuery && matchesRole;
+        const matchesSearch = !searchVal || 
+          u.full_name.toLowerCase().includes(searchVal) || 
+          u.email.toLowerCase().includes(searchVal) || 
+          (u.mobile && u.mobile.toLowerCase().includes(searchVal)) || 
+          `#usr-${u.id}`.includes(searchVal) ||
+          String(u.id) === searchVal;
+
+        let matchesTab = true;
+        if (currentTab === 'admins') matchesTab = (u.role === 'Super Admin' || u.role === 'Admin');
+        else if (currentTab === 'staff') matchesTab = (u.role === 'Staff');
+        else if (currentTab === 'customers') matchesTab = (u.role === 'User');
+
+        let matchesStatus = true;
+        if (statusVal === 'active') matchesStatus = u.is_active === true;
+        else if (statusVal === 'inactive') matchesStatus = u.is_active === false;
+
+        return matchesSearch && matchesTab && matchesStatus;
       });
+
       renderPeopleTable(filtered);
+    }
+
+    function toggleSelectAllUsers(chkAll) {
+      const rows = document.querySelectorAll('.chk-user-row');
+      rows.forEach(r => {
+        const id = parseInt(r.getAttribute('data-id'));
+        r.checked = chkAll.checked;
+        if (chkAll.checked) selectedUserIds.add(id);
+        else selectedUserIds.delete(id);
+      });
+      updateBulkActionBar();
+    }
+
+    function toggleUserCheckbox(id, chk) {
+      if (chk.checked) selectedUserIds.add(id);
+      else selectedUserIds.delete(id);
+      updateSelectAllCheckboxState();
+      updateBulkActionBar();
+    }
+
+    function updateSelectAllCheckboxState() {
+      const rows = document.querySelectorAll('.chk-user-row');
+      const allChk = document.getElementById('chk-select-all');
+      if (!allChk) return;
+      if (rows.length > 0 && Array.from(rows).every(r => r.checked)) {
+        allChk.checked = true;
+      } else {
+        allChk.checked = false;
+      }
+    }
+
+    function updateBulkActionBar() {
+      const bar = document.getElementById('bulk-actions-bar');
+      const cnt = document.getElementById('bulk-selected-count');
+      if (selectedUserIds.size > 0) {
+        cnt.innerText = selectedUserIds.size;
+        bar.style.display = 'flex';
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    async function handleBulkAction(action) {
+      if (selectedUserIds.size === 0) return;
+      const actionText = action.toUpperCase();
+      if (!confirm(`Are you sure you want to ${actionText} ${selectedUserIds.size} selected user(s)?`)) return;
+
+      let reassign_to_id = null;
+      if (action === 'delete') {
+        const staff = rawPeopleData.filter(u => u.role === 'Staff');
+        if (staff.length > 0) {
+          const staffPrompt = staff.map(s => `ID ${s.id}: ${s.full_name}`).join('\n');
+          const chosen = prompt(`To reassign active projects before deleting, enter Staff ID or leave empty:\n${staffPrompt}`);
+          if (chosen) reassign_to_id = parseInt(chosen);
+        }
+      }
+
+      try {
+        const res = await fetch('/api/super-admin/users/bulk-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: action,
+            user_ids: Array.from(selectedUserIds),
+            reassign_to_id: reassign_to_id
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert(data.message);
+          selectedUserIds.clear();
+          updateBulkActionBar();
+          loadDashboardData();
+        } else {
+          alert(data.message || 'Error executing bulk action.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error executing bulk action.');
+      }
+    }
+
+    async function handleCreateUser(e, role) {
+      e.preventDefault();
+      const form = e.target;
+      const pass = form.password.value;
+      const confirmPass = form.confirm_password ? form.confirm_password.value : pass;
+
+      if (pass !== confirmPass) {
+        alert('Passwords do not match. Please re-enter.');
+        return;
+      }
+
+      const payload = {
+        full_name: form.full_name.value.trim(),
+        email: form.email.value.trim(),
+        mobile: form.mobile.value.trim(),
+        password: pass,
+        confirm_password: confirmPass,
+        role: role
+      };
+
+      try {
+        const res = await fetch('/api/super-admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert(data.message || `${role} account created successfully!`);
+          closeModal(role === 'Admin' ? 'modal-create-admin' : 'modal-create-staff');
+          form.reset();
+          loadDashboardData();
+        } else {
+          alert(data.message || `Error creating ${role}.`);
+        }
+      } catch(err) {
+        console.error(err);
+        alert(`Server error while creating ${role}.`);
+      }
+    }
+
+    function openEditUserModal(userId) {
+      const user = rawPeopleData.find(u => u.id === userId);
+      if (!user) return;
+
+      document.getElementById('edit-user-id').value = user.id;
+      document.getElementById('edit-user-fullname').value = user.full_name;
+      document.getElementById('edit-user-email').value = user.email;
+      document.getElementById('edit-user-mobile').value = user.mobile || '';
+      document.getElementById('edit-user-role').value = user.role;
+      document.getElementById('edit-user-status').value = user.is_active ? 'true' : 'false';
+
+      openModal('modal-edit-user');
+    }
+
+    async function handleEditUser(e) {
+      e.preventDefault();
+      const form = e.target;
+      const userId = form.user_id.value;
+      const payload = {
+        full_name: form.full_name.value.trim(),
+        email: form.email.value.trim(),
+        mobile: form.mobile.value.trim(),
+        role: form.role.value,
+        status: form.status.value === 'true'
+      };
+
+      try {
+        const res = await fetch(`/api/super-admin/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert('User account updated successfully!');
+          closeModal('modal-edit-user');
+          loadDashboardData();
+        } else {
+          alert(data.message || 'Error updating user.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error updating user.');
+      }
+    }
+
+    function openResetPasswordModal(userId) {
+      const user = rawPeopleData.find(u => u.id === userId);
+      if (!user) return;
+
+      document.getElementById('reset-pass-user-id').value = user.id;
+      document.getElementById('reset-pass-target-name').innerText = `User: ${user.full_name} (${user.email})`;
+      openModal('modal-reset-password');
+    }
+
+    async function handleResetPassword(e) {
+      e.preventDefault();
+      const form = e.target;
+      const userId = form.user_id.value;
+      const pass = form.password.value;
+      const confirmPass = form.confirm_password.value;
+
+      if (pass !== confirmPass) {
+        alert('Passwords do not match. Please re-enter.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/super-admin/users/${userId}/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pass, confirm_password: confirmPass })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert(data.message || 'Password reset successfully!');
+          closeModal('modal-reset-password');
+          form.reset();
+        } else {
+          alert(data.message || 'Error resetting password.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error resetting password.');
+      }
+    }
+
+    async function toggleUserStatus(userId, currentStatus) {
+      const newStatus = !currentStatus;
+      const actionText = newStatus ? 'activate' : 'deactivate';
+      if (!confirm(`Are you sure you want to ${actionText} this user account?`)) return;
+
+      try {
+        const res = await fetch(`/api/super-admin/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          loadDashboardData();
+        } else {
+          alert(data.message || `Error status update.`);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error updating status.');
+      }
+    }
+
+    async function viewUserDetails(userId) {
+      openModal('modal-user-details');
+      const container = document.getElementById('user-details-content');
+      container.innerHTML = '<p style="text-align:center; padding:2rem;">Fetching user details & audit logs...</p>';
+
+      try {
+        const res = await fetch(`/api/super-admin/users/${userId}`);
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          const u = data.data;
+          const assignedProjects = data.assigned_projects || [];
+          const auditLogs = data.audit_logs || [];
+
+          let projTable = '';
+          if (assignedProjects.length > 0) {
+            assignedProjects.forEach(p => {
+              projTable += `<tr>
+                <td style="font-family:monospace;">${p.project_id}</td>
+                <td><strong>${p.name}</strong></td>
+                <td>${p.stage}</td>
+                <td><span class="badge badge-success">${p.status}</span></td>
+              </tr>`;
+            });
+          } else {
+            projTable = '<tr><td colspan="4" style="color:var(--muted-text);">No assigned projects.</td></tr>';
+          }
+
+          let logTable = '';
+          if (auditLogs.length > 0) {
+            auditLogs.forEach(l => {
+              logTable += `<tr>
+                <td><small>${l.timestamp}</small></td>
+                <td><strong>${l.action}</strong></td>
+                <td>${l.user_email}</td>
+                <td><span class="badge badge-success">${l.status}</span></td>
+              </tr>`;
+            });
+          } else {
+            logTable = '<tr><td colspan="4" style="color:var(--muted-text);">No audit logs recorded for this user.</td></tr>';
+          }
+
+          container.innerHTML = `
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; background:var(--pale-mint); padding:1.25rem; border-radius:12px;">
+            <div class="user-avatar-circle" style="width:54px; height:54px; font-size:1.25rem;">
+              ${(u.full_name || 'U').substring(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary-dark-green);">${u.full_name}</h3>
+              <div style="color:var(--secondary-text); font-size:0.9rem;">${u.email} | Mobile: ${u.mobile || 'N/A'}</div>
+              <div style="display:flex; gap:0.5rem; margin-top:0.35rem;">
+                <span class="badge badge-info">${u.role}</span>
+                <span class="badge ${u.is_active ? 'badge-success' : 'badge-danger'}">${u.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monitoring KPI Cards -->
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem; margin-bottom:1.5rem;">
+            <div style="background:#FFF; border:1px solid var(--border-color); padding:1rem; border-radius:10px; text-align:center;">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--muted-text); text-transform:uppercase;">Assigned Projects</div>
+              <div style="font-size:1.5rem; font-weight:900; color:var(--primary-dark-green); margin-top:0.25rem;">${u.assigned_projects_count || 0}</div>
+            </div>
+            <div style="background:#FFF; border:1px solid var(--border-color); padding:1rem; border-radius:10px; text-align:center;">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--muted-text); text-transform:uppercase;">Completed Projects</div>
+              <div style="font-size:1.5rem; font-weight:900; color:var(--fresh-green); margin-top:0.25rem;">${u.completed_projects_count || 0}</div>
+            </div>
+            <div style="background:#FFF; border:1px solid var(--border-color); padding:1rem; border-radius:10px; text-align:center;">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--muted-text); text-transform:uppercase;">Messages Sent</div>
+              <div style="font-size:1.5rem; font-weight:900; color:var(--info); margin-top:0.25rem;">${u.messages_sent_count || 0}</div>
+            </div>
+            <div style="background:#FFF; border:1px solid var(--border-color); padding:1rem; border-radius:10px; text-align:center;">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--muted-text); text-transform:uppercase;">Total Audit Events</div>
+              <div style="font-size:1.5rem; font-weight:900; color:var(--warning); margin-top:0.25rem;">${u.activity_count || 0}</div>
+            </div>
+          </div>
+
+          <!-- Assigned Projects Table -->
+          <h4 style="margin-bottom:0.5rem; font-weight:800; color:var(--primary-dark-green);">Assigned Projects</h4>
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>Project ID</th><th>Project Name</th><th>Stage</th><th>Status</th></tr></thead>
+                <tbody>${projTable}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Real Audit Trail with Seconds -->
+          <h4 style="margin-bottom:0.5rem; font-weight:800; color:var(--primary-dark-green);">Activity Audit Trail (Precise Timestamps)</h4>
+          <div class="card">
+            <div class="table-responsive">
+              <table>
+                <thead><tr><th>Timestamp (Y-M-D H:M:S)</th><th>Action</th><th>Actor</th><th>Status</th></tr></thead>
+                <tbody>${logTable}</tbody>
+              </table>
+            </div>
+          </div>`;
+        } else {
+          container.innerHTML = `<p style="color:var(--danger); padding:1rem;">${data.message || 'Error fetching user details.'}</p>`;
+        }
+      } catch (err) {
+        console.error(err);
+        container.innerHTML = '<p style="color:var(--danger); padding:1rem;">Server error fetching user details.</p>';
+      }
+    }
+
+    async function confirmDeleteUser(userId) {
+      try {
+        const depRes = await fetch(`/api/super-admin/users/${userId}/dependencies`);
+        const depData = await depRes.json();
+        
+        if (depData.status === 'success' && depData.assigned_projects_count > 0) {
+          targetDeleteUserId = userId;
+          document.getElementById('delete-warning-message').innerText = `This staff member has ${depData.assigned_projects_count} active assigned project(s). Reassign them before deleting.`;
+          
+          const availableStaff = rawPeopleData.filter(u => u.role === 'Staff' && u.id !== userId);
+          let opts = '<option value="">-- Select Target Staff Member --</option>' + 
+            availableStaff.map(s => `<option value="${s.id}">${s.full_name} (${s.email})</option>`).join('');
+          document.getElementById('delete-reassign-staff-select').innerHTML = opts;
+          
+          openModal('modal-delete-warning');
+          return;
+        }
+
+        const user = rawPeopleData.find(u => u.id === userId);
+        const name = user ? user.full_name : 'this user';
+        if (!confirm(`Are you sure you want to permanently delete ${name}? This action cannot be undone.`)) return;
+
+        executeDeleteUser(userId);
+      } catch (err) {
+        console.error(err);
+        alert('Error checking user dependencies.');
+      }
+    }
+
+    async function executeDeleteUser(userId, reassignToId = null) {
+      let url = `/api/super-admin/users/${userId}`;
+      if (reassignToId) url += `?reassign_to=${reassignToId}`;
+
+      try {
+        const res = await fetch(url, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert(data.message || 'User deleted successfully.');
+          loadDashboardData();
+        } else {
+          alert(data.message || 'Error deleting user.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error deleting user.');
+      }
+    }
+
+    function executeReassignAndDelete() {
+      const targetStaffId = document.getElementById('delete-reassign-staff-select').value;
+      if (!targetStaffId) {
+        alert('Please select a target staff member to reassign projects to.');
+        return;
+      }
+      closeModal('modal-delete-warning');
+      executeDeleteUser(targetDeleteUserId, targetStaffId);
     }
 
     function populateSelectOptions(users) {
@@ -1488,31 +2526,6 @@
       if (el) el.classList.remove('active');
     }
 
-    function openProfileDrawer(person) {
-      document.getElementById('drawer-content').innerHTML = `
-        <div style="text-align:center; margin-bottom:1.5rem;">
-          <div style="width:64px; height:64px; border-radius:50%; background:var(--deep-forest); color:#FFF; font-size:1.5rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:0.5rem;">
-            ${(person.full_name || 'U').substring(0,2).toUpperCase()}
-          </div>
-          <h3 style="font-size:1.25rem; font-weight:800; color:var(--primary-dark-green);">${person.full_name}</h3>
-          <p style="color:var(--secondary-text); font-size:0.85rem;">${person.email}</p>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:0.85rem;">
-          <div><label>Role</label><div style="font-weight:700;">${person.role}</div></div>
-          <div><label>Mobile Contact</label><div style="font-weight:600;">${person.mobile || 'N/A'}</div></div>
-          <div><label>Account Status</label><div>${person.is_active ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Suspended</span>'}</div></div>
-          <div><label>Last Login</label><div style="font-weight:600;">${person.last_login ? new Date(person.last_login).toLocaleString() : 'Just now'}</div></div>
-        </div>
-      `;
-      document.getElementById('drawer-backdrop').classList.add('active');
-      document.getElementById('profile-drawer').classList.add('active');
-    }
-
-    function closeDrawer() {
-      document.getElementById('drawer-backdrop').classList.remove('active');
-      document.getElementById('profile-drawer').classList.remove('active');
-    }
-
     function switchSection(secId, evt) {
       if (evt) evt.preventDefault();
       document.querySelectorAll('.view-section').forEach(s => s.style.display = 'none');
@@ -1521,37 +2534,470 @@
 
       document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
       if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+
+      if (secId === 'enquiries') loadEnquiriesData();
+      if (secId === 'messages') loadMessagesHub();
+      if (secId === 'notifications') loadNotificationsSection();
     }
 
-    async function handleCreateUser(e, role) {
-      e.preventDefault();
-      const form = e.target;
-      const payload = {
-        full_name: form.full_name.value.trim(),
-        email: form.email.value.trim(),
-        mobile: form.mobile.value.trim(),
-        password: form.password.value,
-        role: role
-      };
+    let rawEnquiryData = [];
+
+    async function loadEnquiriesData() {
+      const container = document.getElementById('tbl-enquiries-body');
+      if (!container) return;
+      container.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:1.5rem; color:var(--muted-text);">Loading customer enquiries...</td></tr>';
+
       try {
-        const res = await fetch('/api/super-admin/users', {
+        const res = await fetch('/api/enquiries');
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          rawEnquiryData = data.data || [];
+          renderEnquiriesTable(rawEnquiryData);
+        } else {
+          container.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:1.5rem; color:var(--danger);">${data.message || 'Error loading enquiries.'}</td></tr>`;
+        }
+      } catch (err) {
+        console.error('Error loading enquiries:', err);
+        container.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:1.5rem; color:var(--danger);">Server error loading enquiries.</td></tr>';
+      }
+    }
+
+    function renderEnquiriesTable(data) {
+      const container = document.getElementById('tbl-enquiries-body');
+      if (!container) return;
+      if (!data || data.length === 0) {
+        container.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--muted-text);">No enquiry records found.</td></tr>';
+        return;
+      }
+      let html = '';
+      data.forEach(e => {
+        const statusBadgeClass = e.status === 'NEW' ? 'badge-info' : (e.status === 'CONVERTED' ? 'badge-success' : (e.status === 'REJECTED' || e.status === 'CLOSED' ? 'badge-danger' : 'badge-warning'));
+        const convertedBadge = e.is_converted ? `<span class="badge badge-success"><i class="fa-solid fa-check"></i> ${e.project_id || 'Converted'}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">No</span>';
+        
+        html += `
+        <tr>
+          <td style="font-family:monospace; font-weight:700; color:var(--primary-dark-green);">${e.enquiry_id || ('#ENQ-' + e.id)}</td>
+          <td><strong>${e.full_name}</strong></td>
+          <td>
+            <div style="font-size:0.85rem; font-weight:600;">${e.email}</div>
+            <div style="font-size:0.8rem; color:var(--secondary-text);">${e.mobile}</div>
+          </td>
+          <td>
+            <div style="max-width:200px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:0.85rem; color:var(--secondary-text);" title="${e.message}">${e.message}</div>
+          </td>
+          <td><span class="badge ${statusBadgeClass}">${e.status}</span></td>
+          <td>${e.assigned_staff_name ? `<span class="badge badge-info"><i class="fa-solid fa-user"></i> ${e.assigned_staff_name}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">Unassigned</span>'}</td>
+          <td>${convertedBadge}</td>
+          <td><small style="font-weight:600; color:var(--secondary-text);">${e.created_at || 'N/A'}</small></td>
+          <td style="text-align:right;">
+            <div class="action-btn-group" style="justify-content:flex-end; gap:0.35rem;">
+              <button class="btn-icon" onclick="viewEnquiryDetails(${e.id})" title="View Enquiry Details">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+              ${!e.is_converted ? `<button class="btn btn-primary btn-sm" onclick="openConvertEnquiryModal(${e.id})" title="Convert to Project"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert</button>` : ''}
+            </div>
+          </td>
+        </tr>`;
+      });
+      container.innerHTML = html;
+    }
+
+    function filterEnquiriesTable() {
+      const q = document.getElementById('enquiry-search-input').value.toLowerCase().trim();
+      const status = document.getElementById('enquiry-status-filter').value;
+      
+      let filtered = rawEnquiryData;
+      if (q) {
+        filtered = filtered.filter(e => e.full_name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || (e.enquiry_id && e.enquiry_id.toLowerCase().includes(q)));
+      }
+      if (status) {
+        filtered = filtered.filter(e => e.status.toUpperCase() === status.toUpperCase());
+      }
+      renderEnquiriesTable(filtered);
+    }
+
+    function viewEnquiryDetails(enquiryId) {
+      const enq = rawEnquiryData.find(e => e.id === enquiryId);
+      if (!enq) return;
+
+      document.getElementById('enquiry-detail-id').value = enq.id;
+      document.getElementById('enquiry-detail-code').innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
+      document.getElementById('enquiry-detail-status-badge').innerText = enq.status;
+      document.getElementById('enquiry-detail-customer').innerText = `Customer: ${enq.full_name} (${enq.email})`;
+      document.getElementById('enquiry-detail-mobile').innerText = `Mobile: ${enq.mobile}`;
+      document.getElementById('enquiry-detail-address').innerText = `Address: ${enq.address || 'N/A'}`;
+      document.getElementById('enquiry-detail-message').innerText = enq.message;
+      document.getElementById('enquiry-detail-status-select').value = enq.status;
+
+      const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+      let opts = '<option value="">-- Unassigned --</option>' +
+        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id === s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+      document.getElementById('enquiry-detail-staff-select').innerHTML = opts;
+
+      openModal('modal-enquiry-details');
+    }
+
+    async function handleUpdateEnquiryStatus(e) {
+      e.preventDefault();
+      const enquiryId = document.getElementById('enquiry-detail-id').value;
+      const status = document.getElementById('enquiry-detail-status-select').value;
+      const staffId = document.getElementById('enquiry-detail-staff-select').value;
+
+      try {
+        const res = await fetch(`/api/enquiries/${enquiryId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: status, assigned_staff_id: staffId || null })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert('Enquiry updated successfully!');
+          closeModal('modal-enquiry-details');
+          loadEnquiriesData();
+        } else {
+          alert(data.message || 'Error updating enquiry.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error updating enquiry.');
+      }
+    }
+
+    function openConvertEnquiryModal(enquiryId) {
+      const enq = rawEnquiryData.find(e => e.id === enquiryId);
+      if (!enq) return;
+
+      document.getElementById('convert-enquiry-id').value = enq.id;
+      document.getElementById('convert-enquiry-code-label').innerText = `Enquiry: ${enq.enquiry_id || ('#ENQ-' + enq.id)}`;
+      document.getElementById('convert-customer-info').innerText = `Customer: ${enq.full_name} (${enq.email}) • ${enq.mobile}`;
+      document.getElementById('convert-project-name').value = `${enq.full_name} Website Project`;
+      document.getElementById('convert-project-desc').value = enq.message;
+      document.getElementById('convert-project-stage').value = 'Requirement';
+      document.getElementById('convert-project-progress').value = 10;
+
+      const defaultDelivery = new Date();
+      defaultDelivery.setDate(defaultDelivery.getDate() + 30);
+      document.getElementById('convert-project-delivery').value = defaultDelivery.toISOString().split('T')[0];
+
+      const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+      let opts = '<option value="">-- Select Staff --</option>' +
+        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id === s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+      document.getElementById('convert-project-staff').innerHTML = opts;
+
+      openModal('modal-convert-enquiry');
+    }
+
+    function triggerConvertFromDetail() {
+      const enquiryId = document.getElementById('enquiry-detail-id').value;
+      closeModal('modal-enquiry-details');
+      openConvertEnquiryModal(parseInt(enquiryId));
+    }
+
+    async function handleConvertEnquirySubmit(e) {
+      e.preventDefault();
+      const enquiryId = document.getElementById('convert-enquiry-id').value;
+      const payload = {
+        name: document.getElementById('convert-project-name').value.trim(),
+        description: document.getElementById('convert-project-desc').value.trim(),
+        initial_stage: document.getElementById('convert-project-stage').value,
+        initial_progress: document.getElementById('convert-project-progress').value,
+        expected_delivery: document.getElementById('convert-project-delivery').value,
+        assigned_staff_id: document.getElementById('convert-project-staff').value || null
+      };
+
+      try {
+        const res = await fetch(`/api/enquiries/${enquiryId}/convert`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (res.ok && data.status === 'success') {
-          alert(`${role} created successfully!`);
-          closeModal(role === 'Admin' ? 'modal-create-admin' : 'modal-create-staff');
-          form.reset();
+          alert(`Successfully converted enquiry into Project ${data.data.project_id}!`);
+          closeModal('modal-convert-enquiry');
+          loadEnquiriesData();
           loadDashboardData();
         } else {
-          alert(data.message || `Error creating ${role}.`);
+          alert(data.message || 'Error converting enquiry to project.');
         }
-      } catch(err) {
+      } catch (err) {
         console.error(err);
-        alert(`Server error while creating ${role}.`);
+        alert('Server error converting enquiry.');
       }
+    }
+
+    function openAssignStaffModal(userId) {
+      const user = rawPeopleData.find(u => u.id === userId);
+      if (!user) return;
+
+      document.getElementById('assign-staff-client-id').value = user.id;
+      document.getElementById('assign-staff-client-name').innerText = `${user.full_name} (${user.email}) - ${user.role}`;
+
+      const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+      let opts = '<option value="">-- Unassigned --</option>' +
+        staffMembers.map(s => `<option value="${s.id}" ${user.assigned_staff_id === s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+
+      document.getElementById('assign-staff-select').innerHTML = opts;
+      openModal('modal-assign-staff');
+    }
+
+    async function handleAssignStaff(e) {
+      e.preventDefault();
+      const userId = document.getElementById('assign-staff-client-id').value;
+      const staffId = document.getElementById('assign-staff-select').value;
+
+      try {
+        const res = await fetch(`/api/super-admin/users/${userId}/assign-staff`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assigned_staff_id: staffId || null })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          alert(data.message);
+          closeModal('modal-assign-staff');
+          loadDashboardData();
+        } else {
+          alert(data.message || 'Error assigning staff.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error assigning staff.');
+      }
+    }
+
+    let activeMessageConvId = null;
+    let activeMessageRecipientId = null;
+
+    async function loadMessagesHub() {
+      const container = document.getElementById('chat-contacts-list');
+      if (!container) return;
+      container.innerHTML = '<div style="padding:1rem; color:var(--muted-text);">Loading authorized recipients & conversations...</div>';
+
+      try {
+        const [recipRes, convRes] = await Promise.all([
+          fetch('/api/messages/recipients'),
+          fetch('/api/messages/conversations')
+        ]);
+        const recipData = await recipRes.json();
+        const convData = await convRes.json();
+
+        let html = '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--secondary-text); background:var(--pale-mint);">Authorized Contacts & Teams</div>';
+        
+        if (recipData.status === 'success' && recipData.data) {
+          recipData.data.forEach(r => {
+            const initials = (r.name || 'U').substring(0, 2).toUpperCase();
+            html += `
+            <div class="contact-item ${activeMessageRecipientId === r.id ? 'active' : ''}" onclick="selectChatRecipient('${r.id}', '${r.name.replace(/'/g, "\\'")}', '${r.role}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
+              <div class="user-avatar-circle" style="width:34px; height:34px; font-size:0.8rem; background:${r.type === 'TEAM' ? 'var(--emerald)' : 'var(--primary-dark-green)'}; color:#FFF;">${initials}</div>
+              <div style="flex:1; overflow:hidden;">
+                <div style="font-weight:700; font-size:0.85rem; color:var(--primary-dark-green); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${r.name}</div>
+                <div style="font-size:0.75rem; color:var(--secondary-text);">${r.role} • ${r.type}</div>
+              </div>
+            </div>`;
+          });
+        }
+
+        if (convData.status === 'success' && convData.data && convData.data.length > 0) {
+          html += '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--secondary-text); background:#F1F5F9;">Active Conversations</div>';
+          convData.data.forEach(c => {
+            html += `
+            <div class="contact-item ${activeMessageConvId === c.conversation_id ? 'active' : ''}" onclick="openConversationThread('${c.conversation_id}', '${c.subject.replace(/'/g, "\\'")}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="font-size:0.85rem; color:var(--primary-dark-green); font-family:monospace;">${c.conversation_id}</strong>
+                ${c.unread ? '<span class="badge badge-warning" style="font-size:0.7rem;">NEW</span>' : ''}
+              </div>
+              <div style="font-size:0.8rem; color:var(--secondary-text); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${c.sender_name} → ${c.receiver_name}</div>
+              <div style="font-size:0.75rem; color:var(--muted-text);">${c.last_updated_str}</div>
+            </div>`;
+          });
+        }
+
+        container.innerHTML = html;
+
+        if (!activeMessageConvId && !activeMessageRecipientId && recipData.data && recipData.data.length > 0) {
+          selectChatRecipient(recipData.data[0].id, recipData.data[0].name, recipData.data[0].role);
+        }
+      } catch (err) {
+        console.error('Error loading messages hub:', err);
+      }
+    }
+
+    async function selectChatRecipient(recipId, name, role) {
+      activeMessageRecipientId = recipId;
+      activeMessageConvId = null;
+      document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active'));
+      const header = document.getElementById('chat-target-name');
+      if (header) header.innerText = `New Message to: ${name} (${role})`;
+      
+      const container = document.getElementById('chat-messages-body');
+      if (container) container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-regular fa-paper-plane" style="font-size:2rem; margin-bottom:0.5rem; color:var(--primary-green);"></i><p>Ready to send message to <strong>${name}</strong> (${role}). Type your message below.</p></div>`;
+    }
+
+    async function openConversationThread(convId, subject) {
+      activeMessageConvId = convId;
+      activeMessageRecipientId = null;
+      document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active'));
+      const header = document.getElementById('chat-target-name');
+      if (header) header.innerText = `Conversation: ${convId} (${subject})`;
+      
+      const container = document.getElementById('chat-messages-body');
+      if (!container) return;
+      container.innerHTML = '<p style="text-align:center; padding:1.5rem; color:var(--muted-text);">Loading conversation thread...</p>';
+
+      try {
+        const res = await fetch(`/api/messages/conversations/${convId}`);
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          const msgs = data.data || [];
+          if (msgs.length === 0) {
+            container.innerHTML = '<p style="text-align:center; padding:2rem; color:var(--muted-text);">No messages in this conversation.</p>';
+            return;
+          }
+          let html = '';
+          msgs.forEach(m => {
+            const isSentByMe = m.sender_id === {{ current_user.id }};
+            const statusBadge = m.status === 'READ' ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at})</span>` : `<span style="color:#64748B; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
+
+            html += `
+            <div style="display:flex; flex-direction:column; align-items:${isSentByMe ? 'flex-end' : 'flex-start'}; margin-bottom:1rem;">
+              <div style="font-size:0.75rem; color:var(--secondary-text); margin-bottom:0.25rem;">
+                <strong>${m.sender_name}</strong> (${m.sender_role}) • <span style="font-family:monospace; font-weight:700;">${m.message_id}</span> • ${m.timestamp}
+              </div>
+              <div style="max-width:70%; background:${isSentByMe ? 'var(--deep-forest)' : '#F1F5F9'}; color:${isSentByMe ? '#FFF' : '#0F172A'}; padding:0.75rem 1rem; border-radius:12px; font-size:0.9rem; line-height:1.4;">
+                ${m.subject ? `<strong style="display:block; margin-bottom:0.25rem; font-size:0.85rem;">${m.subject}</strong>` : ''}
+                ${m.message || m.body}
+                <div style="margin-top:0.4rem; text-align:right;">${statusBadge}</div>
+              </div>
+            </div>`;
+          });
+          container.innerHTML = html;
+          container.scrollTop = container.scrollHeight;
+        } else {
+          container.innerHTML = `<p style="color:var(--danger); padding:1rem;">${data.message || 'Access Denied'}</p>`;
+        }
+      } catch (err) {
+        console.error('Error loading conversation:', err);
+        container.innerHTML = '<p style="color:var(--danger); padding:1rem;">Error loading conversation.</p>';
+      }
+    }
+
+    async function sendMessageFromHub(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('chat-input-text');
+      const body = input.value.trim();
+      if (!body) return;
+
+      if (!activeMessageRecipientId && !activeMessageConvId) {
+        alert('Please select a recipient or conversation to message.');
+        return;
+      }
+
+      const payload = {
+        recipient_id: activeMessageRecipientId,
+        conversation_id: activeMessageConvId,
+        subject: 'Direct Message',
+        body: body
+      };
+
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          input.value = '';
+          if (data.conversation_id) {
+            openConversationThread(data.conversation_id, 'Direct Message');
+          }
+          loadMessagesHub();
+        } else {
+          alert(data.message || 'Error sending message.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server error sending message.');
+      }
+    }
+
+    async function loadNotificationsSection() {
+      const container = document.getElementById('tbl-notifications-list');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/api/notifications');
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          const notifs = data.data || [];
+          if (notifs.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-solid fa-bell-slash" style="font-size:2rem; margin-bottom:0.5rem; color:var(--muted-text);"></i><p>No notifications at this time.</p></div>';
+            return;
+          }
+          let html = '';
+          notifs.forEach(n => {
+            html += `
+            <div style="background:${n.is_read ? '#FFF' : 'var(--pale-mint)'}; border:1px solid var(--border-color); padding:1rem 1.25rem; border-radius:10px; margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <span class="badge badge-info">${n.type}</span>
+                  <strong style="color:var(--primary-dark-green);">${n.title}</strong>
+                </div>
+                <p style="margin-top:0.35rem; color:var(--secondary-text); font-size:0.9rem;">${n.message}</p>
+                <small style="color:var(--muted-text);">${new Date(n.created_at).toLocaleString()}</small>
+              </div>
+              <div>${!n.is_read ? '<span class="badge badge-warning">NEW</span>' : ''}</div>
+            </div>`;
+          });
+          container.innerHTML = html;
+        }
+      } catch (err) {
+        console.error('Error loading notifications:', err);
+      }
+    }
+
+    async function markAllNotificationsRead() {
+      try {
+        const res = await fetch('/api/notifications/read-all', { method: 'POST' });
+        if (res.ok) {
+          loadNotificationsSection();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function exportUsersCSV() {
+      if (!rawPeopleData || rawPeopleData.length === 0) { alert('No user data to export.'); return; }
+      let csv = 'ID,Full Name,Email,Mobile,Role,Status,Assigned Staff,Created At,Last Login\n';
+      rawPeopleData.forEach(u => {
+        csv += `"${u.id}","${u.full_name}","${u.email}","${u.mobile || ''}","${u.role}","${u.is_active ? 'Active' : 'Inactive'}","${u.assigned_staff_name || ''}","${u.created_at || ''}","${u.last_login || ''}"\n`;
+      });
+      downloadCSV(csv, 'users_export.csv');
+    }
+
+    function exportAuditLogsCSV() {
+      fetch('/api/super-admin/audit-logs').then(r => r.json()).then(data => {
+        if (data.status === 'success' && data.data) {
+          let csv = 'Log ID,Timestamp,Action,User Email,Target User,Status\n';
+          data.data.forEach(l => {
+            csv += `"${l.id}","${l.timestamp}","${l.action}","${l.user_email}","${l.target_user || ''}","${l.status}"\n`;
+          });
+          downloadCSV(csv, 'audit_logs_export.csv');
+        }
+      });
+    }
+
+    function downloadCSV(csvContent, fileName) {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     async function handleCreateProject(e) {

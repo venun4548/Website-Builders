@@ -24,6 +24,8 @@ function testScript() {
   Logger.log('=== Testing Website Builders Contact Form Script ===');
 
   // 1. Test Sheet connection
+  
+  
   try {
     const ss    = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     const sheet = ss.getSheetByName(CONFIG.SHEET_NAME) || ss.getSheets()[0];
@@ -105,7 +107,15 @@ function initialSetup() {
   // 6. AuditLogs Tab
   getOrCreateSheet('AuditLogs', ['Log ID', 'Timestamp', 'Action Event', 'User Email', 'Target User', 'Status']);
 
-  Logger.log('✅ All 6 database tabs (Sheet1/Enquiries, Users, Projects, Websites, Tasks, AuditLogs) initialized successfully!');
+  // 7. Messages Tab
+  getOrCreateSheet('Messages', [
+    'Message ID', 'Conversation ID', 'Sender ID', 'Sender Name', 'Sender Role',
+    'Receiver ID', 'Receiver Name', 'Receiver Role', 'Recipient Type', 'Message Type',
+    'Project ID', 'Customer ID', 'Subject', 'Message', 'Attachment URL',
+    'Status', 'Read At', 'Created Date', 'Created Time', 'Last Updated'
+  ]);
+
+  Logger.log('✅ All 7 database tabs (Sheet1/Enquiries, Users, Projects, Websites, Tasks, AuditLogs, Messages) initialized successfully!');
 }
 
 /**
@@ -173,9 +183,14 @@ function doPost(e) {
     } catch(err) {}
 
     if (action === 'sync_user') return handleUserSync(data);
+    if (action === 'delete_user') return handleRowDelete('Users', 3, data.email || data.id);
     if (action === 'sync_project') return handleProjectSync(data);
+    if (action === 'delete_project') return handleRowDelete('Projects', 1, data.project_id || data.id);
     if (action === 'sync_website') return handleWebsiteSync(data);
+    if (action === 'delete_website') return handleRowDelete('Websites', 1, data.id);
     if (action === 'sync_task') return handleTaskSync(data);
+    if (action === 'delete_task') return handleRowDelete('Tasks', 1, data.id);
+    if (action === 'sync_message') return handleMessageSync(data);
     if (action === 'sync_audit') return handleAuditSync(data);
     if (action === 'update_enquiry') return handleAdministrativeUpdate(params);
   }
@@ -319,13 +334,80 @@ function handleTaskSync(t) {
   }
 }
 
-function handleAuditSync(a) {
+function handleMessageSync(m) {
   try {
-    const headers = ['Log ID', 'Timestamp', 'Action Event', 'User Email', 'Target User', 'Status'];
-    const sheet = getOrCreateSheet('AuditLogs', headers);
-    const rowValues = [a.id || '', a.timestamp || new Date().toISOString(), a.action || '', a.user_email || '', a.target_user || '', a.status || 'Success'];
-    sheet.appendRow(rowValues);
-    return jsonResponse('success', 'Audit log appended to Google Sheets AuditLogs tab.');
+    const headers = [
+      'Message ID', 'Conversation ID', 'Sender ID', 'Sender Name', 'Sender Role',
+      'Receiver ID', 'Receiver Name', 'Receiver Role', 'Recipient Type', 'Message Type',
+      'Project ID', 'Customer ID', 'Subject', 'Message', 'Attachment URL',
+      'Status', 'Read At', 'Created Date', 'Created Time', 'Last Updated'
+    ];
+    const sheet = getOrCreateSheet('Messages', headers);
+    const lastRow = sheet.getLastRow();
+    let rowIndex = -1;
+
+    const msgId = m.message_id || ('MSG-2026-' + m.id);
+
+    if (lastRow > 1) {
+      const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === String(msgId)) {
+          rowIndex = i + 2;
+          break;
+        }
+      }
+    }
+
+    const rowValues = [
+      msgId,
+      m.conversation_id || '',
+      m.sender_id || '',
+      m.sender_name || '',
+      m.sender_role || '',
+      m.receiver_id || '',
+      m.receiver_name || '',
+      m.receiver_role || '',
+      m.recipient_type || 'INDIVIDUAL',
+      m.message_type || 'DIRECT',
+      m.project_id || '',
+      m.customer_id || '',
+      m.subject || '',
+      m.message || m.body || '',
+      m.attachment_url || '',
+      m.status || (m.is_read ? 'READ' : 'SENT'),
+      m.read_at || '',
+      m.created_date || '',
+      m.created_time || '',
+      m.last_updated || new Date().toISOString()
+    ];
+
+    if (rowIndex > -1) {
+      sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return jsonResponse('success', 'Message synced to Google Sheets Messages tab.');
+  } catch(err) {
+    return jsonResponse('error', err.toString());
+  }
+}
+
+function handleRowDelete(sheetName, idColIndex, targetId) {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return jsonResponse('error', 'Sheet ' + sheetName + ' not found.');
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const ids = sheet.getRange(2, idColIndex, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]).toLowerCase() === String(targetId).toLowerCase()) {
+          sheet.deleteRow(i + 2);
+          return jsonResponse('success', 'Row deleted from ' + sheetName + ' sheet.');
+        }
+      }
+    }
+    return jsonResponse('success', 'No matching row found to delete in ' + sheetName + '.');
   } catch(err) {
     return jsonResponse('error', err.toString());
   }
