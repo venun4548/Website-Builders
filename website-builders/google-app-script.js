@@ -543,21 +543,78 @@ function getStats(p){
   return jr('success',{total_users:tu,total_admins:ta,total_staff:ts,total_clients:tc,active_users:au,inactive_users:iu,total_enquiries:te,new_enquiries:ne,total_projects:tp,active_projects:ap,pending_projects:pp,total_messages:tm,unread_messages:um,recent_activity:ra});
 }
 
-// ─────────────── CONTACT FORM (unchanged) ─────────────────────
+// ─────────────── CONTACT FORM ─────────────────────────────────
+// Sheet1 = original mail-automation sheet (NEVER modified by initialSetup)
+// Enquiries = new CRM copy for the dashboard
+// Both receive every public contact form submission.
+
+// Legacy column map for Sheet1 (matches the original spreadsheet exactly)
+const COL={SUBMISSION_ID:1,TIMESTAMP:2,CUSTOMER_NAME:3,EMAIL:4,MOBILE_NUMBER:5,ADDRESS:6,MESSAGE:7,EMAIL_STATUS:8,EMAIL_SENT_AT:9,OWNER_NOTIF_STAT:10,OWNER_NOTIF_TIME:11,TICKET_STATUS:12,ASSIGNED_TO:13,FOLLOWUP_DATE:14,FOLLOWUP_STATUS:15,SOURCE_PAGE:16,REMARKS:17};
+
 function handleContactForm(params){
   const lock=LockService.getScriptLock();
   try{lock.waitLock(15000);}catch(err){return jr('error','Server busy.');}
   try{
-    const name=(params.name||'').trim(),email=(params.email||'').trim().toLowerCase(),mobile=(params.mobile||'').trim(),address=(params.address||'').trim(),message=(params.message||'').trim(),source=(params.sourcePage||'Contact Page').trim();
+    const name=(params.name||'').trim();
+    const email=(params.email||'').trim().toLowerCase();
+    const mobile=(params.mobile||'').trim();
+    const address=(params.address||'').trim();
+    const message=(params.message||'').trim();
+    const source=(params.sourcePage||'Contact Page').trim();
     if(!name||!email||!mobile||!message) return jr('error','All required fields must be completed.');
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jr('error','Invalid email.');
-    const enqResult=createEnquiry({customer_name:name,email,mobile,address,message,source_page:source});
-    const enqData=JSON.parse(enqResult.getContent());
-    const enqId=(enqData.data&&enqData.data.id)?enqData.data.id:'ENQ-???';
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jr('error','Invalid email address format.');
+
+    const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    // ── Write to Sheet1 (original mail-automation sheet) ─────────
+    // Uses the same column layout as the original script — Sheet1 is NOT touched elsewhere.
+    const sheet1=ss.getSheetByName('Sheet1')||ss.getSheets()[0];
+    const submissionId=generateSheet1Id(sheet1);
+    const timestampStr=Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'dd-MMM-yyyy hh:mm:ss a');
+    const followUpDate=new Date();followUpDate.setDate(followUpDate.getDate()+3);
+    const followUpDateStr=Utilities.formatDate(followUpDate,CONFIG.TIMEZONE,'dd-MMM-yyyy');
+
+    const newRow=[];
+    newRow[COL.SUBMISSION_ID-1]=submissionId;
+    newRow[COL.TIMESTAMP-1]=timestampStr;
+    newRow[COL.CUSTOMER_NAME-1]=name;
+    newRow[COL.EMAIL-1]=email;
+    newRow[COL.MOBILE_NUMBER-1]=mobile;
+    newRow[COL.ADDRESS-1]=address;
+    newRow[COL.MESSAGE-1]=message;
+    newRow[COL.EMAIL_STATUS-1]='Pending';
+    newRow[COL.EMAIL_SENT_AT-1]='';
+    newRow[COL.OWNER_NOTIF_STAT-1]='Pending';
+    newRow[COL.OWNER_NOTIF_TIME-1]='';
+    newRow[COL.TICKET_STATUS-1]='New';
+    newRow[COL.ASSIGNED_TO-1]='';
+    newRow[COL.FOLLOWUP_DATE-1]=followUpDateStr;
+    newRow[COL.FOLLOWUP_STATUS-1]='Pending';
+    newRow[COL.SOURCE_PAGE-1]=source;
+    newRow[COL.REMARKS-1]='';
+    sheet1.appendRow(newRow);
+    const rowIndex=sheet1.getLastRow();
+
+    // Send owner notification email and update Sheet1 status
+    let ownerStatus='Sent',ownerTime='',remarks='';
+    try{
+      sendOwnerEnquiryEmail(submissionId,name,email,mobile,address,message);
+      ownerTime=Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'dd-MMM-yyyy hh:mm:ss a');
+    }catch(err){ownerStatus='Failed';remarks='Owner email failed: '+err.toString();}
+    sheet1.getRange(rowIndex,COL.OWNER_NOTIF_STAT).setValue(ownerStatus);
+    if(ownerTime) sheet1.getRange(rowIndex,COL.OWNER_NOTIF_TIME).setValue(ownerTime);
+    if(remarks)   sheet1.getRange(rowIndex,COL.REMARKS).setValue(remarks);
+
+    // ── Also write to Enquiries sheet (CRM copy) ─────────────────
+    try{
+      const eSheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
+      const now=getNow();const enqId=generateId('ENQ',SHEETS.ENQUIRIES,E.ID);
+      eSheet.appendRow([enqId,'',name,email,mobile,address,message,'New','',now.date,now.time,'','']);
+    }catch(err){Logger.log('Enquiries write failed (non-fatal): '+err.toString());}
+
     lock.releaseLock();
     const trigger=ScriptApp.newTrigger('sendScheduledCustomerEmail').timeBased().after(CONFIG.DELAY_MINUTES*60*1000).create();
-    PropertiesService.getScriptProperties().setProperty('trigger_'+trigger.getUniqueId(),JSON.stringify({name,email,enqId,message}));
-    return jr('success',{message:'Enquiry submitted successfully.',submissionId:enqId});
+    PropertiesService.getScriptProperties().setProperty('trigger_'+trigger.getUniqueId(),JSON.stringify({name,email,enqId:submissionId,message}));
+    return jr('success',{message:'Enquiry submitted successfully.',submissionId});
   }catch(err){if(lock.hasLock())lock.releaseLock();return jr('error','Submission failed: '+err.toString());}
 }
 
