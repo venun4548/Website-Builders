@@ -2992,8 +2992,10 @@
           }
           let html = '';
           msgs.forEach(m => {
-            const isSentByMe = m.sender_id === {{ current_user.id }};
-            const statusBadge = m.status === 'READ' ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at})</span>` : `<span style="color:#64748B; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
+            const isSentByMe = String(m.sender_id) === String({{ current_user.id }});
+            const statusBadge = m.status === 'READ' 
+              ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at})</span>` 
+              : `<span style="color:${isSentByMe ? 'rgba(255,255,255,0.85)' : '#64748B'}; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
 
             html += `
             <div style="display:flex; flex-direction:column; align-items:${isSentByMe ? 'flex-end' : 'flex-start'}; margin-bottom:1rem;">
@@ -3045,10 +3047,11 @@
         const data = await res.json();
         if (res.ok && data.status === 'success') {
           input.value = '';
-          if (data.conversation_id) {
-            openConversationThread(data.conversation_id, 'Direct Message');
+          const targetConvId = (data.data && data.data.conversation_id) ? data.data.conversation_id : (data.conversation_id || activeMessageConvId);
+          if (targetConvId) {
+            openConversationThread(targetConvId, 'Direct Message');
           }
-          loadMessagesHub();
+          await loadMessagesHub();
         } else {
           alert(data.message || 'Error sending message.');
         }
