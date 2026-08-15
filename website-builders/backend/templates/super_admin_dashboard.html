@@ -1820,14 +1820,9 @@
       activityChart.update();
     }
 
-    let rawPeopleData = [];
     let currentTab = 'all';
     let selectedUserIds = new Set();
     let targetDeleteUserId = null;
-
-    async function initDashboard() {
-      await loadDashboardData();
-    }
 
     async function loadDashboardData() {
       try {
