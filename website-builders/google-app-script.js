@@ -176,6 +176,7 @@ function setUserStatus(d,status){
 }
 
 function deleteUser(d){
+  d = d || {};
   if(!d.user_id&&!d.email) return jr('error','User ID or email required.');
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
   const row=d.user_id?findRowByValue(sheet,U.ID,d.user_id):findRowByValue(sheet,U.EMAIL,d.email.toLowerCase());
