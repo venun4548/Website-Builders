@@ -75,18 +75,25 @@ def clear_pin_failed_attempts(ip):
     PIN_RATE_LIMIT_TRACKER[ip] = []
 
 def is_admin_access_verified():
-    if current_user.is_authenticated and current_user.role in ['Super Admin', 'Admin', 'Staff']:
-        return True
-    granted = session.get('admin_access_granted', False)
-    expiry_str = session.get('admin_access_expires')
-    if granted and expiry_str:
-        try:
-            expiry = datetime.fromisoformat(expiry_str)
-            if datetime.utcnow() < expiry:
-                return True
-        except Exception:
-            pass
+    try:
+        if current_user.is_authenticated and getattr(current_user, 'role', '') in ['Super Admin', 'Admin', 'Staff']:
+            return True
+        granted = session.get('admin_access_granted', False)
+        expiry_str = session.get('admin_access_expires')
+        if granted and expiry_str:
+            try:
+                expiry = datetime.fromisoformat(expiry_str)
+                if datetime.utcnow() < expiry:
+                    return True
+            except Exception:
+                pass
+    except Exception as e:
+        logger.error(f"is_admin_access_verified error: {str(e)}")
     return False
+
+# Secret mapping Google Apps Script Web App
+GAS_WEB_APP_URL = os.environ.get('GAS_WEB_APP_URL', 'https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec')
+SHARED_SECRET = os.environ.get('SHARED_SECRET', 'sec_wb_crm_77c4e569bbd18f0a1c6a58')
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -409,10 +416,13 @@ def contact_page():
 
 @app.route('/admin/access', methods=['GET'])
 def admin_access_page():
-    if current_user.is_authenticated and current_user.role in ['Super Admin', 'Admin', 'Staff']:
-        return redirect(url_for('dashboard'))
-    if is_admin_access_verified():
-        return redirect(url_for('admin_login'))
+    try:
+        if current_user.is_authenticated and getattr(current_user, 'role', '') in ['Super Admin', 'Admin', 'Staff']:
+            return redirect(url_for('dashboard'))
+        if is_admin_access_verified():
+            return redirect(url_for('admin_login'))
+    except Exception as e:
+        logger.error(f"Error in admin_access_page: {str(e)}")
     return render_template('admin_access_verify.html')
 
 @app.route('/api/admin/access/verify', methods=['POST'])
