@@ -273,17 +273,18 @@ img {
 .btn-user-login {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.35rem;
   background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #ffffff !important;
-  padding: 0.55rem 1.1rem;
+  padding: 0.38rem 0.85rem;
   border-radius: var(--radius-full);
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   border: 1px solid rgba(59, 130, 246, 0.3);
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.22);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.01em;
 }
 
 .btn-user-login::after {
@@ -291,25 +292,26 @@ img {
 }
 
 .btn-user-login:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(37, 99, 235, 0.38);
   color: #ffffff !important;
 }
 
 .btn-admin-login {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.35rem;
   background: linear-gradient(135deg, #14532d, #16a34a);
   color: #ffffff !important;
-  padding: 0.55rem 1.1rem;
+  padding: 0.38rem 0.85rem;
   border-radius: var(--radius-full);
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   border: 1px solid rgba(34, 197, 94, 0.3);
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.22);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.01em;
 }
 
 .btn-admin-login::after {
@@ -317,8 +319,8 @@ img {
 }
 
 .btn-admin-login:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(22, 163, 74, 0.38);
   color: #ffffff !important;
 }
 
@@ -400,24 +402,37 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.875rem 2rem;
+  padding: 0.6rem 1.5rem;
   border-radius: var(--radius-full);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.88rem;
   cursor: pointer;
   transition: all var(--transition-normal);
   border: 1px solid transparent;
-  gap: 0.6rem;
-  letter-spacing: 0.02em;
+  gap: 0.5rem;
+  letter-spacing: 0.025em;
   font-family: var(--font-heading);
   position: relative;
   overflow: hidden;
 }
 
+/* Hero-specific larger buttons */
+.hero-buttons .btn {
+  padding: 0.7rem 1.75rem;
+  font-size: 0.92rem;
+}
+
+/* Navbar Start Project button — compact */
+.nav-links .btn {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  gap: 0.35rem;
+}
+
 .btn-primary {
   background: var(--gradient-primary);
   color: white;
-  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 3px 12px rgba(139, 92, 246, 0.35);
 }
 
 .btn-primary::before {
@@ -440,8 +455,8 @@ img {
 }
 
 .btn-primary:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
   color: white;
 }
 
@@ -455,7 +470,7 @@ img {
 .btn-outline:hover {
   border-color: var(--text-main);
   background: rgba(255,255,255,0.1);
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
