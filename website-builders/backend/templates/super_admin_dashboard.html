@@ -2964,8 +2964,21 @@
       activeMessageConvId = null;
       document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active'));
       const header = document.getElementById('chat-target-name');
-      if (header) header.innerText = `New Message to: ${name} (${role})`;
-      
+      if (header) header.innerText = `Messaging: ${name} (${role})`;
+
+      if (recipId && !isNaN(recipId)) {
+        try {
+          const convRes = await fetch(`/api/messages/conversations/with/${recipId}`);
+          const convData = await convRes.json();
+          if (convRes.ok && convData.status === 'success' && convData.conversation_id) {
+            openConversationThread(convData.conversation_id, `Direct with ${name}`);
+            return;
+          }
+        } catch (err) {
+          console.error('Error fetching conversation with user:', err);
+        }
+      }
+
       const container = document.getElementById('chat-messages-body');
       if (container) container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-regular fa-paper-plane" style="font-size:2rem; margin-bottom:0.5rem; color:var(--primary-green);"></i><p>Ready to send message to <strong>${name}</strong> (${role}). Type your message below.</p></div>`;
     }

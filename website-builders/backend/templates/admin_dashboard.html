@@ -719,7 +719,21 @@
       activeAdminChatRecipientId = recipId;
       activeAdminChatConvId = null;
       const header = document.getElementById('admin-chat-target-name');
-      if (header) header.innerText = `New Message to: ${fullName} (${role})`;
+      if (header) header.innerText = `Messaging: ${fullName} (${role})`;
+
+      if (recipId && !isNaN(recipId)) {
+        try {
+          const convRes = await fetch(`/api/messages/conversations/with/${recipId}`);
+          const convData = await convRes.json();
+          if (convRes.ok && convData.status === 'success' && convData.conversation_id) {
+            openAdminConversationThread(convData.conversation_id, `Direct with ${fullName}`);
+            return;
+          }
+        } catch (err) {
+          console.error('Error fetching conversation with user:', err);
+        }
+      }
+
       const container = document.getElementById('admin-chat-messages-body');
       if (container) container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-regular fa-paper-plane" style="font-size:2rem; margin-bottom:0.5rem; color:var(--primary-green);"></i><p>Ready to send message to <strong>${fullName}</strong> (${role}). Type your message below.</p></div>`;
     }

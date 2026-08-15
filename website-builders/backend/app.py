@@ -2047,7 +2047,16 @@ def handle_messages():
         # Generate Message ID & Conversation ID
         msg_code = generate_unique_message_id()
         if not conversation_id:
-            conversation_id = generate_unique_conversation_id()
+            if receiver_id:
+                existing_msg = Message.query.filter(
+                    ((Message.sender_id == sender_id) & (Message.receiver_id == receiver_id)) |
+                    ((Message.sender_id == receiver_id) & (Message.receiver_id == sender_id))
+                ).order_by(Message.timestamp.desc()).first()
+                if existing_msg and existing_msg.conversation_id:
+                    conversation_id = existing_msg.conversation_id
+
+            if not conversation_id:
+                conversation_id = generate_unique_conversation_id()
 
         new_msg = Message(
             message_id=msg_code,
@@ -2147,6 +2156,18 @@ def get_conversations_list():
     except Exception as e:
         logger.error(f"Error fetching conversations list: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/messages/conversations/with/<int:user_id>', methods=['GET'])
+@login_required
+def get_conversation_with_user(user_id):
+    msg = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == user_id)) |
+        ((Message.sender_id == user_id) & (Message.receiver_id == current_user.id))
+    ).order_by(Message.timestamp.desc()).first()
+
+    if msg and msg.conversation_id:
+        return jsonify({'status': 'success', 'conversation_id': msg.conversation_id})
+    return jsonify({'status': 'success', 'conversation_id': None})
 
 @app.route('/api/messages/conversations/<conv_id>', methods=['GET'])
 @login_required
