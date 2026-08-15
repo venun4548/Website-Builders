@@ -32,9 +32,12 @@ class SheetsUser(UserMixin):
         self.mobile       = str(data.get('mobile', ''))
         self.role         = str(data.get('role', ''))
         self.status       = str(data.get('status', 'ACTIVE'))
-        self.is_active    = data.get('is_active', True) if isinstance(data.get('is_active'), bool) else (self.status.upper() == 'ACTIVE')
         self.last_login   = str(data.get('last_login', ''))
         self.assigned_staff_id = str(data.get('assigned_staff_id', ''))
+
+    @property
+    def is_active(self):
+        return self.status.upper() == 'ACTIVE'
 
     # Flask-Login requires get_id()
     def get_id(self):
