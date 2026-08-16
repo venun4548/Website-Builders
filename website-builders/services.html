@@ -287,7 +287,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', async function loadSession() {
       try {
-        const backendUrl = window.location.origin.includes('5000') || window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? '' : 'https://website-builders.onrender.com';
+        const backendUrl = '';
         const res = await fetch(`${backendUrl}/api/me`, { credentials: 'include' });
         if (res.ok) {
           const user = await res.json();
