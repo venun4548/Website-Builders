@@ -167,6 +167,11 @@ def serve_images(filename):
 def serve_webfonts(filename):
     return send_from_directory('../webfonts', filename)
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory('../images', 'logo.png', mimetype='image/png')
+
+
 # ─── Public Pages ─────────────────────────────────────────────
 @app.route('/')
 def index():
