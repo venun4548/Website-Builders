@@ -463,7 +463,7 @@
           recipData.data.forEach(r => {
             const initials = (r.name || 'U').substring(0, 2).toUpperCase();
             html += `
-            <div class="contact-item ${activeCustChatRecipientId === r.id ? 'active' : ''}" onclick="selectCustChatRecipient('${r.id}', '${r.name.replace(/'/g, "\\'")}', '${r.role}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
+            <div class="contact-item ${activeCustChatRecipientId === r.id ? 'active' : ''}" onclick="selectCustChatRecipient('${r.id}', '${r.name.replace(/'/g, "\'")}', '${r.role}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
               <div style="width:34px; height:34px; border-radius:50%; background:var(--primary); color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">${initials}</div>
               <div style="flex:1; overflow:hidden;">
                 <div style="font-weight:700; font-size:0.85rem; color:var(--text-main); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${r.name}</div>
@@ -477,7 +477,7 @@
           html += '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--text-secondary); background:#F1F5F9;">My Conversations</div>';
           convData.data.forEach(c => {
             html += `
-            <div class="contact-item ${activeCustChatConvId === c.conversation_id ? 'active' : ''}" onclick="openCustConversationThread('${c.conversation_id}', '${c.subject.replace(/'/g, "\\'")}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
+            <div class="contact-item ${activeCustChatConvId === c.conversation_id ? 'active' : ''}" onclick="openCustConversationThread('${c.conversation_id}', '${c.subject.replace(/'/g, "\'")}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <strong style="font-size:0.85rem; color:var(--primary); font-family:monospace;">${c.conversation_id}</strong>
                 ${c.unread ? '<span style="background:#D97706; color:#FFF; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.65rem; font-weight:700;">NEW</span>' : ''}

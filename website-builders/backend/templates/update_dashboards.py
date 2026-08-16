@@ -149,7 +149,7 @@ def process_super_admin():
                 <td>${u.last_login || 'Never'}</td>
                 <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
                   <button class="btn-action" style="padding: 0.3rem 0.6rem;" onclick='editUser(${JSON.stringify(u)})'><i class="fa-solid fa-pen"></i></button>
-                  <button class="btn-action" style="padding: 0.3rem 0.6rem; color: #f87171;" onclick="deleteUser(${u.id})"><i class="fa-solid fa-trash"></i></button>
+                  <button class="btn-action" style="padding: 0.3rem 0.6rem; color: #f87171;" onclick="deleteUser('${u.id}')"><i class="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
             `;

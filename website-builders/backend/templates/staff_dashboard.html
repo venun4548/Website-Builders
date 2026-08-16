@@ -502,7 +502,7 @@
               <td>${t.due_date || 'TBD'}</td>
               <td><span class="badge badge-info">${t.status}</span></td>
               <td>
-                ${t.status !== 'Completed' ? `<button class="btn btn-teal btn-sm" onclick="completeTask(${t.id})">Mark Complete</button>` : '<i class="fa-solid fa-check" style="color:var(--success);"></i>'}
+                ${t.status !== 'Completed' ? `<button class="btn btn-teal btn-sm" onclick="completeTask('${t.id}')">Mark Complete</button>` : '<i class="fa-solid fa-check" style="color:var(--success);"></i>'}
               </td>
             </tr>`;
 
@@ -510,7 +510,7 @@
               <div class="kanban-card">
                 <div class="kanban-card-title">${t.title}</div>
                 <div class="kanban-card-sub">Priority: ${t.priority} | Due: ${t.due_date || 'TBD'}</div>
-                ${t.status !== 'Completed' ? `<button class="btn btn-teal btn-sm" style="width:100%; justify-center;" onclick="completeTask(${t.id})">Mark Complete</button>` : '<span class="badge badge-success">Completed</span>'}
+                ${t.status !== 'Completed' ? `<button class="btn btn-teal btn-sm" style="width:100%; justify-center;" onclick="completeTask('${t.id}')">Mark Complete</button>` : '<span class="badge badge-success">Completed</span>'}
               </div>
             `;
 
@@ -650,7 +650,7 @@
           recipData.data.forEach(r => {
             const initials = (r.name || 'U').substring(0, 2).toUpperCase();
             html += `
-            <div class="contact-item ${activeStaffChatRecipientId === r.id ? 'active' : ''}" onclick="selectStaffChatRecipient('${r.id}', '${r.name.replace(/'/g, "\\'")}', '${r.role}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
+            <div class="contact-item ${activeStaffChatRecipientId === r.id ? 'active' : ''}" onclick="selectStaffChatRecipient('${r.id}', '${r.name.replace(/'/g, "\'")}', '${r.role}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
               <div class="user-avatar-circle" style="width:34px; height:34px; font-size:0.8rem; border-radius:50%; background:${r.type === 'TEAM' ? 'var(--emerald)' : 'var(--deep-forest)'}; color:#FFF; display:inline-flex; align-items:center; justify-content:center;">${initials}</div>
               <div style="flex:1; overflow:hidden;">
                 <div style="font-weight:700; font-size:0.85rem; color:var(--primary-dark-green); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${r.name}</div>
@@ -664,7 +664,7 @@
           html += '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--secondary-text); background:#F1F5F9;">Active Conversations</div>';
           convData.data.forEach(c => {
             html += `
-            <div class="contact-item ${activeStaffChatConvId === c.conversation_id ? 'active' : ''}" onclick="openStaffConversationThread('${c.conversation_id}', '${c.subject.replace(/'/g, "\\'")}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
+            <div class="contact-item ${activeStaffChatConvId === c.conversation_id ? 'active' : ''}" onclick="openStaffConversationThread('${c.conversation_id}', '${c.subject.replace(/'/g, "\'")}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <strong style="font-size:0.85rem; color:var(--primary-dark-green); font-family:monospace;">${c.conversation_id}</strong>
                 ${c.unread ? '<span class="badge badge-warning" style="font-size:0.7rem;">NEW</span>' : ''}

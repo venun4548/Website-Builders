@@ -23,7 +23,7 @@ def update_dashboard(filename, is_staff=False, is_super=False):
                 new_tabs = old_tabs.replace('id="tab-enquiries">', 'id="tab-enquiries">')
                 # Insert projects tab right after enquiries
                 insert_pos = new_tabs.find('</button>') + 9
-                projects_tab = '\n      <button class="btn-action" style="background: transparent;" onclick="switchTab(\'projects\')" id="tab-projects"><i class="fa-solid fa-briefcase"></i> Projects</button>'
+                projects_tab = '\n      <button class="btn-action" style="background: transparent;" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-briefcase"></i> Projects</button>'
                 new_tabs = new_tabs[:insert_pos] + projects_tab + new_tabs[insert_pos:]
                 html = html.replace(old_tabs, new_tabs)
 
@@ -127,7 +127,7 @@ def update_dashboard(filename, is_staff=False, is_super=False):
 
     # 4. Add JS for switchTab to include projects
     # For switchTab logic:
-    if 'document.getElementById(\'section-projects\')' not in html:
+    if 'document.getElementById('section-projects')' not in html:
         html = html.replace("document.getElementById('section-enquiries').style.display = 'none';", 
                             "document.getElementById('section-enquiries').style.display = 'none';\n      if(document.getElementById('section-projects')) document.getElementById('section-projects').style.display = 'none';")
         html = html.replace("document.getElementById('tab-enquiries').style.background = 'transparent';", 
@@ -263,7 +263,7 @@ def update_dashboard(filename, is_staff=False, is_super=False):
         html = html.replace('</script>', projects_js + '\n  </script>')
 
     # 6. Fix user deletion fetch logic to alert on failure
-    if 'const res = await fetch(\'/api/super-admin/users/\' + id, { method: \'DELETE\' });\n        if (res.ok) fetchManageUsers();\n      } catch (e)' in html:
+    if 'const res = await fetch('/api/super-admin/users/' + id, { method: 'DELETE' });\n        if (res.ok) fetchManageUsers();\n      } catch (e)' in html:
         old_delete = """const res = await fetch('/api/super-admin/users/' + id, { method: 'DELETE' });
         if (res.ok) fetchManageUsers();
       } catch (e)"""
