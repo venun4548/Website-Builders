@@ -877,12 +877,12 @@ def api_sa_user_reset(user_id):
 def api_sa_audit():
     return api_get_activity()
 
-@app.route('/api/admin/workload')
-@app.route('/api/websites')
-@app.route('/api/tasks')
-@app.route('/api/clients')
-@app.route('/api/admin/team-performance')
-@app.route('/api/notifications')
+@app.route('/api/admin/workload', methods=['GET', 'POST'])
+@app.route('/api/websites', methods=['GET', 'POST'])
+@app.route('/api/tasks', methods=['GET', 'POST'])
+@app.route('/api/clients', methods=['GET', 'POST'])
+@app.route('/api/admin/team-performance', methods=['GET', 'POST'])
+@app.route('/api/notifications', methods=['GET', 'POST'])
 @app.route('/api/super-admin/users/bulk-action', methods=['POST'])
 @app.route('/api/super-admin/users/<user_id>/dependencies')
 @login_required
