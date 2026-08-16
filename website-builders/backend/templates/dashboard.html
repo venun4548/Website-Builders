@@ -571,7 +571,7 @@
       try {
         const res = await fetch('/api/users');
         const result = await res.json();
-        if (result.status === 'success') {
+        if ((result.status === 'success' || result.success)) {
           users = result.data;
           populateAssigneeDropdown();
         }
@@ -592,7 +592,7 @@
       try {
         const res = await fetch('/api/enquiries');
         const result = await res.json();
-        if (result.status === 'success') {
+        if ((result.status === 'success' || result.success)) {
           enquiries = result.data;
           applyFilters();
         } else {
@@ -749,7 +749,7 @@
           body: JSON.stringify({ submissionId, ticketStatus, assignedTo, followUpStatus, remarks })
         });
         const result = await res.json();
-        if (result.status === 'success') {
+        if ((result.status === 'success' || result.success)) {
           closeModal();
           fetchEnquiries();
         } else {

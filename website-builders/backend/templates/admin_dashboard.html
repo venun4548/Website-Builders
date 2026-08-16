@@ -523,7 +523,7 @@
       try {
         const statsRes = await fetch('/api/stats/admin');
         const statsData = await statsRes.json();
-        if(statsData.status === 'success') {
+        if((statsData.status === 'success' || statsData.success)) {
           const s = statsData.data;
           document.getElementById('op-projects').innerText = s.active_projects || 0;
           document.getElementById('op-completed').innerText = s.completed_projects || 0;
@@ -533,7 +533,7 @@
 
         const usersRes = await fetch('/api/users');
         const usersData = await usersRes.json();
-        if(usersData.status === 'success') {
+        if((usersData.status === 'success' || usersData.success)) {
           let sCount = 0, cCount = 0;
           let tRows = '', cRows = '';
           usersData.data.forEach(u => {
@@ -556,7 +556,7 @@
 
         const projRes = await fetch('/api/projects');
         const projData = await projRes.json();
-        if(projData.status === 'success') {
+        if((projData.status === 'success' || projData.success)) {
           let rows = '';
           projData.data.forEach(p => {
             rows += `<tr>
@@ -574,7 +574,7 @@
 
         const perfRes = await fetch('/api/admin/team-performance');
         const perfData = await perfRes.json();
-        if(perfData.status === 'success') {
+        if((perfData.status === 'success' || perfData.success)) {
           let rows = '';
           perfData.data.forEach(p => {
             let loadFillClass = 'fill-balanced';
@@ -599,7 +599,7 @@
 
         const workloadRes = await fetch('/api/admin/workload');
         const workloadData = await workloadRes.json();
-        if(workloadData.status === 'success') {
+        if((workloadData.status === 'success' || workloadData.success)) {
           let rows = '';
           workloadData.data.forEach(w => {
             let fillClass = 'fill-balanced';
@@ -623,7 +623,7 @@
 
         const taskRes = await fetch('/api/tasks');
         const taskData = await taskRes.json();
-        if(taskData.status === 'success') {
+        if((taskData.status === 'success' || taskData.success)) {
           let openCnt = taskData.data.filter(t => t.status !== 'Completed').length;
           document.getElementById('op-tasks').innerText = openCnt;
           document.getElementById('tp-tasks').innerText = openCnt;
@@ -631,7 +631,7 @@
 
         const webRes = await fetch('/api/websites');
         const webData = await webRes.json();
-        if(webData.status === 'success') {
+        if((webData.status === 'success' || webData.success)) {
           let rows = '';
           document.getElementById('op-websites').innerText = webData.data.length;
           webData.data.forEach(w => {
@@ -676,7 +676,7 @@
 
         let html = '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--secondary-text); background:var(--pale-mint);">Authorized Contacts & Teams</div>';
 
-        if (recipData.status === 'success' && recipData.data) {
+        if ((recipData.status === 'success' || recipData.success) && recipData.data) {
           recipData.data.forEach(r => {
             const initials = (r.name || 'U').substring(0, 2).toUpperCase();
             html += `
@@ -690,7 +690,7 @@
           });
         }
 
-        if (convData.status === 'success' && convData.data && convData.data.length > 0) {
+        if ((convData.status === 'success' || convData.success) && convData.data && convData.data.length > 0) {
           html += '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--secondary-text); background:#F1F5F9;">Active Conversations</div>';
           convData.data.forEach(c => {
             html += `
@@ -725,7 +725,7 @@
         try {
           const convRes = await fetch(`/api/messages/conversations/with/${recipId}`);
           const convData = await convRes.json();
-          if (convRes.ok && convData.status === 'success' && convData.conversation_id) {
+          if (convRes.ok && (convData.status === 'success' || convData.success) && convData.conversation_id) {
             openAdminConversationThread(convData.conversation_id, `Direct with ${fullName}`);
             return;
           }
@@ -751,7 +751,7 @@
       try {
         const res = await fetch(`/api/messages/conversations/${convId}`);
         const data = await res.json();
-        if (res.ok && (data.status === 'success' || data.success)) {
+        if (res.ok && (data.status === \'success\' || data.success)) {
           const msgs = data.data || [];
           if (msgs.length === 0) {
             container.innerHTML = '<p style="text-align:center; padding:2rem; color:var(--muted-text);">No messages in this conversation.</p>';
@@ -810,7 +810,7 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (res.ok && (data.status === 'success' || data.success)) {
+        if (res.ok && (data.status === \'success\' || data.success)) {
           input.value = '';
           const targetConvId = (data.data && data.data.conversation_id) ? data.data.conversation_id : (data.conversation_id || activeAdminChatConvId);
           if (targetConvId) {
@@ -832,7 +832,7 @@
       try {
         const res = await fetch('/api/notifications');
         const data = await res.json();
-        if (res.ok && (data.status === 'success' || data.success)) {
+        if (res.ok && (data.status === \'success\' || data.success)) {
           const notifs = data.data || [];
           if (notifs.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-solid fa-bell-slash" style="font-size:2rem; margin-bottom:0.5rem;"></i><p>No notifications.</p></div>';
@@ -854,7 +854,7 @@
 
     function exportProjectsCSV() {
       fetch('/api/projects').then(r => r.json()).then(data => {
-        if ((data.status === 'success' || data.success) && data.data) {
+        if ((data.status === \'success\' || data.success) && data.data) {
           let csv = 'Project ID,Project Name,Customer Name,Stage,Progress,Status\n';
           data.data.forEach(p => {
             csv += `"${p.project_id}","${p.name}","${p.customer_name || ''}","${p.stage}","${p.progress}%","${p.status}"\n`;

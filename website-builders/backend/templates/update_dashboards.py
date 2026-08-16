@@ -137,7 +137,7 @@ def process_super_admin():
         const data = await res.json();
         const tbody = document.getElementById('users-tbody');
         tbody.innerHTML = '';
-        if ((data.status === 'success' || data.success)) {
+        if ((data.status === \'success\' || data.success)) {
           data.data.forEach(u => {
             const statusBadge = u.is_active ? '<span class="badge badge-status-completed">Active</span>' : '<span class="badge badge-status-failed">Inactive</span>';
             tbody.innerHTML += `
@@ -217,7 +217,7 @@ def process_super_admin():
           body: JSON.stringify(payload)
         });
         const result = await res.json();
-        if (result.status === 'success') {
+        if ((result.status === 'success' || result.success)) {
           closeUserModal();
           fetchManageUsers();
         } else {
@@ -244,7 +244,7 @@ def process_super_admin():
         const data = await res.json();
         const tbody = document.getElementById('audit-tbody');
         tbody.innerHTML = '';
-        if ((data.status === 'success' || data.success)) {
+        if ((data.status === \'success\' || data.success)) {
           data.data.forEach(log => {
             tbody.innerHTML += `
               <tr>
