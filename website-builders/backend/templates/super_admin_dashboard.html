@@ -2883,10 +2883,11 @@
     }
 
     function openAssignStaffModal(userId) {
-      const user = rawPeopleData.find(u => u.id == userId);
-      if (!user) return;
+      try {
+        const user = rawPeopleData.find(u => String(u.id) === String(userId));
+        if (!user) { alert('User not found in rawPeopleData: ' + userId); return; }
 
-      document.getElementById('assign-staff-client-id').value = user.id;
+        document.getElementById('assign-staff-client-id').value = user.id;
       document.getElementById('assign-staff-client-name').innerText = `${user.full_name} (${user.email}) - ${user.role}`;
 
       const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
@@ -2895,6 +2896,9 @@
 
       document.getElementById('assign-staff-select').innerHTML = opts;
       openModal('modal-assign-staff');
+      } catch(err) {
+        alert("CRASH in openAssignStaffModal: " + err.message + "\n" + err.stack);
+      }
     }
 
     async function handleAssignStaff(e) {
