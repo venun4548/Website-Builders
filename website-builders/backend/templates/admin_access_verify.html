@@ -262,7 +262,7 @@
 
         const data = await response.json();
 
-        if (response.ok && (data.status === \'success\' || data.success)) {
+        if (response.ok && (data.status === 'success' || data.success)) {
           // Success state
           alertBox.className = 'alert-box alert-success';
           alertIcon.className = 'fa-solid fa-circle-check';

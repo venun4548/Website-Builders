@@ -145,7 +145,7 @@ def update_dashboard(filename, is_staff=False, is_super=False):
         const tbody = document.getElementById('projects-tbody');
         if(!tbody) return;
         tbody.innerHTML = '';
-        if ((data.status === \'success\' || data.success)) {{
+        if ((data.status === 'success' || data.success)) {{
           adminProjects = data.data;
           adminProjects.forEach(p => {{
             tbody.innerHTML += `
@@ -270,7 +270,7 @@ def update_dashboard(filename, is_staff=False, is_super=False):
         new_delete = """const res = await fetch('/api/super-admin/users/' + id, { method: 'DELETE' });
         if (res.ok) {
           const data = await res.json();
-          if (data && (data.status === \'success\' || data.success)) {
+          if (data && (data.status === 'success' || data.success)) {
             fetchManageUsers();
           } else {
             alert('Error deleting user: ' + (data ? data.message : 'Unknown error'));
