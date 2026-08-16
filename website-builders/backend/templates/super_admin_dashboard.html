@@ -2311,7 +2311,7 @@
     }
 
     function openEditUserModal(userId) {
-      const user = rawPeopleData.find(u => u.id === userId);
+      const user = rawPeopleData.find(u => u.id == userId);
       if (!user) return;
 
       document.getElementById('edit-user-id').value = user.id;
@@ -2357,7 +2357,7 @@
     }
 
     function openResetPasswordModal(userId) {
-      const user = rawPeopleData.find(u => u.id === userId);
+      const user = rawPeopleData.find(u => u.id == userId);
       if (!user) return;
 
       document.getElementById('reset-pass-user-id').value = user.id;
@@ -2535,7 +2535,7 @@
           targetDeleteUserId = userId;
           document.getElementById('delete-warning-message').innerText = `This staff member has ${depData.assigned_projects_count} active assigned project(s). Reassign them before deleting.`;
           
-          const availableStaff = rawPeopleData.filter(u => u.role === 'Staff' && u.id !== userId);
+          const availableStaff = rawPeopleData.filter(u => u.role === 'Staff' && u.id != userId);
           let opts = '<option value="">-- Select Target Staff Member --</option>' + 
             availableStaff.map(s => `<option value="${s.id}">${s.full_name} (${s.email})</option>`).join('');
           document.getElementById('delete-reassign-staff-select').innerHTML = opts;
@@ -2544,7 +2544,7 @@
           return;
         }
 
-        const user = rawPeopleData.find(u => u.id === userId);
+        const user = rawPeopleData.find(u => u.id == userId);
         const name = user ? user.full_name : 'this user';
         if (!confirm(`Are you sure you want to permanently delete ${name}? This action cannot be undone.`)) return;
 
@@ -2753,7 +2753,7 @@
     }
 
     function viewEnquiryDetails(enquiryId) {
-      const enq = rawEnquiryData.find(e => e.id === enquiryId);
+      const enq = rawEnquiryData.find(e => e.id == enquiryId);
       if (!enq) return;
 
       document.getElementById('enquiry-detail-id').value = enq.id;
@@ -2767,7 +2767,7 @@
 
       const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
       let opts = '<option value="">-- Unassigned --</option>' +
-        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id === s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
       document.getElementById('enquiry-detail-staff-select').innerHTML = opts;
 
       openModal('modal-enquiry-details');
@@ -2800,7 +2800,7 @@
     }
 
     function openConvertEnquiryModal(enquiryId) {
-      const enq = rawEnquiryData.find(e => e.id === enquiryId);
+      const enq = rawEnquiryData.find(e => e.id == enquiryId);
       if (!enq) return;
 
       document.getElementById('convert-enquiry-id').value = enq.id;
@@ -2817,7 +2817,7 @@
 
       const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
       let opts = '<option value="">-- Select Staff --</option>' +
-        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id === s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
       document.getElementById('convert-project-staff').innerHTML = opts;
 
       openModal('modal-convert-enquiry');
@@ -2863,7 +2863,7 @@
     }
 
     function openAssignStaffModal(userId) {
-      const user = rawPeopleData.find(u => u.id === userId);
+      const user = rawPeopleData.find(u => u.id == userId);
       if (!user) return;
 
       document.getElementById('assign-staff-client-id').value = user.id;
@@ -2871,7 +2871,7 @@
 
       const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
       let opts = '<option value="">-- Unassigned --</option>' +
-        staffMembers.map(s => `<option value="${s.id}" ${user.assigned_staff_id === s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        staffMembers.map(s => `<option value="${s.id}" ${user.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
 
       document.getElementById('assign-staff-select').innerHTML = opts;
       openModal('modal-assign-staff');

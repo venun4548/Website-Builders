@@ -674,7 +674,7 @@
     }
 
     function openDetails(subId) {
-      const item = enquiries.find(e => e.submissionId === subId);
+      const item = enquiries.find(e => e.submissionId == subId);
       if (!item) return;
 
       // Fill details view
