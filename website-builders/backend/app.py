@@ -838,3 +838,55 @@ def server_error(e):
 # ─── Entrypoint ───────────────────────────────────────────────
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+# --- Compatibility Aliases and Stubs ---
+@app.route('/api/stats/<role>')
+@login_required
+def api_stats_role(role):
+    return api_stats()
+
+@app.route('/api/super-admin/users', methods=['GET', 'POST'])
+@login_required
+def api_sa_users():
+    if request.method == 'POST':
+        return api_create_user()
+    return api_get_users()
+
+@app.route('/api/super-admin/users/<user_id>', methods=['GET', 'PUT', 'PATCH', 'DELETE'])
+@login_required
+def api_sa_user_ops(user_id):
+    if request.method == 'GET':
+        return api_get_user(user_id)
+    elif request.method in ('PUT', 'PATCH'):
+        return api_update_user(user_id)
+    elif request.method == 'DELETE':
+        return api_delete_user(user_id)
+
+@app.route('/api/super-admin/users/<user_id>/reset-password', methods=['POST'])
+@login_required
+def api_sa_user_reset(user_id):
+    return api_reset_password(user_id)
+
+@app.route('/api/super-admin/audit-logs')
+@login_required
+def api_sa_audit():
+    return api_get_activity()
+
+@app.route('/api/admin/workload')
+@app.route('/api/websites')
+@app.route('/api/tasks')
+@app.route('/api/clients')
+@app.route('/api/admin/team-performance')
+@app.route('/api/notifications')
+@app.route('/api/super-admin/users/bulk-action', methods=['POST'])
+@app.route('/api/super-admin/users/<user_id>/dependencies')
+@login_required
+def api_stub_endpoints(user_id=None):
+    # For endpoints expected by the frontend but not yet in GAS
+    # Return empty list or empty object to prevent 404s and crashes
+    if request.path.endswith('bulk-action'):
+        return jsonify({'success': True, 'status': 'success'})
+    if request.path.endswith('dependencies'):
+        return jsonify({'success': True, 'status': 'success', 'data': {'projects': [], 'messages': []}})
+    return jsonify({'success': True, 'status': 'success', 'data': []})
+

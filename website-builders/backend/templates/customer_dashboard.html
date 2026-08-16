@@ -520,7 +520,7 @@
       try {
         const res = await fetch(`/api/messages/conversations/${convId}`);
         const data = await res.json();
-        if (res.ok && data.status === 'success') {
+        if (res.ok && (data.status === 'success' || data.success)) {
           const msgs = data.data || [];
           if (msgs.length === 0) {
             container.innerHTML = '<p style="text-align:center; padding:2rem; color:var(--text-secondary);">No messages in this conversation.</p>';
@@ -577,7 +577,7 @@
           body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (res.ok && data.status === 'success') {
+        if (res.ok && (data.status === 'success' || data.success)) {
           input.value = '';
           if (data.conversation_id) {
             openCustConversationThread(data.conversation_id, 'Direct Message');
@@ -648,7 +648,7 @@
 
         if (grid) grid.innerHTML = '';
         
-        if (data.status === 'success') {
+        if ((data.status === 'success' || data.success)) {
           const projects = data.data || [];
           if (projects.length === 0) {
             const emptyHtml = '<div style="grid-column:1/-1; text-align:center; padding:3rem; background:#FFF; border-radius:12px; border:1px solid var(--border);"><i class="fa-solid fa-folder-open" style="font-size:2.5rem; color:var(--text-secondary); margin-bottom:0.75rem;"></i><p style="color: var(--text-secondary); font-weight:600;">You do not have any active projects yet.</p></div>';

@@ -33,6 +33,7 @@ class SheetsUser(UserMixin):
         self.role         = str(data.get('role', ''))
         self.status       = str(data.get('status', 'ACTIVE'))
         self.last_login   = str(data.get('last_login', ''))
+        self.created_at = None
         self.assigned_staff_id = str(data.get('assigned_staff_id', ''))
 
     @property
