@@ -627,6 +627,22 @@ def api_create_enquiry():
     ok = result.get('status') == 'success'
     return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
 
+
+@app.route('/api/enquiries/<enquiry_id>/convert', methods=['POST'])
+@login_required
+def api_convert_enquiry(enquiry_id):
+    try:
+        data = request.json
+        data['enquiry_id'] = enquiry_id
+        data['converted_by'] = current_user.id
+        result = gas_post('convertEnquiry', data)
+        if result.get('status') == 'success':
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/api/enquiries/<enquiry_id>', methods=['PUT', 'PATCH'])
 @login_required
 def api_update_enquiry(enquiry_id):
