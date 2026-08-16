@@ -2192,7 +2192,7 @@
     function toggleSelectAllUsers(chkAll) {
       const rows = document.querySelectorAll('.chk-user-row');
       rows.forEach(r => {
-        const id = parseInt(r.getAttribute('data-id'));
+        const id = r.getAttribute('data-id');
         r.checked = chkAll.checked;
         if (chkAll.checked) selectedUserIds.add(id);
         else selectedUserIds.delete(id);
@@ -2240,7 +2240,7 @@
         if (staff.length > 0) {
           const staffPrompt = staff.map(s => `ID ${s.id}: ${s.full_name}`).join('\n');
           const chosen = prompt(`To reassign active projects before deleting, enter Staff ID or leave empty:\n${staffPrompt}`);
-          if (chosen) reassign_to_id = parseInt(chosen);
+          if (chosen) reassign_to_id = chosen;
         }
       }
 
@@ -2826,7 +2826,7 @@
     function triggerConvertFromDetail() {
       const enquiryId = document.getElementById('enquiry-detail-id').value;
       closeModal('modal-enquiry-details');
-      openConvertEnquiryModal(parseInt(enquiryId));
+      openConvertEnquiryModal(enquiryId);
     }
 
     async function handleConvertEnquirySubmit(e) {
