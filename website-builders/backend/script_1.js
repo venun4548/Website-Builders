@@ -892,8 +892,8 @@
     }
 
     function viewEnquiryDetails(enquiryId) {
-      const enq = rawEnquiryData.find(e => e.id == enquiryId);
-      if (!enq) return;
+      const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
+      if (!enq) { alert('Enquiry not found: ' + enquiryId + ' in array of size: ' + rawEnquiryData.length); return; }
 
       document.getElementById('enquiry-detail-id').value = enq.id;
       document.getElementById('enquiry-detail-code').innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
@@ -939,8 +939,8 @@
     }
 
     function openConvertEnquiryModal(enquiryId) {
-      const enq = rawEnquiryData.find(e => e.id == enquiryId);
-      if (!enq) return;
+      const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
+      if (!enq) { alert('Enquiry not found: ' + enquiryId + ' in array of size: ' + rawEnquiryData.length); return; }
 
       document.getElementById('convert-enquiry-id').value = enq.id;
       document.getElementById('convert-enquiry-code-label').innerText = `Enquiry: ${enq.enquiry_id || ('#ENQ-' + enq.id)}`;
@@ -1144,7 +1144,7 @@
           }
           let html = '';
           msgs.forEach(m => {
-            const isSentByMe = String(m.sender_id) === String({{ current_user.id }});
+            const isSentByMe = String(m.sender_id) === String('{{ current_user.id }}');
             const statusBadge = m.status === 'READ' 
               ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at})</span>` 
               : `<span style="color:${isSentByMe ? 'rgba(255,255,255,0.85)' : '#64748B'}; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
@@ -1295,7 +1295,7 @@
       e.preventDefault();
       const form = e.target;
       const payload = {
-        name: form.name.value.trim(),
+        project_name: form.name.value.trim(),
         customer_id: form.customer_id.value,
         assigned_staff_id: form.assigned_staff_id.value || null,
         stage: form.stage.value

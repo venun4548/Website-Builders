@@ -2753,24 +2753,40 @@
     }
 
     function viewEnquiryDetails(enquiryId) {
-      const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
-      if (!enq) { alert('Enquiry not found: ' + enquiryId + ' in array of size: ' + rawEnquiryData.length); return; }
+      try {
+        if(!rawEnquiryData) { alert('Data not loaded'); return; }
+        const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
+        if (!enq) {
+          alert('Enquiry not found! ID: ' + enquiryId + ' | Data length: ' + rawEnquiryData.length);
+          return;
+        }
 
-      document.getElementById('enquiry-detail-id').value = enq.id;
-      document.getElementById('enquiry-detail-code').innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
-      document.getElementById('enquiry-detail-status-badge').innerText = enq.status;
-      document.getElementById('enquiry-detail-customer').innerText = `Customer: ${enq.full_name} (${enq.email})`;
-      document.getElementById('enquiry-detail-mobile').innerText = `Mobile: ${enq.mobile}`;
-      document.getElementById('enquiry-detail-address').innerText = `Address: ${enq.address || 'N/A'}`;
-      document.getElementById('enquiry-detail-message').innerText = enq.message;
-      document.getElementById('enquiry-detail-status-select').value = enq.status;
+        document.getElementById('enquiry-detail-id').value = enq.id;
+        document.getElementById('enquiry-detail-code').innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
+        
+        document.getElementById('enquiry-detail-status-badge').className = 'badge ' + (
+          enq.status === 'NEW' ? 'badge-primary' :
+          enq.status === 'IN_PROGRESS' ? 'badge-warning' :
+          enq.status === 'CONVERTED' ? 'badge-success' : 'badge-neutral'
+        );
+        document.getElementById('enquiry-detail-status-badge').innerText = enq.status.replace('_', ' ');
 
-      const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
-      let opts = '<option value="">-- Unassigned --</option>' +
-        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
-      document.getElementById('enquiry-detail-staff-select').innerHTML = opts;
+        document.getElementById('enquiry-detail-status-select').value = enq.status;
+        
+        document.getElementById('enquiry-detail-customer').innerText = `${enq.full_name} (${enq.email})`;
+        document.getElementById('enquiry-detail-mobile').innerText = enq.mobile || 'N/A';
+        document.getElementById('enquiry-detail-address').innerText = [enq.address, enq.city, enq.state, enq.zip_code].filter(Boolean).join(', ') || 'N/A';
+        document.getElementById('enquiry-detail-message').innerText = enq.message || 'N/A';
 
-      openModal('modal-enquiry-details');
+        const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+        let opts = '<option value="">-- Unassigned --</option>' + 
+          staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        document.getElementById('enquiry-detail-staff-select').innerHTML = opts;
+
+        openModal('modal-enquiry-details');
+      } catch (err) {
+        alert("CRASH in viewEnquiryDetails: " + err.message + "\n" + err.stack);
+      }
     }
 
     async function handleUpdateEnquiryStatus(e) {
@@ -2800,27 +2816,31 @@
     }
 
     function openConvertEnquiryModal(enquiryId) {
-      const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
-      if (!enq) { alert('Enquiry not found: ' + enquiryId + ' in array of size: ' + rawEnquiryData.length); return; }
+      try {
+        const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
+        if (!enq) { alert('Enquiry not found: ' + enquiryId + ' in array of size: ' + rawEnquiryData.length); return; }
 
-      document.getElementById('convert-enquiry-id').value = enq.id;
-      document.getElementById('convert-enquiry-code-label').innerText = `Enquiry: ${enq.enquiry_id || ('#ENQ-' + enq.id)}`;
-      document.getElementById('convert-customer-info').innerText = `Customer: ${enq.full_name} (${enq.email}) • ${enq.mobile}`;
-      document.getElementById('convert-project-name').value = `${enq.full_name} Website Project`;
-      document.getElementById('convert-project-desc').value = enq.message;
-      document.getElementById('convert-project-stage').value = 'Requirement';
-      document.getElementById('convert-project-progress').value = 10;
+        document.getElementById('convert-enquiry-id').value = enq.id;
+        document.getElementById('convert-enquiry-code-label').innerText = `Enquiry: ${enq.enquiry_id || ('#ENQ-' + enq.id)}`;
+        document.getElementById('convert-customer-info').innerText = `Customer: ${enq.full_name} (${enq.email}) • ${enq.mobile}`;
+        document.getElementById('convert-project-name').value = `${enq.full_name} Website Project`;
+        document.getElementById('convert-project-desc').value = enq.message;
+        document.getElementById('convert-project-stage').value = 'Requirement';
+        document.getElementById('convert-project-progress').value = 10;
 
-      const defaultDelivery = new Date();
-      defaultDelivery.setDate(defaultDelivery.getDate() + 30);
-      document.getElementById('convert-project-delivery').value = defaultDelivery.toISOString().split('T')[0];
+        const defaultDelivery = new Date();
+        defaultDelivery.setDate(defaultDelivery.getDate() + 30);
+        document.getElementById('convert-project-delivery').value = defaultDelivery.toISOString().split('T')[0];
 
-      const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
-      let opts = '<option value="">-- Select Staff --</option>' +
-        staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
-      document.getElementById('convert-project-staff').innerHTML = opts;
+        const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+        let opts = '<option value="">-- Select Staff --</option>' +
+          staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        document.getElementById('convert-project-staff').innerHTML = opts;
 
-      openModal('modal-convert-enquiry');
+        openModal('modal-convert-enquiry');
+      } catch (err) {
+        alert("CRASH in openConvertEnquiryModal: " + err.message + "\n" + err.stack);
+      }
     }
 
     function triggerConvertFromDetail() {
