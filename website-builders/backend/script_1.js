@@ -852,13 +852,13 @@
         html += `
         <tr>
           <td style="font-family:monospace; font-weight:700; color:var(--primary-dark-green);">${e.enquiry_id || ('#ENQ-' + e.id)}</td>
-          <td><strong>${e.full_name}</strong></td>
+          <td><strong>${e.full_name || e.customer_name || e.name || 'N/A'}</strong></td>
           <td>
-            <div style="font-size:0.85rem; font-weight:600;">${e.email}</div>
-            <div style="font-size:0.8rem; color:var(--secondary-text);">${e.mobile}</div>
+            <div style="font-size:0.85rem; font-weight:600;">${e.email || 'N/A'}</div>
+            <div style="font-size:0.8rem; color:var(--secondary-text);">${e.mobile || ''}</div>
           </td>
           <td>
-            <div style="max-width:200px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:0.85rem; color:var(--secondary-text);" title="${e.message}">${e.message}</div>
+            <div style="max-width:200px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:0.85rem; color:var(--secondary-text);" title="${e.message || ''}">${e.message || ''}</div>
           </td>
           <td><span class="badge ${statusBadgeClass}">${e.status}</span></td>
           <td>${e.assigned_staff_name ? `<span class="badge badge-info"><i class="fa-solid fa-user"></i> ${e.assigned_staff_name}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">Unassigned</span>'}</td>
@@ -883,10 +883,15 @@
       
       let filtered = rawEnquiryData;
       if (q) {
-        filtered = filtered.filter(e => e.full_name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || (e.enquiry_id && e.enquiry_id.toLowerCase().includes(q)));
+        filtered = filtered.filter(e => {
+          const cName = (e.full_name || e.customer_name || e.name || '').toLowerCase();
+          const cEmail = (e.email || '').toLowerCase();
+          const cEnqId = (e.enquiry_id || '').toLowerCase();
+          return cName.includes(q) || cEmail.includes(q) || cEnqId.includes(q);
+        });
       }
       if (status) {
-        filtered = filtered.filter(e => e.status.toUpperCase() === status.toUpperCase());
+        filtered = filtered.filter(e => (e.status || '').toUpperCase() === status.toUpperCase());
       }
       renderEnquiriesTable(filtered);
     }
@@ -895,10 +900,11 @@
       const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
       if (!enq) { alert('Enquiry not found: ' + enquiryId + ' in array of size: ' + rawEnquiryData.length); return; }
 
+      const clientName = enq.full_name || enq.customer_name || enq.name || 'Customer';
       document.getElementById('enquiry-detail-id').value = enq.id;
       document.getElementById('enquiry-detail-code').innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
       document.getElementById('enquiry-detail-status-badge').innerText = enq.status;
-      document.getElementById('enquiry-detail-customer').innerText = `Customer: ${enq.full_name} (${enq.email})`;
+      document.getElementById('enquiry-detail-customer').innerText = `Customer: ${clientName} (${enq.email || 'N/A'})`;
       document.getElementById('enquiry-detail-mobile').innerText = `Mobile: ${enq.mobile}`;
       document.getElementById('enquiry-detail-address').innerText = `Address: ${enq.address || 'N/A'}`;
       document.getElementById('enquiry-detail-message').innerText = enq.message;

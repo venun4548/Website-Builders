@@ -189,14 +189,23 @@ def contact():
 @app.route('/api/contact', methods=['POST'])
 @app.route('/api/enquiry', methods=['POST'])
 def contact_form():
-    data = request.get_json(silent=True) or request.form.to_dict()
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    cust_name = (data.get('customer_name') or data.get('name') or data.get('fullName') or data.get('full_name') or '').strip()
+    email = (data.get('email') or '').strip()
+    mobile = (data.get('mobile') or data.get('mobile_number') or data.get('phone') or '').strip()
+    address = (data.get('address') or '').strip()
+    message = (data.get('message') or data.get('enquiry') or data.get('comments') or '').strip()
+    source_page = data.get('sourcePage') or data.get('source_page') or 'Contact Page'
+
     result = call_gas('createEnquiry', {
-        'customer_name': data.get('name', ''),
-        'email'        : data.get('email', ''),
-        'mobile'       : data.get('mobile', ''),
-        'address'      : data.get('address', ''),
-        'message'      : data.get('message', ''),
-        'source_page'  : data.get('sourcePage', 'Contact Page')
+        'customer_name': cust_name,
+        'name'         : cust_name,
+        'full_name'    : cust_name,
+        'email'        : email,
+        'mobile'       : mobile,
+        'address'      : address,
+        'message'      : message,
+        'source_page'  : source_page
     })
     if result.get('status') == 'success':
         return jsonify({
@@ -620,12 +629,17 @@ def api_get_enquiries():
 
 @app.route('/api/enquiries', methods=['POST'])
 def api_create_enquiry():
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    cust_name = (data.get('customer_name') or data.get('name') or data.get('fullName') or data.get('full_name') or '').strip()
+    if cust_name:
+        data['customer_name'] = cust_name
+        data['name'] = cust_name
+        data['full_name'] = cust_name
     if current_user.is_authenticated:
         data['customer_id'] = current_user.id
     result = call_gas('createEnquiry', data)
     ok = result.get('status') == 'success'
-    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message'), 'message': result.get('message')}), (200 if ok else 400)
 
 
 @app.route('/api/enquiries/<enquiry_id>/convert', methods=['POST'])
