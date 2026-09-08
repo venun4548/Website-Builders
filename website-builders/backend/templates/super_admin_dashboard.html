@@ -1867,7 +1867,10 @@
 
     async function initDashboard() {
       setupChart();
-      await loadDashboardData();
+      await Promise.allSettled([
+        loadDashboardData(),
+        loadEnquiriesData()
+      ]);
     }
 
     function setupChart() {
@@ -2759,41 +2762,62 @@
       renderEnquiriesTable(filtered);
     }
 
-    function viewEnquiryDetails(enquiryId) {
+    async function viewEnquiryDetails(enquiryId) {
       try {
-        if(!rawEnquiryData) { alert('Data not loaded'); return; }
-        const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
+        if (!rawEnquiryData || rawEnquiryData.length === 0) {
+          await loadEnquiriesData();
+        }
+        if (!rawPeopleData || rawPeopleData.length === 0) {
+          try {
+            const uRes = await fetch('/api/super-admin/users');
+            const uData = await uRes.json();
+            if (uData.status === 'success' || uData.success) rawPeopleData = uData.data || [];
+          } catch(e) {}
+        }
+        const enq = (rawEnquiryData || []).find(e => String(e.id) === String(enquiryId) || String(e.enquiry_id) === String(enquiryId));
         if (!enq) {
-          alert('Enquiry not found! ID: ' + enquiryId + ' | Data length: ' + rawEnquiryData.length);
+          alert('Enquiry not found! ID: ' + enquiryId);
           return;
         }
 
         const clientName = enq.full_name || enq.customer_name || enq.name || 'Customer';
-        document.getElementById('enquiry-detail-id').value = enq.id;
-        document.getElementById('enquiry-detail-code').innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
+        const elId = document.getElementById('enquiry-detail-id');
+        if (elId) elId.value = enq.id || enq.enquiry_id;
+        const elCode = document.getElementById('enquiry-detail-code');
+        if (elCode) elCode.innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
         
-        document.getElementById('enquiry-detail-status-badge').className = 'badge ' + (
-          enq.status === 'NEW' ? 'badge-primary' :
-          enq.status === 'IN_PROGRESS' ? 'badge-warning' :
-          enq.status === 'CONVERTED' ? 'badge-success' : 'badge-neutral'
-        );
-        document.getElementById('enquiry-detail-status-badge').innerText = (enq.status || 'NEW').replace('_', ' ');
+        const badge = document.getElementById('enquiry-detail-status-badge');
+        if (badge) {
+          badge.className = 'badge ' + (
+            enq.status === 'NEW' ? 'badge-primary' :
+            enq.status === 'IN_PROGRESS' ? 'badge-warning' :
+            enq.status === 'CONVERTED' ? 'badge-success' : 'badge-neutral'
+          );
+          badge.innerText = (enq.status || 'NEW').replace('_', ' ');
+        }
 
-        document.getElementById('enquiry-detail-status-select').value = enq.status;
+        const selStatus = document.getElementById('enquiry-detail-status-select');
+        if (selStatus) selStatus.value = enq.status || 'NEW';
         
-        document.getElementById('enquiry-detail-customer').innerText = `${clientName} (${enq.email || 'N/A'})`;
-        document.getElementById('enquiry-detail-mobile').innerText = enq.mobile || 'N/A';
-        document.getElementById('enquiry-detail-address').innerText = [enq.address, enq.city, enq.state, enq.zip_code].filter(Boolean).join(', ') || 'N/A';
-        document.getElementById('enquiry-detail-message').innerText = enq.message || 'N/A';
+        const elCust = document.getElementById('enquiry-detail-customer');
+        if (elCust) elCust.innerText = `${clientName} (${enq.email || 'N/A'})`;
+        const elMob = document.getElementById('enquiry-detail-mobile');
+        if (elMob) elMob.innerText = enq.mobile || 'N/A';
+        const elAddr = document.getElementById('enquiry-detail-address');
+        if (elAddr) elAddr.innerText = [enq.address, enq.city, enq.state, enq.zip_code].filter(Boolean).join(', ') || 'N/A';
+        const elMsg = document.getElementById('enquiry-detail-message');
+        if (elMsg) elMsg.innerText = enq.message || 'N/A';
 
-        const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+        const staffMembers = (rawPeopleData || []).filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
         let opts = '<option value="">-- Unassigned --</option>' + 
-          staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
-        document.getElementById('enquiry-detail-staff-select').innerHTML = opts;
+          staffMembers.map(s => `<option value="${s.id}" ${(enq.assigned_staff_id == s.id || enq.assigned_to == s.id) ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        const elStaff = document.getElementById('enquiry-detail-staff-select');
+        if (elStaff) elStaff.innerHTML = opts;
 
         openModal('modal-enquiry-details');
       } catch (err) {
-        alert("CRASH in viewEnquiryDetails: " + err.message + "\n" + err.stack);
+        console.error("Error in viewEnquiryDetails:", err);
+        alert("Error displaying enquiry details: " + err.message);
       }
     }
 
@@ -2823,31 +2847,52 @@
       }
     }
 
-    function openConvertEnquiryModal(enquiryId) {
+    async function openConvertEnquiryModal(enquiryId) {
       try {
-        const enq = rawEnquiryData.find(e => String(e.id) === String(enquiryId));
-        if (!enq) { alert('Enquiry not found: ' + enquiryId + ' in array of size: ' + rawEnquiryData.length); return; }
+        if (!rawEnquiryData || rawEnquiryData.length === 0) {
+          await loadEnquiriesData();
+        }
+        if (!rawPeopleData || rawPeopleData.length === 0) {
+          try {
+            const uRes = await fetch('/api/super-admin/users');
+            const uData = await uRes.json();
+            if (uData.status === 'success' || uData.success) rawPeopleData = uData.data || [];
+          } catch(e) {}
+        }
 
-        document.getElementById('convert-enquiry-id').value = enq.id;
-        document.getElementById('convert-enquiry-code-label').innerText = `Enquiry: ${enq.enquiry_id || ('#ENQ-' + enq.id)}`;
-        document.getElementById('convert-customer-info').innerText = `Customer: ${enq.full_name} (${enq.email}) • ${enq.mobile}`;
-        document.getElementById('convert-project-name').value = `${enq.full_name} Website Project`;
-        document.getElementById('convert-project-desc').value = enq.message;
-        document.getElementById('convert-project-stage').value = 'Requirement';
-        document.getElementById('convert-project-progress').value = 10;
+        const enq = (rawEnquiryData || []).find(e => String(e.id) === String(enquiryId) || String(e.enquiry_id) === String(enquiryId));
+        if (!enq) { alert('Enquiry not found: ' + enquiryId); return; }
+
+        const elId = document.getElementById('convert-enquiry-id');
+        if (elId) elId.value = enq.id || enq.enquiry_id;
+        const elLbl = document.getElementById('convert-enquiry-code-label');
+        if (elLbl) elLbl.innerText = `Enquiry: ${enq.enquiry_id || ('#ENQ-' + enq.id)}`;
+        const elInfo = document.getElementById('convert-customer-info');
+        if (elInfo) elInfo.innerText = `Customer: ${enq.full_name || enq.name || 'Customer'} (${enq.email || ''}) • ${enq.mobile || ''}`;
+        const elName = document.getElementById('convert-project-name');
+        if (elName) elName.value = `${enq.full_name || enq.name || 'Customer'} Website Project`;
+        const elDesc = document.getElementById('convert-project-desc');
+        if (elDesc) elDesc.value = enq.message || '';
+        const elStage = document.getElementById('convert-project-stage');
+        if (elStage) elStage.value = 'Requirement';
+        const elProg = document.getElementById('convert-project-progress');
+        if (elProg) elProg.value = 10;
 
         const defaultDelivery = new Date();
         defaultDelivery.setDate(defaultDelivery.getDate() + 30);
-        document.getElementById('convert-project-delivery').value = defaultDelivery.toISOString().split('T')[0];
+        const elDel = document.getElementById('convert-project-delivery');
+        if (elDel) elDel.value = defaultDelivery.toISOString().split('T')[0];
 
-        const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+        const staffMembers = (rawPeopleData || []).filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
         let opts = '<option value="">-- Select Staff --</option>' +
-          staffMembers.map(s => `<option value="${s.id}" ${enq.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
-        document.getElementById('convert-project-staff').innerHTML = opts;
+          staffMembers.map(s => `<option value="${s.id}" ${(enq.assigned_staff_id == s.id || enq.assigned_to == s.id) ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        const elStaff = document.getElementById('convert-project-staff');
+        if (elStaff) elStaff.innerHTML = opts;
 
         openModal('modal-convert-enquiry');
       } catch (err) {
-        alert("CRASH in openConvertEnquiryModal: " + err.message + "\n" + err.stack);
+        console.error("Error in openConvertEnquiryModal:", err);
+        alert("Error opening convert window: " + err.message);
       }
     }
 
@@ -2877,7 +2922,7 @@
         });
         const data = await res.json();
         if (res.ok && (data.status === 'success' || data.success)) {
-          alert(`Successfully converted enquiry into Project ${data.data.project_id}!`);
+          alert(`Successfully converted enquiry into Project ${data.data ? data.data.project_id : ''}!`);
           closeModal('modal-convert-enquiry');
           loadEnquiriesData();
           loadDashboardData();
@@ -2890,22 +2935,33 @@
       }
     }
 
-    function openAssignStaffModal(userId) {
+    async function openAssignStaffModal(userId) {
       try {
-        const user = rawPeopleData.find(u => String(u.id) === String(userId));
-        if (!user) { alert('User not found in rawPeopleData: ' + userId); return; }
+        if (!rawPeopleData || rawPeopleData.length === 0) {
+          try {
+            const uRes = await fetch('/api/super-admin/users');
+            const uData = await uRes.json();
+            if (uData.status === 'success' || uData.success) rawPeopleData = uData.data || [];
+          } catch(e) {}
+        }
+        const user = (rawPeopleData || []).find(u => String(u.id) === String(userId) || String(u.user_id) === String(userId));
+        if (!user) { alert('User not found: ' + userId); return; }
 
-        document.getElementById('assign-staff-client-id').value = user.id;
-      document.getElementById('assign-staff-client-name').innerText = `${user.full_name} (${user.email}) - ${user.role}`;
+        const elId = document.getElementById('assign-staff-client-id');
+        if (elId) elId.value = user.id;
+        const elName = document.getElementById('assign-staff-client-name');
+        if (elName) elName.innerText = `${user.full_name} (${user.email}) - ${user.role}`;
 
-      const staffMembers = rawPeopleData.filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
-      let opts = '<option value="">-- Unassigned --</option>' +
-        staffMembers.map(s => `<option value="${s.id}" ${user.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
+        const staffMembers = (rawPeopleData || []).filter(u => u.role === 'Staff' || u.role === 'Admin' || u.role === 'Super Admin');
+        let opts = '<option value="">-- Unassigned --</option>' +
+          staffMembers.map(s => `<option value="${s.id}" ${user.assigned_staff_id == s.id ? 'selected' : ''}>${s.full_name} (${s.role})</option>`).join('');
 
-      document.getElementById('assign-staff-select').innerHTML = opts;
-      openModal('modal-assign-staff');
+        const elSel = document.getElementById('assign-staff-select');
+        if (elSel) elSel.innerHTML = opts;
+        openModal('modal-assign-staff');
       } catch(err) {
-        alert("CRASH in openAssignStaffModal: " + err.message + "\n" + err.stack);
+        console.error("Error in openAssignStaffModal:", err);
+        alert("Error opening staff assignment: " + err.message);
       }
     }
 

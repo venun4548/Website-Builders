@@ -565,9 +565,16 @@ def api_update_user(user_id):
         return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
     data = request.get_json(silent=True) or {}
     data['user_id'] = user_id
+    # Normalize status: convert boolean to string for GAS
+    if 'status' in data:
+        st = data['status']
+        if st is True or st == 'true':
+            data['status'] = 'ACTIVE'
+        elif st is False or st == 'false':
+            data['status'] = 'INACTIVE'
     result = call_gas('updateUser', data)
     ok = result.get('status') == 'success'
-    return jsonify({'success': ok, 'error': result.get('message')}), (200 if ok else 400)
+    return jsonify({'success': ok, 'error': result.get('message'), 'message': result.get('message') if ok else result.get('message', 'Update failed.')}), (200 if ok else 400)
 
 @app.route('/api/users/<user_id>', methods=['DELETE'])
 @login_required
@@ -646,25 +653,28 @@ def api_create_enquiry():
 @login_required
 def api_convert_enquiry(enquiry_id):
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
         data['enquiry_id'] = enquiry_id
         data['converted_by'] = current_user.id
-        result = gas_post('convertEnquiry', data)
+        result = call_gas('convertEnquiry', data)
         if result.get('status') == 'success':
-            return jsonify(result), 200
+            return jsonify({'success': True, 'status': 'success', 'data': result.get('data', {})}), 200
         else:
-            return jsonify(result), 400
+            return jsonify({'success': False, 'status': 'error', 'message': result.get('message', 'Conversion failed.')}), 400
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'success': False, 'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/enquiries/<enquiry_id>', methods=['PUT', 'PATCH'])
 @login_required
 def api_update_enquiry(enquiry_id):
     data = request.get_json(silent=True) or {}
     data['enquiry_id'] = enquiry_id
+    # Map frontend field names to GAS field names
+    if 'assigned_staff_id' in data and 'assigned_to' not in data:
+        data['assigned_to'] = data['assigned_staff_id']
     result = call_gas('updateEnquiry', data)
     ok = result.get('status') == 'success'
-    return jsonify({'success': ok, 'error': result.get('message')}), (200 if ok else 400)
+    return jsonify({'success': ok, 'error': result.get('message'), 'message': result.get('message')}), (200 if ok else 400)
 
 # ─── API: Projects ────────────────────────────────────────────
 @app.route('/api/projects', methods=['GET'])
@@ -762,6 +772,9 @@ def api_send_message():
     data.setdefault('sender_id',   str(current_user.id))
     data.setdefault('sender_name', current_user.full_name)
     data.setdefault('sender_role', current_user.role)
+    # Map frontend field names to GAS field names
+    if 'recipient_id' in data and 'receiver_id' not in data:
+        data['receiver_id'] = data.pop('recipient_id')
     result = call_gas('sendMessage', data)
     ok = result.get('status') == 'success'
     return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
@@ -874,7 +887,232 @@ def server_error(e):
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
 
-# --- Compatibility Aliases and Stubs ---
+# --- API: Tasks & Workflow ────────────────────────────────────
+@app.route('/api/tasks', methods=['GET', 'POST'])
+@login_required
+def api_tasks_handler():
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        data['created_by'] = str(current_user.id)
+        result = call_gas('createTask', data)
+        ok = result.get('status') == 'success'
+        return jsonify({'success': ok, 'status': result.get('status', 'error'), 'data': result.get('data'), 'message': result.get('message', 'Task created.')}), (200 if ok else 400)
+    
+    # GET tasks
+    params = dict(request.args)
+    if current_user.is_staff():
+        params['staff_id'] = str(current_user.id)
+    result = gas_get('getTasks', params)
+    if result.get('status') == 'success':
+        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', [])})
+    return jsonify({'success': False, 'status': 'error', 'data': [], 'error': result.get('message')}), 400
+
+@app.route('/api/tasks/<task_id>', methods=['GET', 'PUT', 'PATCH', 'DELETE'])
+@login_required
+def api_task_ops(task_id):
+    if request.method == 'GET':
+        result = gas_get('getTasks', {'task_id': task_id})
+        if result.get('status') == 'success':
+            tasks = result.get('data', [])
+            return jsonify({'success': True, 'status': 'success', 'data': tasks[0] if tasks else {}})
+        return jsonify({'success': False, 'error': result.get('message')}), 404
+    elif request.method in ('PUT', 'PATCH'):
+        data = request.get_json(silent=True) or {}
+        data['task_id'] = task_id
+        data['updated_by'] = str(current_user.id)
+        result = call_gas('updateTask', data)
+        ok = result.get('status') == 'success'
+        return jsonify({'success': ok, 'status': result.get('status', 'error'), 'message': result.get('message')}), (200 if ok else 400)
+    elif request.method == 'DELETE':
+        if current_user.role not in ('Super Admin', 'Admin'):
+            return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+        result = call_gas('deleteTask', {'task_id': task_id})
+        ok = result.get('status') == 'success'
+        return jsonify({'success': ok, 'status': result.get('status', 'error'), 'message': result.get('message')}), (200 if ok else 400)
+
+# --- API: User Staff Assignment ───────────────────────────────
+@app.route('/api/super-admin/users/<user_id>/assign-staff', methods=['POST'])
+@login_required
+def api_sa_assign_staff(user_id):
+    if current_user.role not in ('Super Admin', 'Admin'):
+        return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+    data = request.get_json(silent=True) or {}
+    data['user_id'] = str(user_id)
+    data['assigned_by'] = str(current_user.id)
+    result = call_gas('assignStaffToUser', data)
+    ok = result.get('status') == 'success'
+    return jsonify({'success': ok, 'status': result.get('status', 'error'), 'message': result.get('message', 'Staff assigned.')}), (200 if ok else 400)
+
+# --- API: Clients ─────────────────────────────────────────────
+@app.route('/api/clients', methods=['GET', 'POST'])
+@login_required
+def api_clients_handler():
+    if request.method == 'POST':
+        if current_user.role not in ('Super Admin', 'Admin'):
+            return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+        data = request.get_json(silent=True) or {}
+        data['role'] = 'User'
+        data['created_by'] = str(current_user.id)
+        result = call_gas('createUser', data)
+        ok = result.get('status') == 'success'
+        return jsonify({'success': ok, 'data': result.get('data'), 'message': result.get('message')}), (200 if ok else 400)
+    
+    # GET clients
+    result = gas_get('getUsers', {'role': 'User'})
+    if result.get('status') == 'success':
+        clients = result.get('data', [])
+        if current_user.is_staff():
+            clients = [c for c in clients if str(c.get('assigned_staff_id', '')) == str(current_user.id)]
+        return jsonify({'success': True, 'status': 'success', 'data': clients})
+    return jsonify({'success': False, 'status': 'error', 'data': [], 'error': result.get('message')}), 400
+
+# --- API: Websites ────────────────────────────────────────────
+@app.route('/api/websites', methods=['GET', 'POST'])
+@login_required
+def api_websites_handler():
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        proj_name = data.get('name') or data.get('domain') or 'Client Website'
+        cust_id = data.get('client_id') or data.get('customer_id') or ''
+        result = call_gas('createProject', {
+            'project_name': proj_name,
+            'customer_id': cust_id,
+            'description': 'Website domain: ' + (data.get('domain') or ''),
+            'status': data.get('status') or 'Active',
+            'created_by': str(current_user.id)
+        })
+        ok = result.get('status') == 'success'
+        return jsonify({'success': ok, 'status': result.get('status', 'error'), 'data': result.get('data'), 'message': 'Website created successfully.'}), (200 if ok else 400)
+    
+    # GET websites
+    result = gas_get('getProjects')
+    if result.get('status') == 'success':
+        websites = []
+        for p in result.get('data', []):
+            websites.append({
+                'id': p.get('project_id') or p.get('id'),
+                'name': p.get('name') or p.get('project_name'),
+                'domain': (p.get('name', '').lower().replace(' ', '') + '.websitebuilders.in') if p.get('name') else 'site.vercel.app',
+                'status': p.get('status') or 'Active',
+                'customer_name': p.get('customer_name') or 'Client',
+                'progress': p.get('progress', 0)
+            })
+        return jsonify({'success': True, 'status': 'success', 'data': websites})
+    return jsonify({'success': True, 'status': 'success', 'data': []})
+
+# --- API: Operations & Performance ────────────────────────────
+@app.route('/api/admin/workload', methods=['GET', 'POST'])
+@login_required
+def api_admin_workload():
+    u_res = gas_get('getUsers', {'role': 'Staff'})
+    staff_list = u_res.get('data', []) if u_res.get('status') == 'success' else []
+    
+    t_res = gas_get('getTasks')
+    tasks = t_res.get('data', []) if t_res.get('status') == 'success' else []
+    
+    workloads = []
+    for s in staff_list:
+        sid = str(s.get('id') or s.get('user_id') or '')
+        s_tasks = [t for t in tasks if str(t.get('assigned_staff_id', '')) == sid]
+        t_count = len(s_tasks)
+        p_count = s.get('assigned_projects_count', 0)
+        
+        load_score = p_count * 20 + t_count * 10
+        load_pct = min(100, max(15, load_score))
+        if load_pct > 80:
+            state = 'Overloaded'
+        elif load_pct >= 50:
+            state = 'High'
+        elif load_pct >= 30:
+            state = 'Balanced'
+        else:
+            state = 'Low'
+            
+        workloads.append({
+            'id': sid,
+            'name': s.get('full_name', 'Staff'),
+            'email': s.get('email', ''),
+            'projects_count': p_count,
+            'tasks_count': t_count,
+            'load_percentage': load_pct,
+            'state': state
+        })
+    return jsonify({'success': True, 'status': 'success', 'data': workloads})
+
+@app.route('/api/admin/team-performance', methods=['GET', 'POST'])
+@login_required
+def api_admin_team_performance():
+    u_res = gas_get('getUsers', {'role': 'Staff'})
+    staff_list = u_res.get('data', []) if u_res.get('status') == 'success' else []
+    
+    t_res = gas_get('getTasks')
+    tasks = t_res.get('data', []) if t_res.get('status') == 'success' else []
+    
+    perf_list = []
+    for s in staff_list:
+        sid = str(s.get('id') or s.get('user_id') or '')
+        s_tasks = [t for t in tasks if str(t.get('assigned_staff_id', '')) == sid]
+        total_tasks = len(s_tasks)
+        comp_tasks = len([t for t in s_tasks if t.get('status') == 'Completed'])
+        rate = int((comp_tasks / total_tasks * 100)) if total_tasks > 0 else 100
+        
+        perf_list.append({
+            'id': sid,
+            'name': s.get('full_name', 'Staff'),
+            'email': s.get('email', ''),
+            'total_tasks': total_tasks,
+            'completed_tasks': comp_tasks,
+            'completion_rate': rate,
+            'active_projects': s.get('assigned_projects_count', 0)
+        })
+    return jsonify({'success': True, 'status': 'success', 'data': perf_list})
+
+@app.route('/api/super-admin/users/<user_id>/dependencies', methods=['GET'])
+@login_required
+def api_sa_user_dependencies(user_id):
+    p_res = gas_get('getProjects', {'customer_id': user_id, 'staff_id': user_id})
+    projs = p_res.get('data', []) if p_res.get('status') == 'success' else []
+    return jsonify({
+        'success': True,
+        'status': 'success',
+        'assigned_projects_count': len(projs),
+        'data': {'projects': projs, 'messages': []}
+    })
+
+@app.route('/api/super-admin/users/bulk-action', methods=['POST'])
+@login_required
+def api_sa_bulk_action():
+    data = request.get_json(silent=True) or {}
+    action = data.get('action')
+    user_ids = data.get('user_ids', [])
+    for uid in user_ids:
+        if action == 'activate':
+            call_gas('activateUser', {'user_id': uid})
+        elif action == 'deactivate':
+            call_gas('deactivateUser', {'user_id': uid})
+        elif action == 'delete':
+            call_gas('deleteUser', {'user_id': uid})
+    return jsonify({'success': True, 'status': 'success', 'message': f'Bulk action {action} applied.'})
+
+@app.route('/api/notifications', methods=['GET', 'POST'])
+@login_required
+def api_notifications():
+    if request.method == 'POST':
+        return jsonify({'success': True, 'status': 'success', 'message': 'Notification recorded.'})
+    act_res = gas_get('getActivityLogs', {'limit': '10'})
+    acts = act_res.get('data', []) if act_res.get('status') == 'success' else []
+    notifs = []
+    for a in acts:
+        notifs.append({
+            'id': a.get('activity_id'),
+            'title': a.get('action', '').replace('_', ' ').title(),
+            'message': a.get('description', ''),
+            'timestamp': a.get('timestamp', ''),
+            'read': False
+        })
+    return jsonify({'success': True, 'status': 'success', 'data': notifs})
+
+# --- Compatibility Aliases ---
 @app.route('/api/stats/<role>')
 @login_required
 def api_stats_role(role):
@@ -906,22 +1144,4 @@ def api_sa_user_reset(user_id):
 @login_required
 def api_sa_audit():
     return api_get_activity()
-
-@app.route('/api/admin/workload', methods=['GET', 'POST'])
-@app.route('/api/websites', methods=['GET', 'POST'])
-@app.route('/api/tasks', methods=['GET', 'POST'])
-@app.route('/api/clients', methods=['GET', 'POST'])
-@app.route('/api/admin/team-performance', methods=['GET', 'POST'])
-@app.route('/api/notifications', methods=['GET', 'POST'])
-@app.route('/api/super-admin/users/bulk-action', methods=['POST'])
-@app.route('/api/super-admin/users/<user_id>/dependencies')
-@login_required
-def api_stub_endpoints(user_id=None):
-    # For endpoints expected by the frontend but not yet in GAS
-    # Return empty list or empty object to prevent 404s and crashes
-    if request.path.endswith('bulk-action'):
-        return jsonify({'success': True, 'status': 'success'})
-    if request.path.endswith('dependencies'):
-        return jsonify({'success': True, 'status': 'success', 'data': {'projects': [], 'messages': []}})
-    return jsonify({'success': True, 'status': 'success', 'data': []})
 

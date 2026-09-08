@@ -23,7 +23,8 @@ const CONFIG = {
 const SHEETS = {
   USERS:'Users', MESSAGES:'Messages', ENQUIRIES:'Enquiries',
   PROJECTS:'Projects', ASSIGNMENTS:'ProjectAssignments',
-  UPDATES:'ProjectUpdates', ACTIVITY:'ActivityLogs'
+  UPDATES:'ProjectUpdates', ACTIVITY:'ActivityLogs',
+  TASKS:'Tasks'
 };
 
 // Column indexes (1-based)
@@ -34,6 +35,7 @@ const P={ID:1,CUST_ID:2,CUST_NAME:3,PROJ_NAME:4,DESC:5,STAGE:6,PROGRESS:7,DELIVE
 const A={ID:1,PROJ_ID:2,STAFF_ID:3,STAFF_NAME:4,ASSIGNED_BY:5,ASSIGNED_DATE:6,ASSIGNED_TIME:7,UNASSIGNED_DATE:8,STATUS:9,TOTAL:9};
 const PU={ID:1,PROJ_ID:2,STAFF_ID:3,STAFF_NAME:4,STAGE:5,PROGRESS:6,TEXT:7,REMARK:8,CREATED_DATE:9,CREATED_TIME:10,TOTAL:10};
 const AL={ID:1,USER_ID:2,USER_NAME:3,ROLE:4,ACTION:5,RELATED_ID:6,DESC:7,DATE:8,TIME:9,STATUS:10,TOTAL:10};
+const T={ID:1,PROJ_ID:2,PROJ_NAME:3,TITLE:4,DESC:5,STAFF_ID:6,STAFF_NAME:7,PRIORITY:8,STATUS:9,DUE_DATE:10,CREATED_BY:11,CREATED_DATE:12,CREATED_TIME:13,UPD_DATE:14,UPD_TIME:15,TOTAL:15};
 
 const HEADERS={
   Users:['User ID','Full Name','Email','Mobile Number','Password Hash','Role','Status','Created Date','Created Time','Last Login Date','Last Login Time','Last Activity Date','Last Activity Time','Updated Date','Updated Time','Assigned Staff ID'],
@@ -42,14 +44,45 @@ const HEADERS={
   Projects:['Project ID','Customer ID','Customer Name','Project Name','Description','Current Stage','Progress','Expected Delivery Date','Status','Created By','Created Date','Created Time','Updated Date','Updated Time','Latest Update'],
   ProjectAssignments:['Assignment ID','Project ID','Staff ID','Staff Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Status'],
   ProjectUpdates:['Update ID','Project ID','Staff ID','Staff Name','Stage','Progress','Update Text','Remark','Created Date','Created Time'],
-  ActivityLogs:['Activity ID','User ID','User Name','Role','Action','Related ID','Description','Date','Time','Status']
+  ActivityLogs:['Activity ID','User ID','User Name','Role','Action','Related ID','Description','Date','Time','Status'],
+  Tasks:['Task ID','Project ID','Project Name','Task Title','Description','Assigned Staff ID','Assigned Staff Name','Priority','Status','Due Date','Created By','Created Date','Created Time','Updated Date','Updated Time']
 };
 
 function initialSetup(){
   Logger.log('Initializing Website Builders Sheets...');
-  Object.keys(HEADERS).forEach(n=>{getOrCreateSheet(n,HEADERS[n]);Logger.log('Sheet ready: '+n);});
-  repairEnquiriesHeaders();
-  Logger.log('All 7 sheets initialized and verified.');
+  repairAllHeaders();
+  Logger.log('All 8 sheets initialized, headers verified and aligned.');
+}
+
+function repairAllHeaders(){
+  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  Object.keys(HEADERS).forEach(name => {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+    }
+    const headerCols = HEADERS[name];
+    sheet.getRange(1, 1, 1, headerCols.length).setValues([headerCols])
+      .setBackground('#0f172a')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    Logger.log('Header verified and aligned for sheet: ' + name);
+  });
+  Logger.log('All sheet headers reset and aligned with standard schema.');
+}
+
+function repairUsersHeaders(){
+  const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  let sheet=ss.getSheetByName(SHEETS.USERS);
+  if(!sheet){
+    sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+    Logger.log('Created fresh Users sheet with standard headers.');
+    return;
+  }
+  sheet.getRange(1,1,1,HEADERS.Users.length).setValues([HEADERS.Users]).setBackground('#0f172a').setFontColor('#ffffff').setFontWeight('bold');
+  sheet.setFrozenRows(1);
+  Logger.log('Users sheet headers reset and aligned with standard schema.');
 }
 
 function repairEnquiriesHeaders(){
@@ -70,7 +103,7 @@ function repairEnquiriesHeaders(){
 }
 
 function upgradeEnquiriesSheet(){
-  repairEnquiriesHeaders();
+  repairAllHeaders();
 }
 
 function seedSuperAdmin(){
@@ -103,18 +136,23 @@ function doPost(e){
       if(action==='loginUser')        return loginUser(data);
       if(action==='createEnquiry')    return createEnquiry(data);
       if(action==='updateEnquiry')    return updateEnquiry(data);
+      if(action==='convertEnquiry')   return convertEnquiry(data);
       if(action==='createProject')    return createProject(data);
       if(action==='updateProject')    return updateProject(data);
       if(action==='assignStaff')      return assignStaff(data);
       if(action==='reassignStaff')    return reassignStaff(data);
       if(action==='addProjectUpdate') return addProjectUpdate(data);
+      if(action==='createTask')       return createTask(data);
+      if(action==='updateTask')       return updateTask(data);
+      if(action==='deleteTask')       return deleteTask(data);
+      if(action==='assignStaffToUser')return assignStaffToUser(data);
       if(action==='sendMessage')      return sendMessage(data);
       if(action==='markMessageRead')  return markMessageRead(data);
       if(action==='logActivity')      return logActivity(data);
       if(action==='sync_user')        return syncLegacyUser(data);
       if(action==='sync_message')     return sendMessage({sender_id:data.sender_id,sender_name:data.sender_name,sender_role:data.sender_role,receiver_id:data.receiver_id,receiver_name:data.receiver_name,receiver_role:data.receiver_role,conversation_id:data.conversation_id,body:data.body||data.message,subject:data.subject,project_id:data.project_id,customer_id:data.customer_id,recipient_type:data.recipient_type,message_type:data.message_type});
       if(action==='sync_audit')       return logActivity({userId:'',userName:data.user_email||'',role:'',action:data.action||'AUDIT',relatedId:'',description:data.action||'',status:data.status||'SUCCESS'});
-      if(action==='update_enquiry')   return updateEnquiry({enquiry_id:p.submissionId,status:p.ticketStatus});
+      if(action==='update_enquiry')   return updateEnquiry({enquiry_id:p.submissionId,status:p.ticketStatus,assigned_to:p.assignedTo});
     }catch(err){return jr('error','Action failed: '+err.toString());}
     return jr('error','Unknown action: '+action);
   }
@@ -133,6 +171,7 @@ function doGet(e){
     if(action==='getProjects')          return getProjects(p);
     if(action==='getAssignments')       return getAssignments(p);
     if(action==='getProjectUpdates')    return getProjectUpdates(p);
+    if(action==='getTasks')             return getTasks(p);
     if(action==='getMessages')          return getMessages(p);
     if(action==='getConversations')     return getConversations(p);
     if(action==='getConversationThread')return getConversationThread(p);
@@ -175,6 +214,18 @@ function updateUser(d){
   if(d.mobile)    sheet.getRange(row,U.MOBILE).setValue(d.mobile.trim());
   if(d.role)      sheet.getRange(row,U.ROLE).setValue(normalizeRole(d.role));
   if(d.assigned_staff_id!==undefined) sheet.getRange(row,U.ASSIGNED_STAFF).setValue(d.assigned_staff_id);
+  // Handle status changes (boolean or string)
+  if(d.status!==undefined){
+    let newStatus=d.status;
+    if(newStatus===true||newStatus==='true') newStatus='ACTIVE';
+    else if(newStatus===false||newStatus==='false') newStatus='INACTIVE';
+    newStatus=String(newStatus).toUpperCase();
+    const email=sheet.getRange(row,U.EMAIL).getValue();
+    if(String(email).toLowerCase()===CONFIG.SUPER_ADMIN_EMAIL.toLowerCase()&&newStatus==='INACTIVE'){
+      return jr('error','Cannot deactivate protected Super Admin.');
+    }
+    sheet.getRange(row,U.STATUS).setValue(newStatus);
+  }
   sheet.getRange(row,U.UPD_DATE).setValue(now.date);
   sheet.getRange(row,U.UPD_TIME).setValue(now.time);
   const userId=String(sheet.getRange(row,U.ID).getValue());
@@ -256,11 +307,90 @@ function loginUser(d){
   return jr('success',{user_id:userId,id:userId,full_name:String(r[U.NAME-1]),email,mobile:String(r[U.MOBILE-1]),role,status,assigned_staff_id:String(r[U.ASSIGNED_STAFF-1]||''),last_login:now.date+' '+now.time});
 }
 
+function getUserColMap(sheet){
+  const fallback = Object.assign({}, U);
+  const lastCol = sheet.getLastColumn();
+  if (sheet.getLastRow() < 1 || lastCol < 1) return fallback;
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const colMap = {};
+  headers.forEach((h, idx) => {
+    const raw = String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!raw) return;
+    const col1 = idx + 1;
+    if (['userid', 'id'].includes(raw)) colMap.ID = col1;
+    else if (['fullname', 'name', 'username', 'user'].includes(raw)) colMap.NAME = col1;
+    else if (['email', 'emailaddress', 'mail'].includes(raw)) colMap.EMAIL = col1;
+    else if (['mobilenumber', 'mobile', 'phone', 'phonenumber', 'contact'].includes(raw)) colMap.MOBILE = col1;
+    else if (['passwordhash', 'password', 'pass', 'hash'].includes(raw)) colMap.PASS = col1;
+    else if (['role', 'userrole'].includes(raw)) colMap.ROLE = col1;
+    else if (['status', 'userstatus'].includes(raw)) colMap.STATUS = col1;
+    else if (['createddate', 'createdat', 'created'].includes(raw)) colMap.CREATED_DATE = col1;
+    else if (['createdtime'].includes(raw)) colMap.CREATED_TIME = col1;
+    else if (['lastlogindate', 'lastlogin'].includes(raw)) colMap.LAST_LOGIN_DATE = col1;
+    else if (['lastlogintime'].includes(raw)) colMap.LAST_LOGIN_TIME = col1;
+    else if (['lastactivitydate', 'lastactdate', 'lastactivity'].includes(raw)) colMap.LAST_ACT_DATE = col1;
+    else if (['lastactivitytime', 'lastacttime'].includes(raw)) colMap.LAST_ACT_TIME = col1;
+    else if (['updateddate', 'upddate', 'updatedat', 'updated'].includes(raw)) colMap.UPD_DATE = col1;
+    else if (['updatedtime', 'updtime'].includes(raw)) colMap.UPD_TIME = col1;
+    else if (['assignedstaffid', 'assignedstaff', 'assignedto', 'staffid', 'staff'].includes(raw)) colMap.ASSIGNED_STAFF = col1;
+  });
+  return Object.assign({}, fallback, colMap, { TOTAL: Math.max(lastCol, U.TOTAL) });
+}
+
 function getUsers(p){
+  p = p || {};
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+  const colMap=getUserColMap(sheet);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',[]);
-  let users=sheet.getRange(2,1,last-1,U.TOTAL).getValues().map(r=>userRowToDict(r)).filter(u=>u.user_id);
+  const totalCols = Math.max(sheet.getLastColumn(), colMap.TOTAL || U.TOTAL);
+  let rawRows=sheet.getRange(2,1,last-1,totalCols).getValues();
+  
+  // Build name lookup map: ID -> full_name, email -> full_name
+  const nameMap = {};
+  const idCol = colMap.ID || U.ID;
+  const emailCol = colMap.EMAIL || U.EMAIL;
+  const nameCol = colMap.NAME || U.NAME;
+  rawRows.forEach(r => {
+    const uid = String(r[idCol-1] || '').trim();
+    const uemail = String(r[emailCol-1] || '').trim().toLowerCase();
+    const uname = String(r[nameCol-1] || '').trim();
+    if(uid) nameMap[uid] = uname;
+    if(uemail) nameMap[uemail] = uname;
+  });
+
+  // Calculate project counts per staff
+  const projSheet = getOrCreateSheet(SHEETS.ASSIGNMENTS, HEADERS.ProjectAssignments);
+  const pLast = projSheet.getLastRow();
+  const staffProjCount = {};
+  if (pLast >= 2) {
+    projSheet.getRange(2, 1, pLast - 1, A.TOTAL).getValues().forEach(r => {
+      if (String(r[A.STATUS - 1]).toUpperCase() === 'ACTIVE') {
+        const sid = String(r[A.STAFF_ID - 1] || '');
+        if (sid) staffProjCount[sid] = (staffProjCount[sid] || 0) + 1;
+      }
+    });
+  }
+
+  // Calculate task counts per staff
+  const taskSheet = getOrCreateSheet(SHEETS.TASKS, HEADERS.Tasks);
+  const tLast = taskSheet.getLastRow();
+  const staffTaskCount = {};
+  if (tLast >= 2) {
+    taskSheet.getRange(2, 1, tLast - 1, T.TOTAL).getValues().forEach(r => {
+      const sid = String(r[T.STAFF_ID - 1] || '');
+      if (sid) staffTaskCount[sid] = (staffTaskCount[sid] || 0) + 1;
+    });
+  }
+
+  let users = rawRows.map(r => {
+    const u = userRowToDict(r, colMap);
+    u.assigned_staff_name = nameMap[u.assigned_staff_id] || '';
+    u.assigned_projects_count = staffProjCount[u.id] || 0;
+    u.tasks_count = staffTaskCount[u.id] || 0;
+    return u;
+  }).filter(u=>u.user_id);
+
   if(p.role)        users=users.filter(u=>u.role.toLowerCase()===p.role.toLowerCase());
   if(p.status)      users=users.filter(u=>u.status.toLowerCase()===p.status.toLowerCase());
   if(p.active_only==='true') users=users.filter(u=>u.status.toUpperCase()==='ACTIVE');
@@ -268,14 +398,67 @@ function getUsers(p){
 }
 
 function getUser(p){
+  p = p || {};
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
-  const row=p.user_id?findRowByValue(sheet,U.ID,p.user_id):(p.email?findRowByValue(sheet,U.EMAIL,p.email.toLowerCase()):-1);
+  const colMap=getUserColMap(sheet);
+  const idCol = colMap.ID || U.ID;
+  const emailCol = colMap.EMAIL || U.EMAIL;
+  const row=p.user_id?findRowByValue(sheet,idCol,p.user_id):(p.email?findRowByValue(sheet,emailCol,p.email.toLowerCase()):-1);
   if(row<0) return jr('error','User not found.');
-  return jr('success',userRowToDict(sheet.getRange(row,1,1,U.TOTAL).getValues()[0]));
+  const totalCols = Math.max(sheet.getLastColumn(), colMap.TOTAL || U.TOTAL);
+  const u = userRowToDict(sheet.getRange(row,1,1,totalCols).getValues()[0], colMap);
+  if(u.assigned_staff_id) {
+    const sRow = findRowByValue(sheet, idCol, u.assigned_staff_id);
+    if(sRow > 0) {
+      u.assigned_staff_name = String(sheet.getRange(sRow, colMap.NAME || U.NAME).getValue() || '');
+    }
+  }
+  return jr('success', u);
 }
 
-function userRowToDict(r){
-  return{user_id:String(r[U.ID-1]),id:String(r[U.ID-1]),full_name:String(r[U.NAME-1]),email:String(r[U.EMAIL-1]),mobile:String(r[U.MOBILE-1]),role:String(r[U.ROLE-1]),status:String(r[U.STATUS-1]),is_active:String(r[U.STATUS-1]).toUpperCase()==='ACTIVE',created_at:String(r[U.CREATED_DATE-1])+' '+String(r[U.CREATED_TIME-1]),last_login:String(r[U.LAST_LOGIN_DATE-1])+' '+String(r[U.LAST_LOGIN_TIME-1]),last_activity:String(r[U.LAST_ACT_DATE-1])+' '+String(r[U.LAST_ACT_TIME-1]),updated_at:String(r[U.UPD_DATE-1])+' '+String(r[U.UPD_TIME-1]),assigned_staff_id:String(r[U.ASSIGNED_STAFF-1]||'')};
+function assignStaffToUser(d){
+  d = d || {};
+  const userId = d.user_id || d.id || d.client_id;
+  if(!userId) return jr('error','User ID required.');
+  const staffId = d.assigned_staff_id !== undefined ? d.assigned_staff_id : (d.staff_id !== undefined ? d.staff_id : '');
+  const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+  const colMap=getUserColMap(sheet);
+  const idCol = colMap.ID || U.ID;
+  const row=findRowByValue(sheet,idCol,userId);
+  if(row<0) return jr('error','User not found.');
+  const now=getNow();
+  if(colMap.ASSIGNED_STAFF) sheet.getRange(row,colMap.ASSIGNED_STAFF).setValue(staffId || '');
+  if(colMap.UPD_DATE) sheet.getRange(row,colMap.UPD_DATE).setValue(now.date);
+  if(colMap.UPD_TIME) sheet.getRange(row,colMap.UPD_TIME).setValue(now.time);
+
+  let staffName = '';
+  if(staffId){
+    const sRow = findRowByValue(sheet, idCol, staffId);
+    if(sRow > 0) staffName = String(sheet.getRange(sRow, colMap.NAME || U.NAME).getValue() || '');
+  }
+
+  logActivity({userId:d.assigned_by||'',userName:'',role:'',action:'STAFF_ASSIGNED_TO_USER',relatedId:userId,description:'Assigned staff '+(staffName||staffId||'Unassigned')+' to user '+userId,status:'SUCCESS'});
+  return jr('success',{message:'Staff assigned to client successfully.',user_id:userId,assigned_staff_id:staffId,assigned_staff_name:staffName});
+}
+
+function userRowToDict(r, colMap){
+  colMap = colMap || U;
+  const getVal = (col) => (col && col <= r.length) ? String(r[col - 1] || '') : '';
+  return {
+    user_id: getVal(colMap.ID),
+    id: getVal(colMap.ID),
+    full_name: getVal(colMap.NAME),
+    email: getVal(colMap.EMAIL),
+    mobile: getVal(colMap.MOBILE),
+    role: getVal(colMap.ROLE),
+    status: getVal(colMap.STATUS),
+    is_active: getVal(colMap.STATUS).toUpperCase() === 'ACTIVE',
+    created_at: getVal(colMap.CREATED_DATE) + ' ' + getVal(colMap.CREATED_TIME),
+    last_login: getVal(colMap.LAST_LOGIN_DATE) + ' ' + getVal(colMap.LAST_LOGIN_TIME),
+    last_activity: getVal(colMap.LAST_ACT_DATE) + ' ' + getVal(colMap.LAST_ACT_TIME),
+    updated_at: getVal(colMap.UPD_DATE) + ' ' + getVal(colMap.UPD_TIME),
+    assigned_staff_id: getVal(colMap.ASSIGNED_STAFF)
+  };
 }
 
 // ─────────────── ENQUIRIES ────────────────────────────────────
@@ -341,51 +524,135 @@ function createEnquiry(d){
     if (colMap.MOBILE_NUMBER) newRow[colMap.MOBILE_NUMBER-1] = mobile;
     if (colMap.ADDRESS) newRow[colMap.ADDRESS-1] = address;
     if (colMap.MESSAGE) newRow[colMap.MESSAGE-1] = message;
-    if (colMap.EMAIL_STATUS) newRow[colMap.EMAIL_STATUS-1] = 'Pending';
-    if (colMap.EMAIL_SENT_AT) newRow[colMap.EMAIL_SENT_AT-1] = '';
-    if (colMap.OWNER_NOTIF_STAT) newRow[colMap.OWNER_NOTIF_STAT-1] = 'Pending';
-    if (colMap.OWNER_NOTIF_TIME) newRow[colMap.OWNER_NOTIF_TIME-1] = '';
     if (colMap.TICKET_STATUS) newRow[colMap.TICKET_STATUS-1] = 'New';
-    if (colMap.ASSIGNED_TO) newRow[colMap.ASSIGNED_TO-1] = '';
+    if (colMap.ASSIGNED_TO) newRow[colMap.ASSIGNED_TO-1] = d.assigned_to || d.assigned_staff_id || '';
     if (colMap.FOLLOWUP_DATE) newRow[colMap.FOLLOWUP_DATE-1] = followUpDateStr;
     if (colMap.FOLLOWUP_STATUS) newRow[colMap.FOLLOWUP_STATUS-1] = 'Pending';
     if (colMap.SOURCE_PAGE) newRow[colMap.SOURCE_PAGE-1] = source;
-    if (colMap.REMARKS) newRow[colMap.REMARKS-1] = '';
     if (colMap.CUST_ID) newRow[colMap.CUST_ID-1] = customerId;
     if (colMap.PROJ_ID) newRow[colMap.PROJ_ID-1] = projectId;
 
+    // Send customer confirmation email immediately
+    const custEmailRes = sendCustomerConfirmationEmail(enqId, name, email, message);
+    const custSentTime = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd-MMM-yyyy hh:mm:ss a');
+    if (colMap.EMAIL_STATUS) newRow[colMap.EMAIL_STATUS-1] = custEmailRes.success ? 'Sent' : 'Failed';
+    if (colMap.EMAIL_SENT_AT) newRow[colMap.EMAIL_SENT_AT-1] = custEmailRes.success ? custSentTime : '';
+
+    // Send owner notification email immediately
+    const ownerEmailRes = sendOwnerEnquiryEmail(enqId, name, email, mobile, address, message);
+    const ownerSentTime = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd-MMM-yyyy hh:mm:ss a');
+    if (colMap.OWNER_NOTIF_STAT) newRow[colMap.OWNER_NOTIF_STAT-1] = ownerEmailRes.success ? 'Sent' : 'Failed';
+    if (colMap.OWNER_NOTIF_TIME) newRow[colMap.OWNER_NOTIF_TIME-1] = ownerEmailRes.success ? ownerSentTime : '';
+
+    let remarksList = [];
+    if (!custEmailRes.success) remarksList.push('Cust email error: ' + (custEmailRes.error || 'failed'));
+    if (!ownerEmailRes.success) remarksList.push('Owner email error: ' + (ownerEmailRes.error || 'failed'));
+    if (colMap.REMARKS) newRow[colMap.REMARKS-1] = remarksList.join(' | ');
+
     sheet.appendRow(newRow);
-    logActivity({userId:customerId,userName:name,role:'User',action:'ENQUIRY_CREATED',relatedId:enqId,description:'New enquiry',status:'SUCCESS'});
-    try{sendOwnerEnquiryEmail(enqId,name,email,mobile,address,message);}catch(e){}
-    return jr('success',{id:enqId,enquiry_id:enqId,message:'Enquiry created.'});
+    logActivity({userId:customerId,userName:name,role:'User',action:'ENQUIRY_CREATED',relatedId:enqId,description:'New enquiry '+enqId,status:'SUCCESS'});
+    return jr('success',{id:enqId,enquiry_id:enqId,message:'Enquiry created.',emails:{customer:custEmailRes,owner:ownerEmailRes}});
   }finally{lock.releaseLock();}
 }
 
 function updateEnquiry(d){
   d = d || {};
-  if(!d.enquiry_id) return jr('error','Enquiry ID required.');
+  const enqId = d.enquiry_id || d.id || d.submission_id || d.submissionId;
+  if(!enqId) return jr('error','Enquiry ID required.');
   const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
   const colMap=getEnquiryColMap(sheet);
   const subCol = colMap.SUBMISSION_ID || E.SUBMISSION_ID;
-  const row=findRowByValue(sheet,subCol,d.enquiry_id);
-  if(row<0) return jr('error','Enquiry not found.');
-  if(d.status && colMap.TICKET_STATUS)         sheet.getRange(row,colMap.TICKET_STATUS).setValue(d.status);
+  const row=findRowByValue(sheet,subCol,enqId);
+  if(row<0) return jr('error','Enquiry not found: '+enqId);
+  
+  const statusVal = d.status || d.ticket_status || d.ticketStatus;
+  if(statusVal && colMap.TICKET_STATUS)         sheet.getRange(row,colMap.TICKET_STATUS).setValue(statusVal);
   if(d.project_id && colMap.PROJ_ID)           sheet.getRange(row,colMap.PROJ_ID).setValue(d.project_id);
-  if(d.assigned_to && colMap.ASSIGNED_TO)       sheet.getRange(row,colMap.ASSIGNED_TO).setValue(d.assigned_to);
-  if(d.remarks && colMap.REMARKS)               sheet.getRange(row,colMap.REMARKS).setValue(d.remarks);
-  if(d.followup_status && colMap.FOLLOWUP_STATUS) sheet.getRange(row,colMap.FOLLOWUP_STATUS).setValue(d.followup_status);
-  return jr('success',{message:'Enquiry updated.'});
+  
+  var assignee = d.assigned_to !== undefined ? d.assigned_to : (d.assigned_staff_id !== undefined ? d.assigned_staff_id : (d.assigned_staff !== undefined ? d.assigned_staff : null));
+  if(assignee !== null && colMap.ASSIGNED_TO)    sheet.getRange(row,colMap.ASSIGNED_TO).setValue(assignee);
+  if(d.remarks !== undefined && colMap.REMARKS)  sheet.getRange(row,colMap.REMARKS).setValue(d.remarks);
+  if(d.followup_status !== undefined && colMap.FOLLOWUP_STATUS) sheet.getRange(row,colMap.FOLLOWUP_STATUS).setValue(d.followup_status);
+  if(d.followup_date !== undefined && colMap.FOLLOWUP_DATE)   sheet.getRange(row,colMap.FOLLOWUP_DATE).setValue(d.followup_date);
+  if(d.customer_name && colMap.CUSTOMER_NAME)   sheet.getRange(row,colMap.CUSTOMER_NAME).setValue(d.customer_name);
+  if(d.address && colMap.ADDRESS)               sheet.getRange(row,colMap.ADDRESS).setValue(d.address);
+  if(d.mobile && colMap.MOBILE_NUMBER)          sheet.getRange(row,colMap.MOBILE_NUMBER).setValue(d.mobile);
+
+  return jr('success',{message:'Enquiry updated.', enquiry_id: enqId});
+}
+
+function convertEnquiry(d){
+  d = d || {};
+  const enqId = d.enquiry_id || d.id || d.submission_id;
+  if(!enqId) return jr('error','Enquiry ID required.');
+  const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
+  const colMap=getEnquiryColMap(sheet);
+  const subCol = colMap.SUBMISSION_ID || E.SUBMISSION_ID;
+  const row=findRowByValue(sheet,subCol,enqId);
+  if(row<0) return jr('error','Enquiry not found.');
+  // Read enquiry data
+  const totalCols=Math.max(sheet.getLastColumn(),colMap.TOTAL||E.TOTAL);
+  const r=sheet.getRange(row,1,1,totalCols).getValues()[0];
+  const getVal=(colIdx)=>(colIdx&&colIdx<=r.length)?String(r[colIdx-1]||''):'';
+  const custName=getVal(colMap.CUSTOMER_NAME);
+  const custEmail=getVal(colMap.EMAIL);
+  const custId=getVal(colMap.CUST_ID)||'';
+  const enqMessage=getVal(colMap.MESSAGE);
+  // Create project
+  var projResult=createProject({
+    project_name: d.name||d.project_name||(custName+' Website Project'),
+    customer_id: custId,
+    customer_name: custName,
+    description: d.description||enqMessage,
+    stage: d.initial_stage||d.stage||'Planning',
+    progress: d.initial_progress||d.progress||0,
+    expected_delivery: d.expected_delivery||'',
+    status: 'Active',
+    staff_id: d.assigned_staff_id||'',
+    staff_name: d.assigned_staff_name||'',
+    created_by: d.converted_by||''
+  });
+  // Parse response to get project_id
+  var projData={};
+  try{projData=JSON.parse(projResult.getContent());}catch(e){}
+  var projId=(projData.data&&projData.data.project_id)||'';
+  // Update enquiry as converted
+  if(projId){
+    if(colMap.TICKET_STATUS) sheet.getRange(row,colMap.TICKET_STATUS).setValue('Converted');
+    if(colMap.PROJ_ID) sheet.getRange(row,colMap.PROJ_ID).setValue(projId);
+    if(colMap.REMARKS) sheet.getRange(row,colMap.REMARKS).setValue('Converted to project '+projId);
+  }
+  logActivity({userId:d.converted_by||'',userName:'',role:'',action:'ENQUIRY_CONVERTED',relatedId:enqId,description:'Enquiry converted to project '+projId,status:'SUCCESS'});
+  return jr('success',{message:'Enquiry converted to project.',project_id:projId,enquiry_id:enqId});
 }
 
 function getEnquiries(p){
+  p = p || {};
   const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
   const colMap=getEnquiryColMap(sheet);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',[]);
+
+  // Build name lookup for assigned_to
+  const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+  const uLast=uSheet.getLastRow();
+  const nameMap={};
+  if(uLast>=2){
+    uSheet.getRange(2,1,uLast-1,U.TOTAL).getValues().forEach(r=>{
+      const uid=String(r[U.ID-1]||'').trim();
+      const uemail=String(r[U.EMAIL-1]||'').trim().toLowerCase();
+      const uname=String(r[U.NAME-1]||'').trim();
+      if(uid) nameMap[uid]=uname;
+      if(uemail) nameMap[uemail]=uname;
+    });
+  }
+
   const totalCols = Math.max(sheet.getLastColumn(), colMap.TOTAL || E.TOTAL);
   let list=sheet.getRange(2,1,last-1,totalCols).getValues().map(r=>{
     const getVal = (colIdx) => (colIdx && colIdx <= r.length) ? String(r[colIdx - 1] || '') : '';
     const custName = getVal(colMap.CUSTOMER_NAME);
+    const assignedTo = getVal(colMap.ASSIGNED_TO);
+    const assignedStaffName = nameMap[assignedTo] || (assignedTo.startsWith('USR-') ? '' : assignedTo);
     return {
       enquiry_id: getVal(colMap.SUBMISSION_ID),
       id: getVal(colMap.SUBMISSION_ID),
@@ -398,7 +665,10 @@ function getEnquiries(p){
       address: getVal(colMap.ADDRESS),
       message: getVal(colMap.MESSAGE),
       status: getVal(colMap.TICKET_STATUS) || 'New',
-      assigned_to: getVal(colMap.ASSIGNED_TO),
+      ticket_status: getVal(colMap.TICKET_STATUS) || 'New',
+      assigned_to: assignedTo,
+      assigned_staff_id: assignedTo,
+      assigned_staff_name: assignedStaffName,
       followup_date: getVal(colMap.FOLLOWUP_DATE),
       followup_status: getVal(colMap.FOLLOWUP_STATUS),
       source_page: getVal(colMap.SOURCE_PAGE),
@@ -447,20 +717,57 @@ function updateProject(d){
 }
 
 function getProjects(p){
+  p = p || {};
   const sheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',[]);
-  let list=sheet.getRange(2,1,last-1,P.TOTAL).getValues().map(r=>({project_id:String(r[P.ID-1]),id:String(r[P.ID-1]),customer_id:String(r[P.CUST_ID-1]),customer_name:String(r[P.CUST_NAME-1]),project_name:String(r[P.PROJ_NAME-1]),name:String(r[P.PROJ_NAME-1]),description:String(r[P.DESC-1]),stage:String(r[P.STAGE-1]),progress:parseInt(r[P.PROGRESS-1])||0,expected_delivery:String(r[P.DELIVERY-1]),status:String(r[P.STATUS-1]),created_by:String(r[P.CREATED_BY-1]),created_at:String(r[P.CREATED_DATE-1])+' '+String(r[P.CREATED_TIME-1]),updated_at:String(r[P.UPD_DATE-1])+' '+String(r[P.UPD_TIME-1]),latest_update:String(r[P.LATEST_UPDATE-1])})).filter(pr=>pr.project_id);
+
+  // Get active assignments to populate assigned_staff_name & assigned_staff_id
+  const as=getOrCreateSheet(SHEETS.ASSIGNMENTS,HEADERS.ProjectAssignments);
+  const aLast=as.getLastRow();
+  const assignMap={};
+  if(aLast>=2){
+    as.getRange(2,1,aLast-1,A.TOTAL).getValues().forEach(r=>{
+      if(String(r[A.STATUS-1]).toUpperCase()==='ACTIVE'){
+        const pid=String(r[A.PROJ_ID-1]);
+        if(pid && !assignMap[pid]){
+          assignMap[pid]={
+            staff_id:String(r[A.STAFF_ID-1]),
+            staff_name:String(r[A.STAFF_NAME-1])
+          };
+        }
+      }
+    });
+  }
+
+  let list=sheet.getRange(2,1,last-1,P.TOTAL).getValues().map(r=>{
+    const pid=String(r[P.ID-1]);
+    const asg=assignMap[pid] || {};
+    return {
+      project_id:pid,
+      id:pid,
+      customer_id:String(r[P.CUST_ID-1]),
+      customer_name:String(r[P.CUST_NAME-1]),
+      project_name:String(r[P.PROJ_NAME-1]),
+      name:String(r[P.PROJ_NAME-1]),
+      description:String(r[P.DESC-1]),
+      stage:String(r[P.STAGE-1]),
+      progress:parseInt(r[P.PROGRESS-1])||0,
+      expected_delivery:String(r[P.DELIVERY-1]),
+      status:String(r[P.STATUS-1]),
+      created_by:String(r[P.CREATED_BY-1]),
+      created_at:String(r[P.CREATED_DATE-1])+' '+String(r[P.CREATED_TIME-1]),
+      updated_at:String(r[P.UPD_DATE-1])+' '+String(r[P.UPD_TIME-1]),
+      latest_update:String(r[P.LATEST_UPDATE-1]),
+      assigned_staff_id:asg.staff_id || '',
+      assigned_staff_name:asg.staff_name || ''
+    };
+  }).filter(pr=>pr.project_id);
+
   if(p.customer_id) list=list.filter(pr=>pr.customer_id===p.customer_id);
   if(p.status)      list=list.filter(pr=>pr.status.toLowerCase()===p.status.toLowerCase());
   if(p.staff_id){
-    const as=getOrCreateSheet(SHEETS.ASSIGNMENTS,HEADERS.ProjectAssignments);
-    const aLast=as.getLastRow();
-    if(aLast>=2){
-      const aRows=as.getRange(2,1,aLast-1,A.TOTAL).getValues();
-      const ids=aRows.filter(r=>String(r[A.STAFF_ID-1])===p.staff_id&&String(r[A.STATUS-1]).toUpperCase()==='ACTIVE').map(r=>String(r[A.PROJ_ID-1]));
-      list=list.filter(pr=>ids.includes(pr.project_id));
-    }else{list=[];}
+    list=list.filter(pr=>pr.assigned_staff_id===p.staff_id);
   }
   return jr('success',list);
 }
@@ -473,8 +780,14 @@ function assignStaff(d){
   try{
     const sheet=getOrCreateSheet(SHEETS.ASSIGNMENTS,HEADERS.ProjectAssignments);
     const now=getNow();const asgId=generateId('ASG',SHEETS.ASSIGNMENTS,A.ID);
-    sheet.appendRow([asgId,d.project_id,d.staff_id,d.staff_name||'',d.assigned_by||'',now.date,now.time,'','ACTIVE']);
-    logActivity({userId:d.staff_id,userName:d.staff_name||'',role:'Staff',action:'PROJECT_ASSIGNED',relatedId:d.project_id,description:'Assigned to '+d.project_id,status:'SUCCESS'});
+    let sName = d.staff_name || '';
+    if(!sName && d.staff_id){
+      const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+      const uRow=findRowByValue(uSheet,U.ID,d.staff_id);
+      if(uRow>0) sName = String(uSheet.getRange(uRow,U.NAME).getValue()||'');
+    }
+    sheet.appendRow([asgId,d.project_id,d.staff_id,sName,d.assigned_by||'',now.date,now.time,'','ACTIVE']);
+    logActivity({userId:d.staff_id,userName:sName,role:'Staff',action:'PROJECT_ASSIGNED',relatedId:d.project_id,description:'Assigned to '+d.project_id,status:'SUCCESS'});
     return jr('success',{id:asgId,message:'Staff assigned.'});
   }finally{lock.releaseLock();}
 }
@@ -492,6 +805,7 @@ function reassignStaff(d){
 }
 
 function getAssignments(p){
+  p = p || {};
   const sheet=getOrCreateSheet(SHEETS.ASSIGNMENTS,HEADERS.ProjectAssignments);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',[]);
@@ -518,11 +832,163 @@ function addProjectUpdate(d){
 }
 
 function getProjectUpdates(p){
+  p = p || {};
   const sheet=getOrCreateSheet(SHEETS.UPDATES,HEADERS.ProjectUpdates);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',[]);
   let list=sheet.getRange(2,1,last-1,PU.TOTAL).getValues().map(r=>({update_id:String(r[PU.ID-1]),project_id:String(r[PU.PROJ_ID-1]),staff_id:String(r[PU.STAFF_ID-1]),staff_name:String(r[PU.STAFF_NAME-1]),stage:String(r[PU.STAGE-1]),progress:parseInt(r[PU.PROGRESS-1])||0,update_text:String(r[PU.TEXT-1]),remark:String(r[PU.REMARK-1]),created_at:String(r[PU.CREATED_DATE-1])+' '+String(r[PU.CREATED_TIME-1])})).filter(u=>u.update_id);
   if(p.project_id) list=list.filter(u=>u.project_id===p.project_id);
+  return jr('success',list);
+}
+
+// ─────────────── TASKS ────────────────────────────────────────
+function createTask(d){
+  d = d || {};
+  if(!d.title) return jr('error','Task title is required.');
+  const lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    const sheet=getOrCreateSheet(SHEETS.TASKS,HEADERS.Tasks);
+    const now=getNow();const taskId=generateId('TSK',SHEETS.TASKS,T.ID);
+    let staffName = d.assigned_staff_name || d.staff_name || '';
+    const staffId = d.assigned_staff_id !== undefined ? d.assigned_staff_id : (d.staff_id !== undefined ? d.staff_id : '');
+    if(!staffName && staffId){
+      const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+      const uRow=findRowByValue(uSheet,U.ID,staffId);
+      if(uRow>0) staffName = String(uSheet.getRange(uRow,U.NAME).getValue()||'');
+    }
+    let projName = d.project_name || '';
+    const projId = d.project_id || '';
+    if(!projName && projId){
+      const pSheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
+      const pRow=findRowByValue(pSheet,P.ID,projId);
+      if(pRow>0) projName = String(pSheet.getRange(pRow,P.PROJ_NAME).getValue()||'');
+    }
+    const status = d.status || 'Pending';
+    const priority = d.priority || 'Normal';
+    const desc = d.description || '';
+    const dueDate = d.due_date || '';
+    const createdBy = d.created_by || '';
+
+    sheet.appendRow([
+      taskId, projId, projName, d.title.trim(), desc.trim(),
+      staffId, staffName, priority, status, dueDate,
+      createdBy, now.date, now.time, now.date, now.time
+    ]);
+
+    logActivity({
+      userId: createdBy || staffId,
+      userName: staffName || '',
+      role: 'Staff',
+      action: 'TASK_CREATED',
+      relatedId: taskId,
+      description: 'Task created: ' + d.title,
+      status: 'SUCCESS'
+    });
+
+    return jr('success',{
+      id: taskId,
+      task_id: taskId,
+      title: d.title,
+      status: status,
+      priority: priority,
+      assigned_staff_id: staffId,
+      assigned_staff_name: staffName,
+      message: 'Task created successfully.'
+    });
+  }finally{lock.releaseLock();}
+}
+
+function updateTask(d){
+  d = d || {};
+  const taskId = d.task_id || d.id;
+  if(!taskId) return jr('error','Task ID is required.');
+  const sheet=getOrCreateSheet(SHEETS.TASKS,HEADERS.Tasks);
+  const row=findRowByValue(sheet,T.ID,taskId);
+  if(row<0) return jr('error','Task not found: '+taskId);
+
+  const now=getNow();
+  if(d.title) sheet.getRange(row,T.TITLE).setValue(d.title.trim());
+  if(d.project_id) sheet.getRange(row,T.PROJ_ID).setValue(d.project_id);
+  if(d.project_name) sheet.getRange(row,T.PROJ_NAME).setValue(d.project_name);
+  if(d.description!==undefined) sheet.getRange(row,T.DESC).setValue(String(d.description).trim());
+  if(d.priority) sheet.getRange(row,T.PRIORITY).setValue(d.priority);
+  if(d.status) sheet.getRange(row,T.STATUS).setValue(d.status);
+  if(d.due_date!==undefined) sheet.getRange(row,T.DUE_DATE).setValue(d.due_date);
+
+  if(d.assigned_staff_id!==undefined || d.staff_id!==undefined){
+    const staffId = d.assigned_staff_id !== undefined ? d.assigned_staff_id : d.staff_id;
+    sheet.getRange(row,T.STAFF_ID).setValue(staffId || '');
+    let staffName = d.assigned_staff_name || d.staff_name || '';
+    if(!staffName && staffId){
+      const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+      const uRow=findRowByValue(uSheet,U.ID,staffId);
+      if(uRow>0) staffName = String(uSheet.getRange(uRow,U.NAME).getValue()||'');
+    }
+    sheet.getRange(row,T.STAFF_NAME).setValue(staffName);
+  }
+
+  sheet.getRange(row,T.UPD_DATE).setValue(now.date);
+  sheet.getRange(row,T.UPD_TIME).setValue(now.time);
+
+  logActivity({
+    userId: d.updated_by || '',
+    userName: '',
+    role: '',
+    action: 'TASK_UPDATED',
+    relatedId: taskId,
+    description: 'Task updated: ' + (d.status ? 'status to ' + d.status : taskId),
+    status: 'SUCCESS'
+  });
+
+  return jr('success',{message:'Task updated.',id:taskId,task_id:taskId});
+}
+
+function deleteTask(d){
+  d = d || {};
+  const taskId = d.task_id || d.id;
+  if(!taskId) return jr('error','Task ID is required.');
+  const sheet=getOrCreateSheet(SHEETS.TASKS,HEADERS.Tasks);
+  const row=findRowByValue(sheet,T.ID,taskId);
+  if(row<0) return jr('error','Task not found: '+taskId);
+  sheet.deleteRow(row);
+  return jr('success',{message:'Task deleted.',id:taskId});
+}
+
+function getTasks(p){
+  p = p || {};
+  const sheet=getOrCreateSheet(SHEETS.TASKS,HEADERS.Tasks);
+  const last=sheet.getLastRow();
+  if(last<2) return jr('success',[]);
+  const todayIso=new Date().toISOString().split('T')[0];
+  let list=sheet.getRange(2,1,last-1,T.TOTAL).getValues().map(r=>{
+    const dueDate=String(r[T.DUE_DATE-1]||'');
+    const status=String(r[T.STATUS-1]||'Pending');
+    const isOverdue=Boolean(dueDate && dueDate < todayIso && status !== 'Completed');
+    return {
+      task_id:String(r[T.ID-1]),
+      id:String(r[T.ID-1]),
+      project_id:String(r[T.PROJ_ID-1]),
+      project_name:String(r[T.PROJ_NAME-1]||''),
+      title:String(r[T.TITLE-1]),
+      name:String(r[T.TITLE-1]),
+      description:String(r[T.DESC-1]),
+      assigned_staff_id:String(r[T.STAFF_ID-1]),
+      staff_id:String(r[T.STAFF_ID-1]),
+      assigned_staff_name:String(r[T.STAFF_NAME-1]),
+      staff_name:String(r[T.STAFF_NAME-1]),
+      priority:String(r[T.PRIORITY-1]||'Normal'),
+      status:status,
+      due_date:dueDate,
+      is_overdue:isOverdue,
+      created_by:String(r[T.CREATED_BY-1]),
+      created_at:String(r[T.CREATED_DATE-1])+' '+String(r[T.CREATED_TIME-1]),
+      updated_at:String(r[T.UPD_DATE-1])+' '+String(r[T.UPD_TIME-1])
+    };
+  }).filter(t=>t.task_id);
+
+  if(p.staff_id)   list=list.filter(t=>t.assigned_staff_id===p.staff_id);
+  if(p.project_id) list=list.filter(t=>t.project_id===p.project_id);
+  if(p.status)     list=list.filter(t=>t.status.toLowerCase()===p.status.toLowerCase());
   return jr('success',list);
 }
 
@@ -675,8 +1141,7 @@ function getStats(p){
   return jr('success',{total_users:tu,total_admins:ta,total_staff:ts,total_clients:tc,active_users:au,inactive_users:iu,total_enquiries:te,new_enquiries:ne,total_projects:tp,active_projects:ap,pending_projects:pp,total_messages:tm,unread_messages:um,recent_activity:ra});
 }
 
-// ─────────────── CONTACT FORM ─────────────────────────────────
-// Unified Enquiries sheet handling (legacy mail automation + CRM)
+// ─────────────── CONTACT FORM & EMAIL SYSTEM ───────────────────
 function handleContactForm(params){
   const lock=LockService.getScriptLock();
   try{lock.waitLock(15000);}catch(err){return jr('error','Server busy.');}
@@ -706,37 +1171,39 @@ function handleContactForm(params){
     if (colMap.MOBILE_NUMBER) newRow[colMap.MOBILE_NUMBER-1] = mobile;
     if (colMap.ADDRESS) newRow[colMap.ADDRESS-1] = address;
     if (colMap.MESSAGE) newRow[colMap.MESSAGE-1] = message;
-    if (colMap.EMAIL_STATUS) newRow[colMap.EMAIL_STATUS-1] = 'Pending';
-    if (colMap.EMAIL_SENT_AT) newRow[colMap.EMAIL_SENT_AT-1] = '';
-    if (colMap.OWNER_NOTIF_STAT) newRow[colMap.OWNER_NOTIF_STAT-1] = 'Pending';
-    if (colMap.OWNER_NOTIF_TIME) newRow[colMap.OWNER_NOTIF_TIME-1] = '';
     if (colMap.TICKET_STATUS) newRow[colMap.TICKET_STATUS-1] = 'New';
     if (colMap.ASSIGNED_TO) newRow[colMap.ASSIGNED_TO-1] = '';
     if (colMap.FOLLOWUP_DATE) newRow[colMap.FOLLOWUP_DATE-1] = followUpDateStr;
     if (colMap.FOLLOWUP_STATUS) newRow[colMap.FOLLOWUP_STATUS-1] = 'Pending';
     if (colMap.SOURCE_PAGE) newRow[colMap.SOURCE_PAGE-1] = source;
-    if (colMap.REMARKS) newRow[colMap.REMARKS-1] = '';
     if (colMap.CUST_ID) newRow[colMap.CUST_ID-1] = params.customer_id || '';
     if (colMap.PROJ_ID) newRow[colMap.PROJ_ID-1] = params.project_id || '';
-    
+
+    // Send customer confirmation email immediately
+    const custEmailRes = sendCustomerConfirmationEmail(submissionId, name, email, message);
+    const custSentTime = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd-MMM-yyyy hh:mm:ss a');
+    if (colMap.EMAIL_STATUS) newRow[colMap.EMAIL_STATUS-1] = custEmailRes.success ? 'Sent' : 'Failed';
+    if (colMap.EMAIL_SENT_AT) newRow[colMap.EMAIL_SENT_AT-1] = custEmailRes.success ? custSentTime : '';
+
+    // Send owner notification email immediately
+    const ownerEmailRes = sendOwnerEnquiryEmail(submissionId, name, email, mobile, address, message);
+    const ownerSentTime = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd-MMM-yyyy hh:mm:ss a');
+    if (colMap.OWNER_NOTIF_STAT) newRow[colMap.OWNER_NOTIF_STAT-1] = ownerEmailRes.success ? 'Sent' : 'Failed';
+    if (colMap.OWNER_NOTIF_TIME) newRow[colMap.OWNER_NOTIF_TIME-1] = ownerEmailRes.success ? ownerSentTime : '';
+
+    let remarksList = [];
+    if (!custEmailRes.success) remarksList.push('Cust email error: ' + (custEmailRes.error || 'failed'));
+    if (!ownerEmailRes.success) remarksList.push('Owner email error: ' + (ownerEmailRes.error || 'failed'));
+    if (colMap.REMARKS) newRow[colMap.REMARKS-1] = remarksList.join(' | ');
+
     sheet.appendRow(newRow);
-    const rowIndex=sheet.getLastRow();
-
-    // Send owner notification email
-    let ownerStatus='Sent',ownerTime='',remarks='';
-    try{
-      sendOwnerEnquiryEmail(submissionId,name,email,mobile,address,message);
-      ownerTime=Utilities.formatDate(new Date(),CONFIG.TIMEZONE,'dd-MMM-yyyy hh:mm:ss a');
-    }catch(err){ownerStatus='Failed';remarks='Owner email failed: '+err.toString();}
-    if (colMap.OWNER_NOTIF_STAT) sheet.getRange(rowIndex,colMap.OWNER_NOTIF_STAT).setValue(ownerStatus);
-    if(ownerTime && colMap.OWNER_NOTIF_TIME) sheet.getRange(rowIndex,colMap.OWNER_NOTIF_TIME).setValue(ownerTime);
-    if(remarks && colMap.REMARKS)   sheet.getRange(rowIndex,colMap.REMARKS).setValue(remarks);
-
-    lock.releaseLock();
-    const trigger=ScriptApp.newTrigger('sendScheduledCustomerEmail').timeBased().after(CONFIG.DELAY_MINUTES*60*1000).create();
-    PropertiesService.getScriptProperties().setProperty('trigger_'+trigger.getUniqueId(),JSON.stringify({name,email,enqId:submissionId,message}));
-    return jr('success',{message:'Enquiry submitted successfully.',submissionId});
-  }catch(err){if(lock.hasLock())lock.releaseLock();return jr('error','Submission failed: '+err.toString());}
+    logActivity({userId:params.customer_id||'',userName:name,role:'User',action:'ENQUIRY_CREATED',relatedId:submissionId,description:'Contact form enquiry '+submissionId,status:'SUCCESS'});
+    return jr('success',{message:'Enquiry submitted successfully.',submissionId,emails:{customer:custEmailRes,owner:ownerEmailRes}});
+  }catch(err){
+    return jr('error','Submission failed: '+err.toString());
+  }finally{
+    if(lock.hasLock())lock.releaseLock();
+  }
 }
 
 function generateEnquiryId(sheet){
@@ -753,15 +1220,72 @@ function generateEnquiryId(sheet){
   return prefix+('0000'+(maxSeq+1)).slice(-4);
 }
 
-function sendScheduledCustomerEmail(e){
-  const tid=e.triggerUid;const props=PropertiesService.getScriptProperties();const raw=props.getProperty('trigger_'+tid);
-  if(!raw){cleanTrigger(tid);return;}
-  try{const d=JSON.parse(raw);GmailApp.sendEmail(d.email,'Thank You for Contacting Website Builders','',{htmlBody:buildEmailTemplate(d.name,d.enqId,d.message),name:CONFIG.BUSINESS_NAME,replyTo:CONFIG.BUSINESS_EMAIL});}
-  catch(err){Logger.log('Email failed: '+err.toString());}finally{cleanTrigger(tid);}
+function sendEmailSafely(recipient, subject, htmlBody, options){
+  options = options || {};
+  if(!recipient || !recipient.includes('@')){
+    return {success:false, error:'Invalid recipient email address: ' + recipient};
+  }
+  const payload = {
+    to: recipient.trim(),
+    subject: subject,
+    htmlBody: htmlBody,
+    name: options.name || CONFIG.BUSINESS_NAME,
+    replyTo: options.replyTo || CONFIG.BUSINESS_EMAIL
+  };
+
+  // Try standard MailApp first
+  try {
+    MailApp.sendEmail(payload);
+    return {success:true, method:'MailApp'};
+  } catch(err1) {
+    Logger.log('MailApp.sendEmail failed: ' + err1.toString() + ', attempting GmailApp fallback...');
+    // Fallback to GmailApp
+    try {
+      GmailApp.sendEmail(recipient.trim(), subject, '', {
+        htmlBody: htmlBody,
+        name: options.name || CONFIG.BUSINESS_NAME,
+        replyTo: options.replyTo || CONFIG.BUSINESS_EMAIL
+      });
+      return {success:true, method:'GmailApp'};
+    } catch(err2) {
+      Logger.log('GmailApp.sendEmail also failed: ' + err2.toString());
+      return {success:false, error:err2.toString()};
+    }
+  }
 }
 
-function sendOwnerEnquiryEmail(enqId,name,email,mobile,address,message){
-  try{GmailApp.sendEmail(CONFIG.BUSINESS_EMAIL,'New Enquiry - '+enqId,'',{htmlBody:`<div style="font-family:Arial,sans-serif;padding:24px;"><h2 style="color:#1d4ed8;">New Enquiry — ${enqId}</h2><p><b>Name:</b> ${name}</p><p><b>Email:</b> ${email}</p><p><b>Mobile:</b> ${mobile}</p><p><b>Address:</b> ${address||'N/A'}</p><div style="background:#f8fafc;padding:16px;border-left:4px solid #1d4ed8;margin-top:16px;"><b>Message:</b><p>${message}</p></div></div>`,name:'Website Builders Alerts'});}catch(e){}
+function sendCustomerConfirmationEmail(enqId, name, email, message){
+  const subject = 'Thank You for Contacting ' + CONFIG.BUSINESS_NAME + ' [' + enqId + ']';
+  const body = buildEmailTemplate(name, enqId, message);
+  return sendEmailSafely(email, subject, body, {
+    name: CONFIG.BUSINESS_NAME,
+    replyTo: CONFIG.BUSINESS_EMAIL
+  });
+}
+
+function sendOwnerEnquiryEmail(enqId, name, email, mobile, address, message){
+  const subject = 'New Enquiry Received — ' + enqId + ' (' + name + ')';
+  const body = buildOwnerEmailTemplate(enqId, name, email, mobile, address, message);
+  return sendEmailSafely(CONFIG.BUSINESS_EMAIL, subject, body, {
+    name: CONFIG.BUSINESS_NAME + ' Alerts',
+    replyTo: email || CONFIG.BUSINESS_EMAIL
+  });
+}
+
+function buildOwnerEmailTemplate(enqId, name, email, mobile, address, message){
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;}.card{max-width:600px;margin:24px auto;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);}.hdr{background:#0f172a;color:#fff;padding:24px;}.hdr h2{margin:0;font-size:20px;color:#38bdf8;}.content{padding:24px;line-height:1.6;}.field{margin-bottom:12px;}.field b{color:#475569;display:inline-block;width:120px;}.msgbox{background:#f1f5f9;padding:16px;border-left:4px solid #0284c7;border-radius:4px;margin-top:16px;}.footer{background:#f8fafc;padding:16px;text-align:center;font-size:12px;color:#64748b;border-top:1px solid #e2e8f0;}</style></head><body><div class="card"><div class="hdr"><h2>⚡ New Enquiry Received — ${enqId}</h2></div><div class="content"><div class="field"><b>Customer:</b> <strong>${name}</strong></div><div class="field"><b>Email:</b> <a href="mailto:${email}">${email}</a></div><div class="field"><b>Phone:</b> <a href="tel:${mobile}">${mobile}</a></div><div class="field"><b>Address:</b> ${address||'N/A'}</div><div class="msgbox"><b>Message:</b><p style="margin:8px 0 0 0; white-space:pre-wrap;">${message}</p></div></div><div class="footer">Website Builders CRM • Automated Lead Notification</div></div></body></html>`;
+}
+
+function testEmail(recipientEmail){
+  const target = recipientEmail || CONFIG.BUSINESS_EMAIL;
+  Logger.log('Sending test email to: ' + target);
+  const result = sendEmailSafely(
+    target,
+    'Website Builders — Email System Test',
+    '<div style="font-family:sans-serif;padding:20px;"><h2>Email System Functional ✅</h2><p>This test verifies that MailApp/GmailApp is authorized and successfully sending emails from Google Apps Script.</p></div>'
+  );
+  Logger.log('Test Result: ' + JSON.stringify(result));
+  return result;
 }
 
 function syncLegacyUser(u){

@@ -472,7 +472,7 @@
         email: form.email.value.trim(),
         mobile: form.mobile.value.trim(),
         role: form.role.value,
-        status: form.status.value === 'true'
+        status: form.status.value === 'true' ? 'ACTIVE' : 'INACTIVE'
       };
 
       try {
@@ -545,7 +545,7 @@
         const res = await fetch(`/api/super-admin/users/${userId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
+          body: JSON.stringify({ status: newStatus ? 'ACTIVE' : 'INACTIVE' })
         });
         const data = await res.json();
         if (res.ok && (data.status === 'success' || data.success)) {
@@ -846,7 +846,8 @@
       }
       let html = '';
       data.forEach(e => {
-        const statusBadgeClass = e.status === 'NEW' ? 'badge-info' : (e.status === 'CONVERTED' ? 'badge-success' : (e.status === 'REJECTED' || e.status === 'CLOSED' ? 'badge-danger' : 'badge-warning'));
+        const eStatusUpper = (e.status || '').toUpperCase();
+        const statusBadgeClass = eStatusUpper === 'NEW' ? 'badge-info' : (eStatusUpper === 'CONVERTED' ? 'badge-success' : (eStatusUpper === 'REJECTED' || eStatusUpper === 'CLOSED' ? 'badge-danger' : 'badge-warning'));
         const convertedBadge = e.is_converted ? `<span class="badge badge-success"><i class="fa-solid fa-check"></i> ${e.project_id || 'Converted'}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">No</span>';
         
         html += `
@@ -928,7 +929,7 @@
         const res = await fetch(`/api/enquiries/${enquiryId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: status, assigned_staff_id: staffId || null })
+          body: JSON.stringify({ status: status, assigned_to: staffId || '' })
         });
         const data = await res.json();
         if (res.ok && (data.status === 'success' || data.success)) {
@@ -1111,12 +1112,12 @@
       const header = document.getElementById('chat-target-name');
       if (header) header.innerText = `Messaging: ${name} (${role})`;
 
-      if (recipId && !isNaN(recipId)) {
+      if (recipId) {
         try {
           const convRes = await fetch(`/api/messages/conversations/with/${recipId}`);
           const convData = await convRes.json();
-          if (convRes.ok && (convData.status === 'success' || convData.success) && convData.conversation_id) {
-            openConversationThread(convData.conversation_id, `Direct with ${name}`);
+          if (convRes.ok && (convData.status === 'success' || convData.success) && convData.data && convData.data.conversation_id) {
+            openConversationThread(convData.data.conversation_id, `Direct with ${name}`);
             return;
           }
         } catch (err) {
@@ -1190,7 +1191,7 @@
       }
 
       const payload = {
-        recipient_id: activeMessageRecipientId,
+        receiver_id: activeMessageRecipientId,
         conversation_id: activeMessageConvId,
         subject: 'Direct Message',
         body: body

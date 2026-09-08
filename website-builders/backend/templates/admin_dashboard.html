@@ -624,9 +624,25 @@
         const taskRes = await fetch('/api/tasks');
         const taskData = await taskRes.json();
         if((taskData.status === 'success' || taskData.success)) {
-          let openCnt = taskData.data.filter(t => t.status !== 'Completed').length;
+          let openCnt = 0, compCnt = 0, tRows = '';
+          (taskData.data || []).forEach(t => {
+            if (t.status === 'Completed') compCnt++;
+            else openCnt++;
+            const pClass = t.priority === 'Urgent' ? 'badge-danger' : (t.priority === 'High' ? 'badge-warning' : 'badge-info');
+            const sClass = t.status === 'Completed' ? 'badge-success' : 'badge-info';
+            tRows += `<tr>
+              <td><strong>${t.title}</strong></td>
+              <td>${t.assigned_staff_name || 'Unassigned'}</td>
+              <td><span class="badge ${pClass}">${t.priority || 'Normal'}</span></td>
+              <td><span class="badge ${sClass}">${t.status || 'Pending'}</span></td>
+              <td>${t.due_date || 'N/A'}</td>
+            </tr>`;
+          });
           document.getElementById('op-tasks').innerText = openCnt;
           document.getElementById('tp-tasks').innerText = openCnt;
+          if (document.getElementById('op-completed')) document.getElementById('op-completed').innerText = compCnt;
+          if (document.getElementById('tp-completed')) document.getElementById('tp-completed').innerText = compCnt;
+          if (document.getElementById('tbl-tasks')) document.getElementById('tbl-tasks').innerHTML = tRows || '<tr><td colspan="5">No tasks available.</td></tr>';
         }
 
         const webRes = await fetch('/api/websites');
