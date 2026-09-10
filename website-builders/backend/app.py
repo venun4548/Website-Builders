@@ -59,6 +59,11 @@ def call_gas(action: str, data: dict = None, timeout: int = 20) -> dict:
     except requests.exceptions.Timeout:
         logger.error('GAS timeout: %s', action)
         return {'status': 'error', 'message': 'Request timed out. Please retry.'}
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 404:
+            return {'status': 'error', 'message': 'Google Apps Script returned a 404 Not Found. This usually means the deployment URL is invalid, or the script "Who has access" is not set to "Anyone". Please check your GAS_WEB_APP_URL environment variable and Apps Script deployment settings.'}
+        logger.error('GAS HTTP error (%s): %s', action, str(e))
+        return {'status': 'error', 'message': str(e)}
     except Exception as e:
         logger.error('GAS error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
@@ -78,6 +83,11 @@ def gas_get(action: str, params: dict = None, timeout: int = 20) -> dict:
     except requests.exceptions.Timeout:
         logger.error('GAS GET timeout: %s', action)
         return {'status': 'error', 'message': 'Request timed out. Please retry.'}
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 404:
+            return {'status': 'error', 'message': 'Google Apps Script returned a 404 Not Found. This usually means the deployment URL is invalid, or the script "Who has access" is not set to "Anyone". Please check your GAS_WEB_APP_URL environment variable and Apps Script deployment settings.'}
+        logger.error('GAS GET HTTP error (%s): %s', action, str(e))
+        return {'status': 'error', 'message': str(e)}
     except Exception as e:
         logger.error('GAS GET error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
