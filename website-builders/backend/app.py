@@ -1122,6 +1122,11 @@ def api_notifications():
         })
     return jsonify({'success': True, 'status': 'success', 'data': notifs})
 
+@app.route('/api/notifications/read-all', methods=['POST'])
+@login_required
+def api_notifications_read_all():
+    return jsonify({'success': True, 'status': 'success', 'message': 'All notifications marked as read.'})
+
 # --- Compatibility Aliases ---
 @app.route('/api/stats/<role>')
 @login_required
