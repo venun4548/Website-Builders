@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "env": {
+    "GAS_WEB_APP_URL": "https://script.google.com/macros/s/AKfycbzOHqf47OudqBUULE8wLrMv-lWVN8InExF56vd_AL8PlE3zA_u65se3SPbc4P1K6ePkjQ/exec"
+  },
   "builds": [
     {
       "src": "api/index.py",
