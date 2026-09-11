@@ -249,7 +249,8 @@
         const roleClass = u.role === 'Super Admin' ? 'badge-danger' : (u.role === 'Admin' ? 'badge-info' : (u.role === 'Staff' ? 'badge-success' : 'badge-warning'));
         const statusBadge = u.is_active ? '<span class="badge badge-success">ACTIVE</span>' : '<span class="badge badge-danger">INACTIVE</span>';
         const formattedCreated = u.created_at ? u.created_at.split('T')[0] : 'N/A';
-        const assignedStaffBadge = u.assigned_staff_name ? `<span class="badge badge-info"><i class="fa-solid fa-user-check"></i> ${u.assigned_staff_name}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">Unassigned</span>';
+        const isInternal = u.role === 'Admin' || u.role === 'Super Admin' || u.role === 'Staff';
+        const assignedStaffBadge = isInternal ? '' : (u.assigned_staff_name ? `<span class="badge badge-info"><i class="fa-solid fa-user-check"></i> ${u.assigned_staff_name}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">Unassigned</span>');
 
         rows += `
         <tr>
@@ -274,11 +275,11 @@
           <td>${formattedCreated}</td>
           <td><small style="font-weight:600; color:var(--secondary-text);">${u.last_activity || u.last_action || 'Active'}</small></td>
           <td style="text-align:right;">
-            <div class="action-btn-group" style="justify-content:flex-end;">
-              <button class="btn-icon" onclick="openAssignStaffModal('${u.id}')" title="Assign Staff / Team Member">
-                <i class="fa-solid fa-user-plus"></i>
-              </button>
-              <button class="btn-icon" onclick="viewUserDetails('${u.id}')" title="User Details & Real-Time Monitoring">
+              <div class="action-btn-group" style="justify-content:flex-end;">
+                ${isInternal ? '' : `<button class="btn-icon" onclick="openAssignStaffModal('${u.id}')" title="Assign Staff / Team Member">
+                  <i class="fa-solid fa-user-plus"></i>
+                </button>`}
+                <button class="btn-icon" onclick="viewUserDetails('${u.id}')" title="User Details & Real-Time Monitoring">
                 <i class="fa-solid fa-chart-line"></i>
               </button>
               <button class="btn-icon" onclick="openEditUserModal('${u.id}')" title="Edit User">
