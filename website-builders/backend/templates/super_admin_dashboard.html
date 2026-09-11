@@ -2712,7 +2712,10 @@
         return;
       }
       let html = '';
-      data.forEach(e => {
+      data.forEach((e, index) => {
+        if (!e.id && !e.enquiry_id) {
+          e.id = 'TMP-' + index;
+        }
         const statusBadgeClass = e.status === 'NEW' ? 'badge-info' : (e.status === 'CONVERTED' ? 'badge-success' : (e.status === 'REJECTED' || e.status === 'CLOSED' ? 'badge-danger' : 'badge-warning'));
         const convertedBadge = e.is_converted ? `<span class="badge badge-success"><i class="fa-solid fa-check"></i> ${e.project_id || 'Converted'}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">No</span>';
         
@@ -2733,10 +2736,10 @@
           <td><small style="font-weight:600; color:var(--secondary-text);">${e.created_at || 'N/A'}</small></td>
           <td style="text-align:right;">
             <div class="action-btn-group" style="justify-content:flex-end; gap:0.35rem;">
-              <button class="btn-icon" onclick="viewEnquiryDetails('${e.id}')" title="View Enquiry Details">
+              <button class="btn-icon" onclick="viewEnquiryDetails('${e.id || e.enquiry_id}')" title="View Enquiry Details">
                 <i class="fa-solid fa-eye"></i>
               </button>
-              ${!e.is_converted ? `<button class="btn btn-primary btn-sm" onclick="openConvertEnquiryModal('${e.id}')" title="Convert to Project"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert</button>` : ''}
+              ${!e.is_converted ? `<button class="btn btn-primary btn-sm" onclick="openConvertEnquiryModal('${e.id || e.enquiry_id}')" title="Convert to Project"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert</button>` : ''}
             </div>
           </td>
         </tr>`;
