@@ -96,11 +96,11 @@
         </div>
         <div class="meta-item">
           <span class="meta-lbl">Joined Date</span>
-          <span class="meta-val">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Initial Setup' }}</span>
+          <span class="meta-val">{{ user.created_at if user.created_at else 'Initial Setup' }}</span>
         </div>
         <div class="meta-item">
           <span class="meta-lbl">Last Active Login</span>
-          <span class="meta-val">{{ user.last_login.strftime('%Y-%m-%d %H:%M:%S UTC') if user.last_login else 'Active Session' }}</span>
+          <span class="meta-val">{{ user.last_login if user.last_login else 'Active Session' }}</span>
         </div>
       </div>
 
