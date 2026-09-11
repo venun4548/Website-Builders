@@ -499,7 +499,25 @@ def staff_dashboard():
 def customer_dashboard():
     return render_template('customer_dashboard.html', user=current_user)
 
+@app.route('/admin/notifications')
+@app.route('/super-admin/notifications')
+@login_required
+def admin_notifications_redirect():
+    if current_user.role == 'Super Admin':
+        return redirect(url_for('super_admin_dashboard') + '#notifications')
+    return redirect(url_for('admin_dashboard') + '#notifications')
+
+@app.route('/staff/notifications')
+@login_required
+def staff_notifications_redirect():
+    return redirect(url_for('staff_dashboard') + '#notifications')
+
 @app.route('/profile')
+@app.route('/super-admin/profile')
+@app.route('/admin/profile')
+@app.route('/staff/profile')
+@app.route('/customer/profile')
+@app.route('/user/profile')
 @login_required
 def profile():
     role = current_user.role.lower()
