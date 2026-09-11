@@ -62,6 +62,8 @@ def call_gas(action: str, data: dict = None, timeout: int = 20) -> dict:
     except requests.exceptions.HTTPError as e:
         if e.response is not None and e.response.status_code == 404:
             return {'status': 'error', 'message': 'Google Apps Script returned a 404 Not Found. This usually means the deployment URL is invalid, or the script "Who has access" is not set to "Anyone". Please check your GAS_WEB_APP_URL environment variable and Apps Script deployment settings.'}
+        elif e.response is not None and e.response.status_code == 401:
+            return {'status': 'error', 'message': 'Google Apps Script returned a 401 Unauthorized error. You must redeploy your script and ensure "Who has access" is set exactly to "Anyone" (NOT "Anyone with Google Account").'}
         logger.error('GAS HTTP error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
     except Exception as e:
@@ -86,6 +88,8 @@ def gas_get(action: str, params: dict = None, timeout: int = 20) -> dict:
     except requests.exceptions.HTTPError as e:
         if e.response is not None and e.response.status_code == 404:
             return {'status': 'error', 'message': 'Google Apps Script returned a 404 Not Found. This usually means the deployment URL is invalid, or the script "Who has access" is not set to "Anyone". Please check your GAS_WEB_APP_URL environment variable and Apps Script deployment settings.'}
+        elif e.response is not None and e.response.status_code == 401:
+            return {'status': 'error', 'message': 'Google Apps Script returned a 401 Unauthorized error. You must redeploy your script and ensure "Who has access" is set exactly to "Anyone" (NOT "Anyone with Google Account").'}
         logger.error('GAS GET HTTP error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
     except Exception as e:
