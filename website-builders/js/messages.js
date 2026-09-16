@@ -363,9 +363,12 @@ function loadRecipients() {
         select.innerHTML = '<option value="">Select a recipient...</option>' + recipients.map(r => 
           `<option value="${r.user_id}">${r.full_name} (${r.role})</option>`
         ).join('');
+      } else {
+        select.innerHTML = `<option value="">Error: ${parsed.message}</option>`;
       }
     } catch(e) {
       console.error(e);
+      select.innerHTML = '<option value="">Failed to parse response</option>';
     }
   }).doGet({
     action: 'getRecipients',

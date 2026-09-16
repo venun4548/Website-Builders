@@ -1084,17 +1084,7 @@ function getConvWithUser(p){
   return jr('success',{conversation_id:findExistingConversation(p.user_id,p.other_user_id)});
 }
 
-function getRecipients(p){
-  const role=(p.role||'').toLowerCase();const uid=String(p.user_id||'');
-  const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);const last=sheet.getLastRow();
-  if(last<2) return jr('success',[]);
-  const users=sheet.getRange(2,1,last-1,U.TOTAL).getValues().map(r=>userRowToDict(r)).filter(u=>u.user_id&&u.is_active&&u.user_id!==uid);
-  const r=[];
-  if(role==='super admin'||role==='admin'){users.forEach(u=>r.push({id:u.user_id,name:u.full_name,email:u.email,role:u.role,type:'INDIVIDUAL'}));r.push({id:'TEAM_OPERATIONS',name:'Operations Staff Team',role:'TEAM',type:'TEAM'});}
-  else if(role==='staff'){users.filter(u=>['Super Admin','Admin'].includes(u.role)).forEach(u=>r.push({id:u.user_id,name:u.full_name,email:u.email,role:u.role,type:'INDIVIDUAL'}));r.push({id:'TEAM_OPERATIONS',name:'Operations Team',role:'TEAM',type:'TEAM'});}
-  else{users.filter(u=>['Super Admin','Admin','Staff'].includes(u.role)).forEach(u=>r.push({id:u.user_id,name:u.full_name,email:u.email,role:u.role,type:'INDIVIDUAL'}));}
-  return jr('success',r);
-}
+
 
 function msgRowToDict(r){
   const body=String(r[M.BODY-1]||'');const created=String(r[M.CREATED_DATE-1])+' '+String(r[M.CREATED_TIME-1]);
@@ -1642,38 +1632,7 @@ function getMessageStats(p) {
   });
 }
 
-function getRecipients(p) {
-  p = p || {};
-  if (!p.user_id) return jr('error', 'User ID required.');
-  const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
-  const uRow = findRowByValue(uSheet, U.ID, p.user_id);
-  if (uRow < 0) return jr('error', 'User not found.');
-  const role = normalizeRole(uSheet.getRange(uRow, U.ROLE).getValue());
-  const assignedStaff = String(uSheet.getRange(uRow, U.ASSIGNED_STAFF).getValue());
-  
-  const usersReq = JSON.parse(getUsers({ active_only: 'true' }).getContent());
-  if (usersReq.status !== 'success') return jr('error', usersReq.message);
-  let allUsers = usersReq.data;
-  
-  let recipients = [];
-  if (role === 'Super Admin' || role === 'Admin') {
-    recipients = allUsers.filter(u => u.user_id !== p.user_id);
-  } else if (role === 'Staff') {
-    recipients = allUsers.filter(u => {
-      if (u.user_id === p.user_id) return false;
-      if (u.role === 'Super Admin' || u.role === 'Admin' || u.role === 'Staff') return true;
-      if (u.role === 'User' && u.assigned_staff_id === p.user_id) return true;
-      return false;
-    });
-  } else if (role === 'User') {
-    recipients = allUsers.filter(u => {
-      if (u.role === 'Admin') return true;
-      if (u.role === 'Staff' && u.user_id === assignedStaff) return true;
-      return false;
-    });
-  }
-  return jr('success', recipients);
-}
+
 
 // ─────────────── UTILITIES ────────────────────────────────────
 function hashPassword(password,salt){
@@ -1732,3 +1691,68 @@ function jr(status,data){const o={status};if(status==='success')o.data=data;else
 function cleanTrigger(tid){PropertiesService.getScriptProperties().deleteProperty('trigger_'+tid);ScriptApp.getProjectTriggers().forEach(t=>{if(t.getUniqueId()===tid)ScriptApp.deleteTrigger(t);});}
 
 function buildEmailTemplate(name,id,msg){return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;background:#f1f5f9;}.wrapper{max-width:620px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.12);}.header{background:linear-gradient(135deg,#1d4ed8,#7c3aed);padding:40px;text-align:center;color:#fff;font-size:26px;font-weight:800;}.body{padding:40px;}.cta-btn{display:inline-block;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff!important;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:700;}.footer{background:#0f172a;padding:28px;text-align:center;color:#64748b;font-size:12px;}</style></head><body><div class="wrapper"><div class="header">Website <span style="color:#34d399;">Builders</span></div><div class="body"><h2>Thank You, ${name}!</h2><p style="margin:16px 0;">Your enquiry <strong>${id}</strong> has been received. We'll respond within 24–48 hours.</p><p style="margin:16px 0;"><em>"${msg.length>80?msg.substring(0,80)+'...':msg}"</em></p><div style="text-align:center;margin:32px 0;"><a href="${CONFIG.BUSINESS_WEBSITE}" class="cta-btn">Visit Our Website</a></div></div><div class="footer">© ${new Date().getFullYear()} Website Builders • ${CONFIG.BUSINESS_WEBSITE}</div></div></body></html>`;}
+
+
+function getRecipients(p) {
+  p = p || {};
+  if (!p.user_id) return jr('error', 'User ID required.');
+  
+  const uid = String(p.user_id);
+  const sheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  const allUsers = sheet.getRange(2, 1, last - 1, U.TOTAL).getValues().map(r => userRowToDict(r)).filter(u => u.user_id && u.is_active);
+  
+  const caller = allUsers.find(u => String(u.user_id) === uid);
+  if (!caller) return jr('error', 'User not found.');
+  
+  const role = String(caller.role || '').toLowerCase();
+  const assignedStaff = String(caller.assigned_staff_id || '');
+  
+  const r = [];
+  
+  if (role === 'super admin' || role === 'admin') {
+    // Admin can message anyone except themselves
+    allUsers.filter(u => String(u.user_id) !== uid).forEach(u => r.push({
+      user_id: u.user_id,
+      full_name: u.full_name,
+      email: u.email,
+      role: u.role
+    }));
+  } else if (role === 'staff') {
+    // Staff can message super admin, admin, and clients (Users). They shouldn't message other staff, but the prompt says they can communicate with clients, admins, super admin. Let's allow everyone except themselves, maybe other staff too.
+    allUsers.filter(u => String(u.user_id) !== uid).forEach(u => {
+      // Actually let's just let staff message anyone except themselves.
+      r.push({
+        user_id: u.user_id,
+        full_name: u.full_name,
+        email: u.email,
+        role: u.role
+      });
+    });
+  } else if (role === 'user' || role === 'client' || role === 'customer') {
+    // Client can ONLY message Admin and their Assigned Staff
+    allUsers.forEach(u => {
+      const uRole = String(u.role || '').toLowerCase();
+      if (uRole === 'admin' || uRole === 'super admin') {
+        r.push({
+          user_id: u.user_id,
+          full_name: u.full_name,
+          email: u.email,
+          role: u.role
+        });
+      } else if (uRole === 'staff' && String(u.user_id) === assignedStaff) {
+        r.push({
+          user_id: u.user_id,
+          full_name: u.full_name,
+          email: u.email,
+          role: u.role
+        });
+      }
+    });
+  }
+  
+  return jr('success', r);
+}
+
