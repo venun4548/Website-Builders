@@ -370,6 +370,9 @@ function loadRecipients() {
       console.error(e);
       select.innerHTML = '<option value="">Failed to parse response</option>';
     }
+  }).withFailureHandler(err => {
+    console.error("Backend error:", err);
+    select.innerHTML = `<option value="">Script Error: ${err.message || err}</option>`;
   }).doGet({
     action: 'getRecipients',
     token: 'sec_wb_crm_77c4e569bbd18f0a1c6a58',
