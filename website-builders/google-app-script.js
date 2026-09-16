@@ -39,7 +39,7 @@ const T={ID:1,PROJ_ID:2,PROJ_NAME:3,TITLE:4,DESC:5,STAFF_ID:6,STAFF_NAME:7,PRIOR
 
 const HEADERS={
   Users:['User ID','Full Name','Email','Mobile Number','Password Hash','Role','Status','Created Date','Created Time','Last Login Date','Last Login Time','Last Activity Date','Last Activity Time','Updated Date','Updated Time','Assigned Staff ID'],
-  Messages:['Message ID','Conversation ID','Sender ID','Sender Name','Sender Role','Receiver ID','Receiver Name','Receiver Role','Recipient Type','Message Type','Project ID','Customer ID','Subject','Message','Attachment URL','Status','Read At','Created Date','Created Time','Last Updated'],
+  Messages:['Message ID','Conversation ID','Sender ID','Sender Name','Sender Role','Receiver ID','Receiver Name','Receiver Role','Project ID','Customer ID','Subject','Message','Status','Read At','Created Date','Created Time','Last Updated','Deleted By Sender','Deleted By Receiver','Deleted Date','Deleted Time'],
   Enquiries:['Submission ID','Timestamp','Customer Name','Email','Mobile Number','Address','Message','Email Status','Email Sent At','Owner Notification Status','Owner Notification Time','Ticket Status','Assigned To','Followup Date','Followup Status','Source Page','Remarks','Customer ID','Project ID'],
   Projects:['Project ID','Customer ID','Customer Name','Project Name','Description','Current Stage','Progress','Expected Delivery Date','Status','Created By','Created Date','Created Time','Updated Date','Updated Time','Latest Update'],
   ProjectAssignments:['Assignment ID','Project ID','Staff ID','Staff Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Status'],
@@ -148,6 +148,8 @@ function doPost(e){
       if(action==='assignStaffToUser')return assignStaffToUser(data);
       if(action==='sendMessage')      return sendMessage(data);
       if(action==='markMessageRead')  return markMessageRead(data);
+      if(action==='deleteMessageForMe') return deleteMessageForMe(data);
+      if(action==='deleteConversationForMe') return deleteConversationForMe(data);
       if(action==='logActivity')      return logActivity(data);
       if(action==='sync_user')        return syncLegacyUser(data);
       if(action==='sync_message')     return sendMessage({sender_id:data.sender_id,sender_name:data.sender_name,sender_role:data.sender_role,receiver_id:data.receiver_id,receiver_name:data.receiver_name,receiver_role:data.receiver_role,conversation_id:data.conversation_id,body:data.body||data.message,subject:data.subject,project_id:data.project_id,customer_id:data.customer_id,recipient_type:data.recipient_type,message_type:data.message_type});
@@ -1299,6 +1301,378 @@ function syncLegacyUser(u){
     const now=getNow();sheet.getRange(row,U.UPD_DATE).setValue(now.date);sheet.getRange(row,U.UPD_TIME).setValue(now.time);
   }
   return jr('success','User synced.');
+}
+
+// ─────────────── MESSAGING SYSTEM ────────────────────────────
+function getMessageColMap(sheet){
+  const fallback = Object.assign({}, M);
+  const lastCol = sheet.getLastColumn();
+  if (sheet.getLastRow() < 1 || lastCol < 1) return fallback;
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const colMap = {};
+  headers.forEach((h, idx) => {
+    const raw = String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!raw) return;
+    const col1 = idx + 1;
+    if (raw === 'messageid' || raw === 'id') colMap.ID = col1;
+    else if (raw === 'conversationid' || raw === 'convid') colMap.CONV_ID = col1;
+    else if (raw === 'senderid') colMap.SENDER_ID = col1;
+    else if (raw === 'sendername') colMap.SENDER_NAME = col1;
+    else if (raw === 'senderrole') colMap.SENDER_ROLE = col1;
+    else if (raw === 'receiverid' || raw === 'recvid') colMap.RECV_ID = col1;
+    else if (raw === 'receivername' || raw === 'recvname') colMap.RECV_NAME = col1;
+    else if (raw === 'receiverrole' || raw === 'recvrole') colMap.RECV_ROLE = col1;
+    else if (raw === 'projectid') colMap.PROJ_ID = col1;
+    else if (raw === 'customerid') colMap.CUST_ID = col1;
+    else if (raw === 'subject') colMap.SUBJECT = col1;
+    else if (raw === 'message' || raw === 'body') colMap.BODY = col1;
+    else if (raw === 'status') colMap.STATUS = col1;
+    else if (raw === 'readat') colMap.READ_AT = col1;
+    else if (raw === 'createddate') colMap.CREATED_DATE = col1;
+    else if (raw === 'createdtime') colMap.CREATED_TIME = col1;
+    else if (raw === 'lastupdated') colMap.UPDATED = col1;
+    else if (raw === 'deletedbysender') colMap.DEL_SENDER = col1;
+    else if (raw === 'deletedbyreceiver') colMap.DEL_RECV = col1;
+    else if (raw === 'deleteddate') colMap.DEL_DATE = col1;
+    else if (raw === 'deletedtime') colMap.DEL_TIME = col1;
+  });
+  return Object.assign({}, fallback, colMap, { TOTAL: Math.max(lastCol, M.TOTAL) });
+}
+
+function sendMessage(d) {
+  d = d || {};
+  if (!d.sender_id || !d.receiver_id || !d.message) return jr('error', 'Sender, receiver, and message are required.');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+    const sRow = findRowByValue(uSheet, U.ID, d.sender_id);
+    const rRow = findRowByValue(uSheet, U.ID, d.receiver_id);
+    if (sRow < 0) return jr('error', 'Sender not found.');
+    if (rRow < 0) return jr('error', 'Receiver not found.');
+    
+    const senderRole = normalizeRole(uSheet.getRange(sRow, U.ROLE).getValue());
+    const recvRole = normalizeRole(uSheet.getRange(rRow, U.ROLE).getValue());
+    const senderName = uSheet.getRange(sRow, U.NAME).getValue();
+    const recvName = uSheet.getRange(rRow, U.NAME).getValue();
+
+    if (senderRole === 'User') {
+      const senderAssignedStaff = String(uSheet.getRange(sRow, U.ASSIGNED_STAFF).getValue());
+      if (recvRole === 'User') return jr('error', 'Clients cannot message other clients.');
+      if (recvRole === 'Staff' && senderAssignedStaff !== d.receiver_id) return jr('error', 'You can only message your assigned staff.');
+    }
+
+    const sheet = getOrCreateSheet(SHEETS.MESSAGES, HEADERS.Messages);
+    const colMap = getMessageColMap(sheet);
+    const msgId = generateId('MSG', SHEETS.MESSAGES, colMap.ID || M.ID);
+    let convId = d.conversation_id;
+    if (!convId) {
+      convId = findExistingConversation(d.sender_id, d.receiver_id);
+      if (!convId) convId = generateConvId();
+    }
+    
+    const now = getNow();
+    const maxCols = Math.max(sheet.getLastColumn(), HEADERS.Messages.length);
+    const newRow = new Array(maxCols).fill('');
+    
+    if (colMap.ID) newRow[colMap.ID-1] = msgId;
+    if (colMap.CONV_ID) newRow[colMap.CONV_ID-1] = convId;
+    if (colMap.SENDER_ID) newRow[colMap.SENDER_ID-1] = d.sender_id;
+    if (colMap.SENDER_NAME) newRow[colMap.SENDER_NAME-1] = senderName;
+    if (colMap.SENDER_ROLE) newRow[colMap.SENDER_ROLE-1] = senderRole;
+    if (colMap.RECV_ID) newRow[colMap.RECV_ID-1] = d.receiver_id;
+    if (colMap.RECV_NAME) newRow[colMap.RECV_NAME-1] = recvName;
+    if (colMap.RECV_ROLE) newRow[colMap.RECV_ROLE-1] = recvRole;
+    if (colMap.PROJ_ID) newRow[colMap.PROJ_ID-1] = d.project_id || '';
+    if (colMap.CUST_ID) newRow[colMap.CUST_ID-1] = d.customer_id || '';
+    if (colMap.SUBJECT) newRow[colMap.SUBJECT-1] = d.subject || '';
+    if (colMap.BODY) newRow[colMap.BODY-1] = d.message;
+    if (colMap.STATUS) newRow[colMap.STATUS-1] = 'UNREAD';
+    if (colMap.CREATED_DATE) newRow[colMap.CREATED_DATE-1] = now.date;
+    if (colMap.CREATED_TIME) newRow[colMap.CREATED_TIME-1] = now.time;
+    if (colMap.UPDATED) newRow[colMap.UPDATED-1] = now.date + ' ' + now.time;
+
+    sheet.appendRow(newRow);
+    return jr('success', { message: 'Message sent successfully', message_id: msgId, conversation_id: convId });
+  } finally { lock.releaseLock(); }
+}
+
+function getMessages(p) {
+  p = p || {};
+  if (!p.user_id) return jr('error', 'User ID required.');
+  const sheet = getOrCreateSheet(SHEETS.MESSAGES, HEADERS.Messages);
+  const colMap = getMessageColMap(sheet);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  const totalCols = Math.max(sheet.getLastColumn(), colMap.TOTAL || M.TOTAL);
+  const rawRows = sheet.getRange(2, 1, last - 1, totalCols).getValues();
+  
+  let messages = rawRows.map(r => {
+    return {
+      message_id: String(r[colMap.ID-1]||''),
+      conversation_id: String(r[colMap.CONV_ID-1]||''),
+      sender_id: String(r[colMap.SENDER_ID-1]||''),
+      sender_name: String(r[colMap.SENDER_NAME-1]||''),
+      sender_role: String(r[colMap.SENDER_ROLE-1]||''),
+      receiver_id: String(r[colMap.RECV_ID-1]||''),
+      receiver_name: String(r[colMap.RECV_NAME-1]||''),
+      receiver_role: String(r[colMap.RECV_ROLE-1]||''),
+      project_id: String(r[colMap.PROJ_ID-1]||''),
+      customer_id: String(r[colMap.CUST_ID-1]||''),
+      subject: String(r[colMap.SUBJECT-1]||''),
+      message: String(r[colMap.BODY-1]||''),
+      status: String(r[colMap.STATUS-1]||''),
+      read_at: String(r[colMap.READ_AT-1]||''),
+      created_date: String(r[colMap.CREATED_DATE-1]||''),
+      created_time: String(r[colMap.CREATED_TIME-1]||''),
+      deleted_by_sender: String(r[colMap.DEL_SENDER-1]||'').toUpperCase() === 'TRUE',
+      deleted_by_receiver: String(r[colMap.DEL_RECV-1]||'').toUpperCase() === 'TRUE'
+    };
+  }).filter(m => m.message_id);
+
+  messages = messages.filter(m => {
+    if (m.sender_id === p.user_id && !m.deleted_by_sender) return true;
+    if (m.receiver_id === p.user_id && !m.deleted_by_receiver) return true;
+    return false;
+  });
+
+  if (p.conversation_id) messages = messages.filter(m => m.conversation_id === p.conversation_id);
+  if (p.type === 'inbox') messages = messages.filter(m => m.receiver_id === p.user_id);
+  if (p.type === 'sent') messages = messages.filter(m => m.sender_id === p.user_id);
+  if (p.status) messages = messages.filter(m => m.status.toLowerCase() === p.status.toLowerCase());
+
+  return jr('success', messages);
+}
+
+function getConversationThread(p) {
+  p = p || {};
+  if (!p.conversation_id || !p.user_id) return jr('error', 'Conversation ID and User ID required.');
+  
+  const msgsReq = JSON.parse(getMessages({ user_id: p.user_id, conversation_id: p.conversation_id }).getContent());
+  if (msgsReq.status !== 'success') return jr('error', msgsReq.message);
+  
+  const messages = msgsReq.data;
+  messages.sort((a, b) => {
+    const timeA = new Date(a.created_date.split('-').reverse().join('-') + 'T' + a.created_time);
+    const timeB = new Date(b.created_date.split('-').reverse().join('-') + 'T' + b.created_time);
+    return timeA - timeB;
+  });
+  return jr('success', messages);
+}
+
+function getConversations(p) {
+  p = p || {};
+  if (!p.user_id) return jr('error', 'User ID required.');
+  const msgsReq = JSON.parse(getMessages(p).getContent());
+  if (msgsReq.status !== 'success') return jr('error', msgsReq.message);
+  
+  const messages = msgsReq.data;
+  const convMap = {};
+  
+  messages.forEach(m => {
+    if (!convMap[m.conversation_id]) {
+      convMap[m.conversation_id] = {
+        conversation_id: m.conversation_id,
+        participant_id: m.sender_id === p.user_id ? m.receiver_id : m.sender_id,
+        participant_name: m.sender_id === p.user_id ? m.receiver_name : m.sender_name,
+        participant_role: m.sender_id === p.user_id ? m.receiver_role : m.sender_role,
+        project_id: m.project_id,
+        customer_id: m.customer_id,
+        latest_message: m,
+        unread_count: 0,
+        messages: []
+      };
+    }
+    const c = convMap[m.conversation_id];
+    c.messages.push(m);
+    if (m.receiver_id === p.user_id && m.status.toUpperCase() === 'UNREAD') {
+      c.unread_count++;
+    }
+    if (m.created_date + ' ' + m.created_time > c.latest_message.created_date + ' ' + c.latest_message.created_time) {
+      c.latest_message = m;
+    }
+  });
+
+  return jr('success', Object.values(convMap).sort((a,b) => {
+    const timeA = new Date(a.latest_message.created_date.split('-').reverse().join('-') + 'T' + a.latest_message.created_time);
+    const timeB = new Date(b.latest_message.created_date.split('-').reverse().join('-') + 'T' + b.latest_message.created_time);
+    return timeB - timeA;
+  }));
+}
+
+function markMessageRead(d) {
+  d = d || {};
+  if (!d.message_id && !d.conversation_id) return jr('error', 'Message ID or Conversation ID required.');
+  if (!d.user_id) return jr('error', 'User ID required.');
+  
+  const sheet = getOrCreateSheet(SHEETS.MESSAGES, HEADERS.Messages);
+  const colMap = getMessageColMap(sheet);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', { message: 'No messages to update' });
+  
+  const rawRows = sheet.getRange(2, 1, last - 1, Math.max(sheet.getLastColumn(), colMap.TOTAL || M.TOTAL)).getValues();
+  const now = getNow();
+  let updatedCount = 0;
+  
+  rawRows.forEach((r, idx) => {
+    const rowNum = idx + 2;
+    const msgId = String(r[colMap.ID-1]||'');
+    const convId = String(r[colMap.CONV_ID-1]||'');
+    const recvId = String(r[colMap.RECV_ID-1]||'');
+    const status = String(r[colMap.STATUS-1]||'').toUpperCase();
+    
+    if (recvId === d.user_id && status === 'UNREAD') {
+      if ((d.message_id && msgId === d.message_id) || (d.conversation_id && convId === d.conversation_id)) {
+        sheet.getRange(rowNum, colMap.STATUS).setValue('READ');
+        if (colMap.READ_AT) sheet.getRange(rowNum, colMap.READ_AT).setValue(now.date + ' ' + now.time);
+        updatedCount++;
+      }
+    }
+  });
+  
+  return jr('success', { message: `Marked ${updatedCount} messages as read.` });
+}
+
+function deleteMessageForMe(d) {
+  d = d || {};
+  if (!d.message_id || !d.user_id) return jr('error', 'Message ID and User ID required.');
+  const sheet = getOrCreateSheet(SHEETS.MESSAGES, HEADERS.Messages);
+  const colMap = getMessageColMap(sheet);
+  const row = findRowByValue(sheet, colMap.ID || M.ID, d.message_id);
+  if (row < 0) return jr('error', 'Message not found.');
+  
+  const senderId = String(sheet.getRange(row, colMap.SENDER_ID).getValue());
+  const recvId = String(sheet.getRange(row, colMap.RECV_ID).getValue());
+  const now = getNow();
+  
+  if (d.user_id === senderId) {
+    if (colMap.DEL_SENDER) sheet.getRange(row, colMap.DEL_SENDER).setValue('TRUE');
+  } else if (d.user_id === recvId) {
+    if (colMap.DEL_RECV) sheet.getRange(row, colMap.DEL_RECV).setValue('TRUE');
+  } else {
+    return jr('error', 'Not authorized to delete this message.');
+  }
+  
+  if (colMap.DEL_DATE) sheet.getRange(row, colMap.DEL_DATE).setValue(now.date);
+  if (colMap.DEL_TIME) sheet.getRange(row, colMap.DEL_TIME).setValue(now.time);
+  
+  return jr('success', { message: 'Message deleted for you.' });
+}
+
+function deleteConversationForMe(d) {
+  d = d || {};
+  if (!d.conversation_id || !d.user_id) return jr('error', 'Conversation ID and User ID required.');
+  const sheet = getOrCreateSheet(SHEETS.MESSAGES, HEADERS.Messages);
+  const colMap = getMessageColMap(sheet);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', { message: 'No messages found.' });
+  
+  const rawRows = sheet.getRange(2, 1, last - 1, Math.max(sheet.getLastColumn(), colMap.TOTAL || M.TOTAL)).getValues();
+  const now = getNow();
+  let updatedCount = 0;
+  
+  rawRows.forEach((r, idx) => {
+    const rowNum = idx + 2;
+    const convId = String(r[colMap.CONV_ID-1]||'');
+    if (convId === d.conversation_id) {
+      const senderId = String(r[colMap.SENDER_ID-1]||'');
+      const recvId = String(r[colMap.RECV_ID-1]||'');
+      let changed = false;
+      if (d.user_id === senderId) {
+        if (colMap.DEL_SENDER) { sheet.getRange(rowNum, colMap.DEL_SENDER).setValue('TRUE'); changed = true; }
+      }
+      if (d.user_id === recvId) {
+        if (colMap.DEL_RECV) { sheet.getRange(rowNum, colMap.DEL_RECV).setValue('TRUE'); changed = true; }
+      }
+      if (changed) {
+        if (colMap.DEL_DATE) sheet.getRange(rowNum, colMap.DEL_DATE).setValue(now.date);
+        if (colMap.DEL_TIME) sheet.getRange(rowNum, colMap.DEL_TIME).setValue(now.time);
+        updatedCount++;
+      }
+    }
+  });
+  
+  return jr('success', { message: `Deleted ${updatedCount} messages in conversation for you.` });
+}
+
+function searchMessages(p) {
+  p = p || {};
+  if (!p.user_id || !p.query) return jr('error', 'User ID and search query required.');
+  const msgsReq = JSON.parse(getMessages(p).getContent());
+  if (msgsReq.status !== 'success') return jr('error', msgsReq.message);
+  
+  const q = p.query.toLowerCase();
+  const results = msgsReq.data.filter(m => {
+    return (m.message && m.message.toLowerCase().includes(q)) ||
+           (m.subject && m.subject.toLowerCase().includes(q)) ||
+           (m.sender_name && m.sender_name.toLowerCase().includes(q)) ||
+           (m.receiver_name && m.receiver_name.toLowerCase().includes(q)) ||
+           (m.project_id && m.project_id.toLowerCase().includes(q)) ||
+           (m.conversation_id && m.conversation_id.toLowerCase().includes(q));
+  });
+  return jr('success', results);
+}
+
+function getMessageStats(p) {
+  p = p || {};
+  if (!p.user_id) return jr('error', 'User ID required.');
+  const msgsReq = JSON.parse(getMessages(p).getContent());
+  if (msgsReq.status !== 'success') return jr('error', msgsReq.message);
+  
+  let inboxCount = 0;
+  let unreadCount = 0;
+  let sentCount = 0;
+  const convSet = new Set();
+  
+  msgsReq.data.forEach(m => {
+    convSet.add(m.conversation_id);
+    if (m.receiver_id === p.user_id) {
+      inboxCount++;
+      if (m.status.toUpperCase() === 'UNREAD') unreadCount++;
+    }
+    if (m.sender_id === p.user_id) {
+      sentCount++;
+    }
+  });
+  
+  return jr('success', {
+    inbox: inboxCount,
+    unread: unreadCount,
+    sent: sentCount,
+    conversations: convSet.size
+  });
+}
+
+function getRecipients(p) {
+  p = p || {};
+  if (!p.user_id) return jr('error', 'User ID required.');
+  const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+  const uRow = findRowByValue(uSheet, U.ID, p.user_id);
+  if (uRow < 0) return jr('error', 'User not found.');
+  const role = normalizeRole(uSheet.getRange(uRow, U.ROLE).getValue());
+  const assignedStaff = String(uSheet.getRange(uRow, U.ASSIGNED_STAFF).getValue());
+  
+  const usersReq = JSON.parse(getUsers({ active_only: 'true' }).getContent());
+  if (usersReq.status !== 'success') return jr('error', usersReq.message);
+  let allUsers = usersReq.data;
+  
+  let recipients = [];
+  if (role === 'Super Admin' || role === 'Admin') {
+    recipients = allUsers.filter(u => u.user_id !== p.user_id);
+  } else if (role === 'Staff') {
+    recipients = allUsers.filter(u => {
+      if (u.user_id === p.user_id) return false;
+      if (u.role === 'Super Admin' || u.role === 'Admin' || u.role === 'Staff') return true;
+      if (u.role === 'User' && u.assigned_staff_id === p.user_id) return true;
+      return false;
+    });
+  } else if (role === 'User') {
+    recipients = allUsers.filter(u => {
+      if (u.role === 'Admin') return true;
+      if (u.role === 'Staff' && u.user_id === assignedStaff) return true;
+      return false;
+    });
+  }
+  return jr('success', recipients);
 }
 
 // ─────────────── UTILITIES ────────────────────────────────────

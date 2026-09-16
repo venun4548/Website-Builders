@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Project Portal - Website Builders</title>
+  <link rel="stylesheet" href="/css/messages.css">
   
   <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -335,30 +336,89 @@
       
       <div id="section-messages" style="display: none;">
         <h1 class="page-title"><i class="fa-solid fa-envelope"></i> Project & Support Messages</h1>
-        <div style="display:grid; grid-template-columns: 280px 1fr; background:#FFF; border:1px solid var(--border); border-radius:12px; height:600px; overflow:hidden;">
-          <div style="border-right:1px solid var(--border); display:flex; flex-direction:column;">
-            <div style="padding:1rem; font-weight:800; border-bottom:1px solid var(--border); font-size:0.85rem; background:#F8FAFC; color:var(--text-main);">
-              <i class="fa-solid fa-users"></i> Contacts & Conversations
+        <div class="messages-container">
+          <div class="messages-sidebar">
+            <div class="messages-sidebar-header">
+              <h3>Messages <span id="badge-unread" class="unread-badge" style="display:none">0</span></h3>
+              <button class="btn-new-message" onclick="openNewMessageModal()"><i class="fa-solid fa-pen-to-square"></i> New</button>
             </div>
-            <div id="cust-chat-contacts-list" style="flex:1; overflow-y:auto;">
-              <p style="padding:1rem; color:var(--text-secondary);">Loading contacts...</p>
+            <div class="messages-filters">
+              <button class="msg-filter-btn active" onclick="setFilter('all')">All</button>
+              <button class="msg-filter-btn" onclick="setFilter('unread')">Unread</button>
+              <button class="msg-filter-btn" onclick="setFilter('inbox')">Inbox <span id="badge-inbox" style="display:none">0</span></button>
+              <button class="msg-filter-btn" onclick="setFilter('sent')">Sent <span id="badge-sent" style="display:none">0</span></button>
+            </div>
+            <div class="messages-search">
+              <div class="messages-search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="msg-search" placeholder="Search conversations..." onkeyup="doMsgSearch()">
+              </div>
+            </div>
+            <div class="conversation-list" id="conversation-list">
+              <!-- Conversations will load here -->
             </div>
           </div>
-          <div style="display:flex; flex-direction:column; background:#FAFAFA;">
-            <div style="padding:1rem; border-bottom:1px solid var(--border); background:#FFF; font-weight:700;" id="cust-chat-target-name">
-              Select a conversation to start messaging
+          
+          <div class="messages-main">
+            <div class="chat-header" id="chat-header" style="display:none">
+              <!-- Chat header will load here -->
             </div>
-            <div id="cust-chat-messages-body" style="flex:1; padding:1.25rem; overflow-y:auto;">
-              <p style="text-align:center; padding:2rem; color:var(--text-secondary);">No conversation selected.</p>
+            <div class="chat-history" id="chat-history">
+              <div class="messages-empty-state">
+                <i class="fa-solid fa-messages"></i>
+                <p>Select a conversation to start messaging</p>
+              </div>
             </div>
-            <form onsubmit="sendCustMessageFromHub(event)" style="display:flex; padding:0.75rem; background:#FFF; border-top:1px solid var(--border); gap:0.5rem;">
-              <input type="text" id="cust-chat-input-text" placeholder="Type your message..." style="flex:1; padding:0.65rem 1rem; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;">
-              <button type="submit" class="btn btn-primary" style="padding:0.65rem 1.25rem; border-radius:8px;"><i class="fa-solid fa-paper-plane"></i> Send</button>
-            </form>
+            <div class="chat-composer" id="chat-composer" style="display:none">
+              <form class="composer-form" onsubmit="event.preventDefault(); sendReply();">
+                <div class="composer-input-wrapper">
+                  <textarea id="msg-input" placeholder="Type a message..." required></textarea>
+                </div>
+                <button type="submit" class="btn-send" id="btn-send" title="Send Message">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
+        
+        <!-- Compose Modal -->
+        <div class="compose-modal" id="compose-modal">
+          <div class="compose-content">
+            <div class="compose-header">
+              <h3>New Message</h3>
+              <button type="button" class="btn-close-modal" onclick="closeNewMessageModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="compose-body">
+              <form id="form-compose" onsubmit="sendNewMessage(event)">
+                <div class="form-group">
+                  <label>Recipient</label>
+                  <select id="compose-recipient" required>
+                    <option value="">Loading...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Project ID (Optional)</label>
+                  <input type="text" id="compose-project" placeholder="e.g. WB-2026-001">
+                </div>
+                <div class="form-group">
+                  <label>Subject</label>
+                  <input type="text" id="compose-subject" placeholder="Message subject" required>
+                </div>
+                <div class="form-group">
+                  <label>Message</label>
+                  <textarea id="compose-message" rows="4" placeholder="Type your message here..." required></textarea>
+                </div>
+                <div class="compose-footer">
+                  <button type="button" class="btn-cancel" onclick="closeNewMessageModal()">Cancel</button>
+                  <button type="submit" class="btn-new-message" id="btn-send-new">Send Message</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
       </div>
-
       <!-- Dedicated Section: Projects -->
       <div id="section-projects" style="display: none;">
         <h1 class="page-title">My Projects & Deliverables</h1>
@@ -745,5 +805,6 @@
       fetchClientProjects();
     });
   </script>
+  <script src="/js/messages.js"></script>
 </body>
 </html>
