@@ -24,6 +24,7 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) {
             .then(res => {
               // The python backend already parsed the JSON from GAS.
               // But our JS expects a JSON string because google.script.run returned stringified JSON.
+              if (res.success && !res.status) res.status = 'success';
               successCb(JSON.stringify(res));
             })
             .catch(e => {
