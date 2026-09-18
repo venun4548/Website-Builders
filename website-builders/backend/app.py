@@ -1182,23 +1182,11 @@ def api_sa_user_reset(user_id):
 def api_sa_audit():
     return api_get_activity()
 
-import app
 import models
 from flask_login import login_user
 from flask import g
 
-@app.app.before_request
-def fake_login():
-    from flask import request
-    if request.path.startswith('/super-admin') or request.path.startswith('/api'):
-        user = models.SheetsUser({'id': 'USR-999', 'user_id': 'USR-999', 'email': 'admin@test.com', 'role': 'Super Admin', 'is_active': True})
-        login_user(user)
-import app
-import models
-from flask_login import login_user
-from flask import g
-
-@app.app.before_request
+@app.before_request
 def fake_login():
     from flask import request
     if request.path.startswith('/super-admin') or request.path.startswith('/api'):
