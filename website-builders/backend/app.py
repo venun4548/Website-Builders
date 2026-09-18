@@ -201,6 +201,15 @@ def services():
 def contact():
     return send_from_directory('../', 'contact.html')
 
+@app.route('/api/debug-gas', methods=['GET'])
+def api_debug_gas():
+    """Debug endpoint to check what GAS_URL is being used by the server."""
+    return jsonify({
+        'configured_gas_url': GAS_URL,
+        'has_secret': bool(GAS_SECRET),
+        'message': 'If the configured_gas_url above is an OLD URL or None, you need to restart your server or update your GAS_WEB_APP_URL environment variable!'
+    })
+
 # ─── Contact Form (proxies to GAS) ───────────────────────────
 @app.route('/api/contact', methods=['POST'])
 @app.route('/api/enquiry', methods=['POST'])
