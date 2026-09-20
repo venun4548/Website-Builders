@@ -24,7 +24,9 @@ const SHEETS = {
   USERS:'Users', MESSAGES:'Messages', ENQUIRIES:'Enquiries',
   PROJECTS:'Projects', ASSIGNMENTS:'ProjectAssignments',
   UPDATES:'ProjectUpdates', ACTIVITY:'ActivityLogs',
-  TASKS:'Tasks'
+  TASKS:'Tasks', INVOICES:'Invoices', INVOICE_ITEMS:'InvoiceItems',
+  PAYMENTS:'Payments', FILES:'Files', TICKETS:'Tickets',
+  TICKET_MESSAGES:'TicketMessages', BRAND_INFO:'BrandInfo'
 };
 
 // Column indexes (1-based)
@@ -45,7 +47,14 @@ const HEADERS={
   ProjectAssignments:['Assignment ID','Project ID','Staff ID','Staff Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Status'],
   ProjectUpdates:['Update ID','Project ID','Staff ID','Staff Name','Stage','Progress','Update Text','Remark','Created Date','Created Time'],
   ActivityLogs:['Activity ID','User ID','User Name','Role','Action','Related ID','Description','Date','Time','Status'],
-  Tasks:['Task ID','Project ID','Project Name','Task Title','Description','Assigned Staff ID','Assigned Staff Name','Priority','Status','Due Date','Created By','Created Date','Created Time','Updated Date','Updated Time']
+  Tasks:['Task ID','Project ID','Project Name','Task Title','Description','Assigned Staff ID','Assigned Staff Name','Priority','Status','Due Date','Created By','Created Date','Created Time','Updated Date','Updated Time'],
+  Invoices:['Invoice ID','Project ID','Project Name','Customer ID','Customer Name','Customer Email','Amount','GST Amount','Total Amount','Status','Due Date','Paid At','Razorpay Order ID','Razorpay Payment ID','Created Date','Updated Date'],
+  InvoiceItems:['Item ID','Invoice ID','Description','Quantity','Rate','Amount'],
+  Payments:['Payment ID','Razorpay Order ID','Razorpay Payment ID','Invoice ID','Customer ID','Amount','Currency','Status','Signature','Paid At'],
+  Files:['File ID','Project ID','Uploaded By','File Name','File URL','File Size','File Type','Category','Uploaded At'],
+  Tickets:['Ticket ID','Customer ID','Customer Name','Customer Email','Subject','Priority','Status','Assigned To','Created At','Updated At'],
+  TicketMessages:['Message ID','Ticket ID','Sender Email','Sender Role','Message','Timestamp'],
+  BrandInfo:['Brand ID','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At']
 };
 
 function initialSetup(){
