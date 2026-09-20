@@ -8,7 +8,6 @@
   
   <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   
   <style>
     :root {
@@ -1038,8 +1037,28 @@
       await launchRazorpayCheckout(desc, amount);
     }
 
+    function ensureRazorpayLoaded() {
+      return new Promise((resolve, reject) => {
+        if (window.Razorpay) return resolve(window.Razorpay);
+        const existing = document.getElementById('rzp-checkout-script');
+        if (existing) {
+          existing.addEventListener('load', () => resolve(window.Razorpay));
+          existing.addEventListener('error', () => reject(new Error('Razorpay SDK failed to load.')));
+          return;
+        }
+        const script = document.createElement('script');
+        script.id = 'rzp-checkout-script';
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => resolve(window.Razorpay);
+        script.onerror = () => reject(new Error('Failed to load Razorpay Checkout SDK. Check your internet connection.'));
+        document.head.appendChild(script);
+      });
+    }
+
     async function launchRazorpayCheckout(description, amountInRupees, invoiceId = null) {
       try {
+        await ensureRazorpayLoaded();
         const res = await fetch('/api/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
