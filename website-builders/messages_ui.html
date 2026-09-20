@@ -1,0 +1,81 @@
+<div class="messages-container">
+  <div class="messages-sidebar">
+    <div class="messages-sidebar-header">
+      <h3>Messages <span id="badge-unread" class="unread-badge" style="display:none">0</span></h3>
+      <button class="btn-new-message" onclick="openNewMessageModal()"><i class="fa-solid fa-pen-to-square"></i> New</button>
+    </div>
+    <div class="messages-filters">
+      <button class="msg-filter-btn active" onclick="setFilter('all')">All</button>
+      <button class="msg-filter-btn" onclick="setFilter('unread')">Unread</button>
+      <button class="msg-filter-btn" onclick="setFilter('inbox')">Inbox <span id="badge-inbox" style="display:none">0</span></button>
+      <button class="msg-filter-btn" onclick="setFilter('sent')">Sent <span id="badge-sent" style="display:none">0</span></button>
+    </div>
+    <div class="messages-search">
+      <div class="messages-search-wrapper">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="msg-search" placeholder="Search conversations..." onkeyup="doMsgSearch()">
+      </div>
+    </div>
+    <div class="conversation-list" id="conversation-list">
+      <!-- Conversations will load here -->
+    </div>
+  </div>
+  
+  <div class="messages-main">
+    <div class="chat-header" id="chat-header" style="display:none">
+      <!-- Chat header will load here -->
+    </div>
+    <div class="chat-history" id="chat-history">
+      <div class="messages-empty-state">
+        <i class="fa-solid fa-messages"></i>
+        <p>Select a conversation to start messaging</p>
+      </div>
+    </div>
+    <div class="chat-composer" id="chat-composer" style="display:none">
+      <form class="composer-form" onsubmit="event.preventDefault(); sendReply();">
+        <div class="composer-input-wrapper">
+          <textarea id="msg-input" placeholder="Type a message..." required></textarea>
+        </div>
+        <button type="submit" class="btn-send" id="btn-send" title="Send Message">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Compose Modal -->
+<div class="compose-modal" id="compose-modal">
+  <div class="compose-content">
+    <div class="compose-header">
+      <h3>New Message</h3>
+      <button type="button" class="btn-close-modal" onclick="closeNewMessageModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="compose-body">
+      <form id="form-compose" onsubmit="sendNewMessage(event)">
+        <div class="form-group">
+          <label>Recipient</label>
+          <select id="compose-recipient" required>
+            <option value="">Loading...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Project ID (Optional)</label>
+          <input type="text" id="compose-project" placeholder="e.g. WB-2026-001">
+        </div>
+        <div class="form-group">
+          <label>Subject</label>
+          <input type="text" id="compose-subject" placeholder="Message subject" required>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea id="compose-message" rows="4" placeholder="Type your message here..." required></textarea>
+        </div>
+        <div class="compose-footer">
+          <button type="button" class="btn-cancel" onclick="closeNewMessageModal()">Cancel</button>
+          <button type="submit" class="btn-new-message" id="btn-send-new">Send Message</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
