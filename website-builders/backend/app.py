@@ -39,21 +39,43 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# ─── GAS Proxy Helpers ────────────────────────────────────────
+# ─── GAS Proxy Helpers with Connection Pooling & Cache ────────
+import time
+
 GAS_URL    = Config.GAS_URL
 GAS_SECRET = Config.GAS_SECRET
 
-def call_gas(action: str, data: dict = None, timeout: int = 45) -> dict:
+# Reusable HTTP Session with connection pooling
+gas_session = requests.Session()
+adapter = requests.adapters.HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=1)
+gas_session.mount('https://', adapter)
+gas_session.mount('http://', adapter)
+
+# Fast In-Memory Cache (TTL: 30s)
+_gas_cache = {}
+_CACHE_TTL = 30  # seconds
+
+def _get_cache_key(action: str, params: dict = None) -> str:
+    if not params:
+        return action
+    try:
+        return f"{action}:{json.dumps(params, sort_keys=True)}"
+    except Exception:
+        return f"{action}:{str(params)}"
+
+def call_gas(action: str, data: dict = None, timeout: int = 12) -> dict:
     """POST to Google Apps Script and return parsed JSON."""
     if not GAS_URL:
         return {'status': 'error', 'message': 'GAS_WEB_APP_URL not configured.'}
+    # Invalidate cache on write operations
+    _gas_cache.clear()
     try:
         payload = {
             'token' : GAS_SECRET,
             'action': action,
             'data'  : json.dumps(data or {})
         }
-        resp = requests.post(GAS_URL, data=payload, timeout=timeout)
+        resp = gas_session.post(GAS_URL, data=payload, timeout=timeout)
         resp.raise_for_status()
         return resp.json()
     except requests.exceptions.Timeout:
@@ -62,9 +84,11 @@ def call_gas(action: str, data: dict = None, timeout: int = 45) -> dict:
     except requests.exceptions.HTTPError as e:
         if e.response is not None and e.response.status_code == 404:
             logger.error('GAS 404 for URL: %s', GAS_URL)
-            return {'status': 'error', 'message': f'Google Apps Script returned a 404 Not Found. Tried URL: {GAS_URL[:30]}... Please check your GAS_WEB_APP_URL environment variable and Apps Script deployment settings.'}
+            return {'status': 'error', 'message': f'Google Apps Script returned a 404 Not Found. Please check GAS_WEB_APP_URL.'}
         elif e.response is not None and e.response.status_code == 401:
-            return {'status': 'error', 'message': 'Google Apps Script returned a 401 Unauthorized error. You must redeploy your script and ensure "Who has access" is set exactly to "Anyone" (NOT "Anyone with Google Account").'}
+            return {'status': 'error', 'message': 'Google Apps Script returned a 401 Unauthorized error. Please redeploy script as "Anyone".'}
+        elif e.response is not None and e.response.status_code == 403:
+            return {'status': 'error', 'message': 'Google Apps Script returned 403 Forbidden. The Apps Script deployment "Who has access" must be set to "Anyone".'}
         logger.error('GAS HTTP error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
     except Exception as e:
@@ -72,31 +96,47 @@ def call_gas(action: str, data: dict = None, timeout: int = 45) -> dict:
         return {'status': 'error', 'message': str(e)}
 
 
-def gas_get(action: str, params: dict = None, timeout: int = 45) -> dict:
-    """GET from Google Apps Script and return parsed JSON."""
+def gas_get(action: str, params: dict = None, timeout: int = 10, use_cache: bool = True) -> dict:
+    """GET from Google Apps Script with connection pooling & 30s cache."""
     if not GAS_URL:
         return {'status': 'error', 'message': 'GAS_WEB_APP_URL not configured.'}
+    
+    cache_key = _get_cache_key(action, params)
+    now = time.time()
+    
+    # Return from cache if fresh
+    if use_cache and cache_key in _gas_cache:
+        entry = _gas_cache[cache_key]
+        if now - entry['time'] < _CACHE_TTL:
+            return entry['data']
+
     try:
         p = {'token': GAS_SECRET, 'action': action}
         if params:
             p.update(params)
-        resp = requests.get(GAS_URL, params=p, timeout=timeout)
+        resp = gas_session.get(GAS_URL, params=p, timeout=timeout)
         resp.raise_for_status()
-        return resp.json()
+        res_json = resp.json()
+        if res_json.get('status') == 'success':
+            _gas_cache[cache_key] = {'data': res_json, 'time': now}
+        return res_json
     except requests.exceptions.Timeout:
         logger.error('GAS GET timeout: %s', action)
         return {'status': 'error', 'message': 'Request timed out. Please retry.'}
     except requests.exceptions.HTTPError as e:
         if e.response is not None and e.response.status_code == 404:
             logger.error('GAS GET 404 for URL: %s', GAS_URL)
-            return {'status': 'error', 'message': f'Google Apps Script returned a 404 Not Found. Tried URL: {GAS_URL[:30]}... Please check your GAS_WEB_APP_URL environment variable and Apps Script deployment settings.'}
+            return {'status': 'error', 'message': f'Google Apps Script returned a 404 Not Found. Please check GAS_WEB_APP_URL.'}
         elif e.response is not None and e.response.status_code == 401:
-            return {'status': 'error', 'message': 'Google Apps Script returned a 401 Unauthorized error. You must redeploy your script and ensure "Who has access" is set exactly to "Anyone" (NOT "Anyone with Google Account").'}
+            return {'status': 'error', 'message': 'Google Apps Script returned a 401 Unauthorized error. Please redeploy script as "Anyone".'}
+        elif e.response is not None and e.response.status_code == 403:
+            return {'status': 'error', 'message': 'Google Apps Script returned 403 Forbidden. The Apps Script deployment "Who has access" must be set to "Anyone".'}
         logger.error('GAS GET HTTP error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
     except Exception as e:
         logger.error('GAS GET error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
+
 
 
 # ─── Flask-Login User Loader ──────────────────────────────────
