@@ -476,6 +476,7 @@
               <thead>
                 <tr style="border-bottom:2px solid var(--border); text-align:left; font-size:0.85rem; color:var(--text-secondary);">
                   <th style="padding:0.75rem;">Invoice ID</th>
+                  <th style="padding:0.75rem;">Date</th>
                   <th style="padding:0.75rem;">Project & Milestone</th>
                   <th style="padding:0.75rem;">Stage</th>
                   <th style="padding:0.75rem;">Amount</th>
@@ -484,7 +485,7 @@
                 </tr>
               </thead>
               <tbody id="tbl-client-invoices">
-                <tr><td colspan="6" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">Loading billing records...</td></tr>
+                <tr><td colspan="7" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">Loading billing records...</td></tr>
               </tbody>
             </table>
           </div>
@@ -783,131 +784,192 @@
 
     async function fetchClientProjects() {
       try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
+        const [projRes, payRes] = await Promise.all([
+          fetch('/api/projects'),
+          fetch('/api/payments').catch(() => ({ json: () => ({ success: true, data: [] }) }))
+        ]);
+        const data = await projRes.json();
+        let paymentsData = { data: [] };
+        try { paymentsData = await payRes.json(); } catch(e) {}
+        const paymentsList = (paymentsData && paymentsData.data) ? paymentsData.data : [];
+
         const grid = document.getElementById('client-projects-grid');
         const dirList = document.getElementById('projects-directory-list');
         const invoiceTbl = document.getElementById('tbl-client-invoices');
         const filesList = document.getElementById('client-files-list');
 
+        let totalBilled = 0;
+        let totalPaid = 0;
+
         if (grid) grid.innerHTML = '';
         
-        if ((data.status === 'success' || data.success)) {
-          const projects = data.data || [];
-          if (projects.length === 0) {
-            const emptyHtml = '<div style="grid-column:1/-1; text-align:center; padding:3rem; background:#FFF; border-radius:12px; border:1px solid var(--border);"><i class="fa-solid fa-folder-open" style="font-size:2.5rem; color:var(--text-secondary); margin-bottom:0.75rem;"></i><p style="color: var(--text-secondary); font-weight:600;">You do not have any active projects yet.</p></div>';
-            if (grid) grid.innerHTML = emptyHtml;
-            if (dirList) dirList.innerHTML = emptyHtml;
-            if (invoiceTbl) invoiceTbl.innerHTML = '<tr><td colspan="6" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">No invoices billed for your account yet.</td></tr>';
-            if (filesList) filesList.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);"><i class="fa-solid fa-folder-open" style="font-size:2rem; margin-bottom:0.5rem; color:var(--primary);"></i><p>No project documents or media files uploaded yet.</p></div>';
-            return;
+        const projects = (data.status === 'success' || data.success) ? (data.data || []) : [];
+        if (projects.length === 0 && paymentsList.length === 0) {
+          const emptyHtml = '<div style="grid-column:1/-1; text-align:center; padding:3rem; background:#FFF; border-radius:12px; border:1px solid var(--border);"><i class="fa-solid fa-folder-open" style="font-size:2.5rem; color:var(--text-secondary); margin-bottom:0.75rem;"></i><p style="color: var(--text-secondary); font-weight:600;">You do not have any active projects yet.</p></div>';
+          if (grid) grid.innerHTML = emptyHtml;
+          if (dirList) dirList.innerHTML = emptyHtml;
+          if (invoiceTbl) invoiceTbl.innerHTML = '<tr><td colspan="6" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">No invoices billed for your account yet.</td></tr>';
+          if (filesList) filesList.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);"><i class="fa-solid fa-folder-open" style="font-size:2rem; margin-bottom:0.5rem; color:var(--primary);"></i><p>No project documents or media files uploaded yet.</p></div>';
+          return;
+        }
+
+        let gridHtml = '';
+        let invoiceRows = '';
+        let fileItems = '';
+        const handledInvIds = new Set();
+
+        projects.forEach(p => {
+          const card = `
+            <div class="project-card" style="background:#FFF; border:1px solid var(--border); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:var(--shadow-subtle);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+                <div>
+                  <span style="font-family:monospace; font-weight:800; font-size:0.85rem; color:var(--primary); background:rgba(15,118,110,0.1); padding:0.2rem 0.6rem; border-radius:6px;">${p.project_id}</span>
+                  <h3 style="font-size:1.3rem; margin-top:0.4rem; color:var(--text-main);">${p.name}</h3>
+                </div>
+                <span class="badge" style="background:${p.status === 'ACTIVE' ? '#D1FAE5' : '#F3F4F6'}; color:${p.status === 'ACTIVE' ? '#065F46' : '#374151'}; font-weight:700; padding:0.35rem 0.75rem; border-radius:20px; font-size:0.8rem;">${p.status}</span>
+              </div>
+
+              <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1rem; line-height:1.5;">${p.description || 'No description provided.'}</p>
+              
+              <div class="progress-wrapper" style="margin-bottom:1rem;">
+                <div class="progress-label" style="display:flex; justify-content:space-between; font-weight:700; font-size:0.85rem; margin-bottom:0.4rem;">
+                  <span>Current Stage: <strong style="color:var(--primary);">${p.stage}</strong></span>
+                  <span>${p.progress}% Completed</span>
+                </div>
+                <div class="progress-container" style="background:#E2E8F0; height:10px; border-radius:5px; overflow:hidden;">
+                  <div class="progress-fill" style="width: ${p.progress}%; background:var(--primary); height:100%; transition:width 0.5s ease;"></div>
+                </div>
+              </div>
+
+              <!-- 7 Stage Visual Interactive Timeline -->
+              <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:1rem;">
+                <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:0.5rem;"><i class="fa-solid fa-route"></i> Interactive Project Timeline</div>
+                ${renderStageTimeline(p.stage)}
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; background:#F1F5F9; padding:0.85rem; border-radius:8px; font-size:0.85rem; margin-bottom:1rem;">
+                <div><strong style="color:var(--text-main);">Assigned Staff:</strong> ${p.assigned_staff_name || 'Team Assigned'}</div>
+                <div><strong style="color:var(--text-main);">Expected Delivery:</strong> ${p.expected_delivery || 'To be determined'}</div>
+                <div style="grid-column:1/-1;"><strong style="color:var(--text-main);">Latest Update:</strong> ${p.latest_update}</div>
+              </div>
+              
+              <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-primary" onclick="switchTab('messages')" style="flex: 1; padding:0.6rem; border-radius:8px;"><i class="fa-solid fa-message"></i> Communicate with Team</button>
+              </div>
+            </div>
+          `;
+
+          gridHtml += card;
+
+          // Invoice 1: Kickoff & Initial Scope (Default Paid milestone)
+          const inv1Id = `INV-${p.project_id.replace('WB-', '')}-01`;
+          const inv1Amt = 25000;
+          const inv1Date = p.created_date ? (p.created_date + (p.created_time ? ' ' + p.created_time : '')) : 'Kickoff';
+          totalBilled += inv1Amt;
+          totalPaid += inv1Amt;
+          handledInvIds.add(inv1Id);
+
+          invoiceRows += `
+            <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
+              <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv1Id}</td>
+              <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${inv1Date}</td>
+              <td style="padding:0.85rem; font-weight:700;">${p.name} - Initial Scope & UI Wireframes</td>
+              <td style="padding:0.85rem;">Kickoff Milestone</td>
+              <td style="padding:0.85rem; font-weight:800; color:#047857;">₹${inv1Amt.toLocaleString()}</td>
+              <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span></td>
+              <td style="padding:0.85rem; text-align:right;">
+                <button class="btn btn-secondary" onclick="viewReceipt('${inv1Id}', '${p.name} - Initial Scope & Wireframes', ${inv1Amt}, 'pay_WB_${p.project_id}_01', '${inv1Date}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>
+              </td>
+            </tr>
+          `;
+
+          // Invoice 2: Current Stage Milestone
+          const inv2Id = `INV-${p.project_id.replace('WB-', '')}-02`;
+          const inv2Amt = 20000;
+          totalBilled += inv2Amt;
+          handledInvIds.add(inv2Id);
+
+          const matchingPayment = paymentsList.find(pm => pm.invoice_id === inv2Id || pm.order_id === inv2Id);
+          const isStagePaid = Boolean(p.progress >= 100 || matchingPayment);
+          const inv2Date = matchingPayment ? (matchingPayment.paid_at || matchingPayment.date || 'Paid') : (p.expected_delivery || 'Due soon');
+          if (isStagePaid) {
+            totalPaid += inv2Amt;
           }
 
-          let gridHtml = '';
-          let invoiceRows = '';
-          let fileItems = '';
+          invoiceRows += `
+            <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
+              <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv2Id}</td>
+              <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${inv2Date}</td>
+              <td style="padding:0.85rem; font-weight:700;">${p.name} - ${p.stage} Phase Milestone</td>
+              <td style="padding:0.85rem;">${p.stage}</td>
+              <td style="padding:0.85rem; font-weight:800; color:${isStagePaid ? '#047857' : '#D97706'};">₹${inv2Amt.toLocaleString()}</td>
+              <td style="padding:0.85rem;">
+                ${isStagePaid ? 
+                  '<span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span>' : 
+                  '<span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> DUE NOW</span>'}
+              </td>
+              <td style="padding:0.85rem; text-align:right;">
+                ${isStagePaid ? 
+                  `<button class="btn btn-secondary" onclick="viewReceipt('${inv2Id}', '${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${matchingPayment ? matchingPayment.payment_id : 'pay_WB_' + p.project_id + '_02'}', '${inv2Date}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>` : 
+                  `<button class="btn btn-primary" onclick="launchRazorpayCheckout('${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${inv2Id}')" style="padding:0.35rem 0.85rem; font-size:0.8rem; background:#0F766E; border:none; border-radius:6px; color:#FFF; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(15,118,110,0.3);"><i class="fa-solid fa-credit-card"></i> Pay via Razorpay</button>`}
+              </td>
+            </tr>
+          `;
 
-          projects.forEach(p => {
-            const card = `
-              <div class="project-card" style="background:#FFF; border:1px solid var(--border); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:var(--shadow-subtle);">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
-                  <div>
-                    <span style="font-family:monospace; font-weight:800; font-size:0.85rem; color:var(--primary); background:rgba(15,118,110,0.1); padding:0.2rem 0.6rem; border-radius:6px;">${p.project_id}</span>
-                    <h3 style="font-size:1.3rem; margin-top:0.4rem; color:var(--text-main);">${p.name}</h3>
-                  </div>
-                  <span class="badge" style="background:${p.status === 'ACTIVE' ? '#D1FAE5' : '#F3F4F6'}; color:${p.status === 'ACTIVE' ? '#065F46' : '#374151'}; font-weight:700; padding:0.35rem 0.75rem; border-radius:20px; font-size:0.8rem;">${p.status}</span>
-                </div>
-
-                <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:1rem; line-height:1.5;">${p.description || 'No description provided.'}</p>
-                
-                <div class="progress-wrapper" style="margin-bottom:1rem;">
-                  <div class="progress-label" style="display:flex; justify-content:space-between; font-weight:700; font-size:0.85rem; margin-bottom:0.4rem;">
-                    <span>Current Stage: <strong style="color:var(--primary);">${p.stage}</strong></span>
-                    <span>${p.progress}% Completed</span>
-                  </div>
-                  <div class="progress-container" style="background:#E2E8F0; height:10px; border-radius:5px; overflow:hidden;">
-                    <div class="progress-fill" style="width: ${p.progress}%; background:var(--primary); height:100%; transition:width 0.5s ease;"></div>
-                  </div>
-                </div>
-
-                <!-- 7 Stage Visual Interactive Timeline -->
-                <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:1rem;">
-                  <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:0.5rem;"><i class="fa-solid fa-route"></i> Interactive Project Timeline</div>
-                  ${renderStageTimeline(p.stage)}
-                </div>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; background:#F1F5F9; padding:0.85rem; border-radius:8px; font-size:0.85rem; margin-bottom:1rem;">
-                  <div><strong style="color:var(--text-main);">Assigned Staff:</strong> ${p.assigned_staff_name || 'Team Assigned'}</div>
-                  <div><strong style="color:var(--text-main);">Expected Delivery:</strong> ${p.expected_delivery || 'To be determined'}</div>
-                  <div style="grid-column:1/-1;"><strong style="color:var(--text-main);">Latest Update:</strong> ${p.latest_update}</div>
-                </div>
-                
-                <div style="display: flex; gap: 0.75rem;">
-                  <button class="btn btn-primary" onclick="switchTab('messages')" style="flex: 1; padding:0.6rem; border-radius:8px;"><i class="fa-solid fa-message"></i> Communicate with Team</button>
+          fileItems += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.75rem; background:#FFF;">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <i class="fa-solid fa-file-pdf" style="font-size:1.5rem; color:#EF4444;"></i>
+                <div>
+                  <div style="font-weight:700; font-size:0.9rem; color:var(--text-main);">${p.name} - Project Blueprint & Scope.pdf</div>
+                  <div style="font-size:0.78rem; color:var(--text-secondary);">${p.project_id} • 2.4 MB • Updated ${p.expected_delivery || 'Recently'}</div>
                 </div>
               </div>
-            `;
+              <button class="btn btn-secondary" onclick="alert('Opening document preview for ${p.name}...');" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-eye"></i> View File</button>
+            </div>
+          `;
+        });
 
-            gridHtml += card;
+        // 3. Render any additional payments or custom online settlements from history
+        paymentsList.forEach(pm => {
+          if (handledInvIds.has(pm.invoice_id)) return;
+          const pAmt = Number(pm.amount) || 0;
+          totalBilled += pAmt;
+          totalPaid += pAmt;
+          const invDisplay = pm.invoice_id || pm.payment_id;
+          const descDisplay = pm.description || 'Online Milestone Settlement';
+          const pmDate = pm.paid_at || pm.date || 'Confirmed';
+          invoiceRows += `
+            <tr style="border-bottom:1px solid var(--border); font-size:0.9rem; background: #F0FDF4;">
+              <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${invDisplay}</td>
+              <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar-check" style="margin-right:4px; color:#059669;"></i>${pmDate}</td>
+              <td style="padding:0.85rem; font-weight:700;">
+                ${descDisplay}
+                <div style="font-size:0.75rem; color:var(--text-secondary); font-family:monospace;">Transaction ID: ${pm.payment_id}</div>
+              </td>
+              <td style="padding:0.85rem;">Online Settlement</td>
+              <td style="padding:0.85rem; font-weight:800; color:#047857;">₹${pAmt.toLocaleString()}</td>
+              <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span></td>
+              <td style="padding:0.85rem; text-align:right;">
+                <button class="btn btn-secondary" onclick="viewReceipt('${invDisplay}', '${descDisplay}', ${pAmt}, '${pm.payment_id}', '${pmDate}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>
+              </td>
+            </tr>
+          `;
+        });
 
-            // Invoice 1: Kickoff & Initial Scope Milestone (PAID)
-            const inv1Id = `INV-${p.project_id.replace('WB-', '')}-01`;
-            const inv1Amt = 25000;
-            invoiceRows += `
-              <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
-                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv1Id}</td>
-                <td style="padding:0.85rem; font-weight:700;">${p.name} - Initial Scope & UI Wireframes</td>
-                <td style="padding:0.85rem;">Kickoff Milestone</td>
-                <td style="padding:0.85rem; font-weight:800; color:#047857;">₹${inv1Amt.toLocaleString()}</td>
-                <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span></td>
-                <td style="padding:0.85rem; text-align:right;">
-                  <button class="btn btn-secondary" onclick="viewReceipt('${inv1Id}', '${p.name} - Initial Scope & Wireframes', ${inv1Amt}, 'pay_WB_${p.project_id}_01')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>
-                </td>
-              </tr>
-            `;
+        // Update KPI widgets
+        const balanceDue = Math.max(0, totalBilled - totalPaid);
+        const billedEl = document.getElementById('stat-total-billed');
+        const paidEl = document.getElementById('stat-total-paid');
+        const dueEl = document.getElementById('stat-balance-due');
+        if (billedEl) billedEl.innerText = `₹${totalBilled.toLocaleString()}`;
+        if (paidEl) paidEl.innerText = `₹${totalPaid.toLocaleString()}`;
+        if (dueEl) dueEl.innerText = `₹${balanceDue.toLocaleString()}`;
 
-            // Invoice 2: Current Stage Milestone
-            const inv2Id = `INV-${p.project_id.replace('WB-', '')}-02`;
-            const inv2Amt = 20000;
-            const isStagePaid = (p.progress >= 100);
-            invoiceRows += `
-              <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
-                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv2Id}</td>
-                <td style="padding:0.85rem; font-weight:700;">${p.name} - ${p.stage} Phase Milestone</td>
-                <td style="padding:0.85rem;">${p.stage}</td>
-                <td style="padding:0.85rem; font-weight:800; color:${isStagePaid ? '#047857' : '#D97706'};">₹${inv2Amt.toLocaleString()}</td>
-                <td style="padding:0.85rem;">
-                  ${isStagePaid ? 
-                    '<span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span>' : 
-                    '<span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> DUE NOW</span>'}
-                </td>
-                <td style="padding:0.85rem; text-align:right;">
-                  ${isStagePaid ? 
-                    `<button class="btn btn-secondary" onclick="viewReceipt('${inv2Id}', '${p.name} - ${p.stage} Milestone', ${inv2Amt})" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>` : 
-                    `<button class="btn btn-primary" onclick="launchRazorpayCheckout('${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${inv2Id}')" style="padding:0.35rem 0.85rem; font-size:0.8rem; background:#0F766E; border:none; border-radius:6px; color:#FFF; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(15,118,110,0.3);"><i class="fa-solid fa-credit-card"></i> Pay via Razorpay</button>`}
-                </td>
-              </tr>
-            `;
-
-            fileItems += `
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.75rem; background:#FFF;">
-                <div style="display:flex; align-items:center; gap:0.75rem;">
-                  <i class="fa-solid fa-file-pdf" style="font-size:1.5rem; color:#EF4444;"></i>
-                  <div>
-                    <div style="font-weight:700; font-size:0.9rem; color:var(--text-main);">${p.name} - Project Blueprint & Scope.pdf</div>
-                    <div style="font-size:0.78rem; color:var(--text-secondary);">${p.project_id} • 2.4 MB • Updated ${p.expected_delivery || 'Recently'}</div>
-                  </div>
-                </div>
-                <button class="btn btn-secondary" onclick="alert('Opening document preview for ${p.name}...');" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-eye"></i> View File</button>
-              </div>
-            `;
-          });
-
-          if (grid) grid.innerHTML = gridHtml;
-          if (dirList) dirList.innerHTML = gridHtml;
-          if (invoiceTbl) invoiceTbl.innerHTML = invoiceRows;
-          if (filesList) filesList.innerHTML = fileItems;
-        }
+        if (grid) grid.innerHTML = gridHtml;
+        if (dirList) dirList.innerHTML = gridHtml;
+        if (invoiceTbl) invoiceTbl.innerHTML = invoiceRows;
+        if (filesList) filesList.innerHTML = fileItems;
       } catch (err) {
         console.error('Error loading client projects:', err);
       }
@@ -933,10 +995,11 @@
       if (modal) modal.style.display = 'none';
     }
 
-    function viewReceipt(invId, desc, amount, payId = 'pay_completed_rzp') {
+    function viewReceipt(invId, desc, amount, payId = 'pay_completed_rzp', dateStr = '') {
       const modal = document.getElementById('receipt-modal');
       const content = document.getElementById('receipt-modal-content');
       if (!modal || !content) return;
+      const displayDate = dateStr || new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
       const gst = Math.round(amount * 0.18);
       const base = amount - gst;
       content.innerHTML = `
@@ -948,6 +1011,7 @@
           <p style="font-size: 0.85rem; color: #059669; font-weight: 700; margin-top: 0.25rem;">PAID & VERIFIED (RAZORPAY)</p>
         </div>
         <div style="font-size: 0.85rem; line-height: 1.9; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Payment Date & Time:</span><strong style="color: var(--text-main);">${displayDate}</strong></div>
           <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Invoice ID:</span><strong style="font-family: monospace;">${invId}</strong></div>
           <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Transaction ID:</span><strong style="font-family: monospace;">${payId}</strong></div>
           <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Milestone / Scope:</span><strong>${desc}</strong></div>
@@ -1001,6 +1065,7 @@
           image: '/images/logo.png',
           order_id: orderData.order_id,
           handler: async function (response) {
+            const paymentTimestamp = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
             try {
               await fetch('/api/verify-payment', {
                 method: 'POST',
@@ -1010,14 +1075,17 @@
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
                   invoice_id: invoiceId,
+                  description: description,
                   amount: amountInRupees,
-                  currency: 'INR'
+                  currency: 'INR',
+                  paid_at: new Date().toISOString(),
+                  paid_date: new Date().toLocaleDateString('en-IN')
                 })
               });
             } catch (e) {
               console.log('Verification recorded:', e);
             }
-            viewReceipt(invoiceId || ('INV-' + Date.now().toString().slice(-6)), description, amountInRupees, response.razorpay_payment_id);
+            viewReceipt(invoiceId || ('INV-' + Date.now().toString().slice(-6)), description, amountInRupees, response.razorpay_payment_id, paymentTimestamp);
             fetchClientProjects();
           },
           prefill: {

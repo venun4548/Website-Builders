@@ -1808,10 +1808,13 @@ function logPayment(d) {
   const lock = LockService.getScriptLock();
   try { lock.waitLock(15000); } catch(e) {}
   try {
-    const sheet = getOrCreateSheet(SHEETS.PAYMENTS, HEADERS.Payments);
+    const paySheet = getOrCreateSheet(SHEETS.PAYMENTS, HEADERS.Payments);
     const id = d.payment_id || ('PAY-' + Utilities.getUuid().slice(0, 8).toUpperCase());
     const now = getNow();
-    sheet.appendRow([
+    const paidAt = d.paid_at || (now.date + ' ' + now.time);
+    
+    // 1. Append to Payments Sheet
+    paySheet.appendRow([
       id,
       d.order_id || '',
       d.payment_id || id,
@@ -1821,9 +1824,66 @@ function logPayment(d) {
       d.currency || 'INR',
       d.status || 'PAID',
       d.signature || '',
-      d.paid_at || (now.date + ' ' + now.time)
+      paidAt
     ]);
-    return jr('success', { payment_id: id });
+
+    // 2. Sync to Invoices Sheet
+    try {
+      const invSheet = getOrCreateSheet(SHEETS.INVOICES, HEADERS.Invoices);
+      const invRows = invSheet.getDataRange().getValues();
+      let found = false;
+      const targetInvId = String(d.invoice_id || '').trim();
+      if (targetInvId) {
+        for (let i = 1; i < invRows.length; i++) {
+          if (String(invRows[i][0]).trim() === targetInvId) {
+            invSheet.getRange(i + 1, 10).setValue('PAID');
+            invSheet.getRange(i + 1, 12).setValue(paidAt);
+            invSheet.getRange(i + 1, 13).setValue(d.order_id || '');
+            invSheet.getRange(i + 1, 14).setValue(d.payment_id || id);
+            invSheet.getRange(i + 1, 16).setValue(now.date + ' ' + now.time);
+            found = true;
+            break;
+          }
+        }
+      }
+      if (!found && targetInvId) {
+        invSheet.appendRow([
+          targetInvId,
+          d.project_id || '',
+          d.project_name || d.description || 'Milestone Settlement',
+          d.customer_id || '',
+          d.customer_name || 'Client',
+          d.customer_email || '',
+          d.amount || 0,
+          Math.round((d.amount || 0) * 0.18),
+          d.amount || 0,
+          'PAID',
+          now.date,
+          paidAt,
+          d.order_id || '',
+          d.payment_id || id,
+          now.date + ' ' + now.time,
+          now.date + ' ' + now.time
+        ]);
+      }
+    } catch(invErr) {
+      Logger.log('Invoice sync error: ' + invErr.toString());
+    }
+
+    // 3. Log Activity
+    try {
+      logActivity({
+        userId: d.customer_id || '',
+        userName: d.customer_name || 'Client',
+        role: 'Client',
+        action: 'PAYMENT_RECEIVED',
+        relatedId: id,
+        description: 'Payment of ' + (d.currency || 'INR') + ' ' + (d.amount || 0) + ' confirmed via Razorpay (' + (d.payment_id || id) + ')',
+        status: 'SUCCESS'
+      });
+    } catch(actErr) {}
+
+    return jr('success', { payment_id: id, invoice_id: d.invoice_id || '' });
   } catch(err) {
     return jr('error', 'Payment logging failed: ' + err.toString());
   } finally {

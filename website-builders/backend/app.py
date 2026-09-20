@@ -923,6 +923,28 @@ def api_create_order():
         'key_id': RAZORPAY_KEY_ID
     })
 
+# ─── Local Payments Persistent Store ──────────────────────────
+PAYMENTS_DB = os.path.join(os.path.dirname(__file__), 'payments_db.json')
+
+def load_local_payments():
+    try:
+        if os.path.exists(PAYMENTS_DB):
+            with open(PAYMENTS_DB, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        logger.warning("Error reading local payments db: %s", e)
+    return []
+
+def save_local_payment(record):
+    try:
+        payments = load_local_payments()
+        if not any(p.get('payment_id') == record.get('payment_id') for p in payments):
+            payments.insert(0, record)
+            with open(PAYMENTS_DB, 'w', encoding='utf-8') as f:
+                json.dump(payments, f, indent=2)
+    except Exception as e:
+        logger.warning("Error saving local payment: %s", e)
+
 @app.route('/api/verify-payment', methods=['POST'])
 def api_verify_payment():
     data = request.get_json(silent=True) or {}
@@ -945,27 +967,80 @@ def api_verify_payment():
         except Exception as e:
             logger.warning("Signature verification calculation error: %s", e)
 
-    # Record payment to Google Apps Script / sheet
     cust_id = str(current_user.id) if current_user and current_user.is_authenticated else 'USR-CLIENT'
-    call_gas('logPayment', {
+    cust_name = getattr(current_user, 'full_name', 'Client')
+    cust_email = getattr(current_user, 'email', '')
+    raw_amt = data.get('amount', 0)
+    try:
+        amt = float(raw_amt)
+    except:
+        amt = 0.0
+
+    now_dt = datetime.now()
+    paid_at_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
+    paid_date_str = now_dt.strftime('%d %b %Y')
+    paid_time_str = now_dt.strftime('%I:%M %p')
+
+    payment_record = {
         'payment_id': payment_id,
         'order_id': order_id,
-        'invoice_id': data.get('invoice_id', ''),
+        'invoice_id': data.get('invoice_id') or f"INV-{int(time.time())}",
+        'description': data.get('description') or 'Milestone Settlement',
         'customer_id': cust_id,
-        'amount': data.get('amount', 0),
+        'customer_name': cust_name,
+        'customer_email': cust_email,
+        'amount': amt,
         'currency': data.get('currency', 'INR'),
         'status': 'PAID',
         'signature': signature or '',
-        'paid_at': datetime.now().isoformat()
-    })
+        'paid_at': paid_at_str,
+        'paid_date': paid_date_str,
+        'paid_time': paid_time_str,
+        'date': f"{paid_date_str}, {paid_time_str}"
+    }
+
+    # 1. Save locally for guaranteed immediate persistence
+    save_local_payment(payment_record)
+
+    # 2. Record payment to Google Apps Script / sheet
+    try:
+        call_gas('logPayment', payment_record)
+    except Exception as e:
+        logger.warning("GAS logPayment call failed: %s", e)
 
     return jsonify({
         'success': True,
         'message': 'Payment verified and recorded successfully.',
         'payment_id': payment_id,
         'order_id': order_id,
-        'verified': verified
+        'verified': verified,
+        'payment': payment_record
     })
+
+@app.route('/api/payments', methods=['GET'])
+def api_get_payments():
+    local_payments = load_local_payments()
+    gas_payments = []
+    try:
+        res = gas_get('getPayments', {
+            'customer_id': str(current_user.id) if current_user and current_user.is_authenticated and current_user.role == 'Client' else ''
+        })
+        if res.get('status') == 'success' and res.get('data'):
+            gas_payments = res.get('data')
+    except Exception as e:
+        logger.warning("GAS getPayments error: %s", e)
+
+    combined = list(local_payments)
+    existing_ids = {p.get('payment_id') for p in combined}
+    for gp in gas_payments:
+        if gp.get('payment_id') not in existing_ids:
+            combined.append(gp)
+            existing_ids.add(gp.get('payment_id'))
+
+    if current_user and current_user.is_authenticated and current_user.role == 'Client':
+        combined = [p for p in combined if str(p.get('customer_id')) == str(current_user.id) or p.get('customer_id') in ('USR-CLIENT', 'GUEST', '')]
+
+    return jsonify({'success': True, 'data': combined})
 
 @app.route('/api/invoices', methods=['GET'])
 @login_required
