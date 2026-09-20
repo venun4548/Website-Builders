@@ -193,6 +193,8 @@ function doPost(e){
       if(action==='deleteMessageForMe') return deleteMessageForMe(data);
       if(action==='deleteConversationForMe') return deleteConversationForMe(data);
       if(action==='logActivity')      return logActivity(data);
+      if(action==='logPayment')       return logPayment(data);
+      if(action==='createInvoice')    return createInvoice(data);
       if(action==='sync_user')        return syncLegacyUser(data);
       if(action==='sync_message')     return sendMessage({sender_id:data.sender_id,sender_name:data.sender_name,sender_role:data.sender_role,receiver_id:data.receiver_id,receiver_name:data.receiver_name,receiver_role:data.receiver_role,conversation_id:data.conversation_id,body:data.body||data.message,subject:data.subject,project_id:data.project_id,customer_id:data.customer_id,recipient_type:data.recipient_type,message_type:data.message_type});
       if(action==='sync_audit')       return logActivity({userId:'',userName:data.user_email||'',role:'',action:data.action||'AUDIT',relatedId:'',description:data.action||'',status:data.status||'SUCCESS'});
@@ -223,6 +225,8 @@ function doGet(e){
     if(action==='getStats')             return getStats(p);
     if(action==='getRecipients')        return getRecipients(p);
     if(action==='getConvWithUser')      return getConvWithUser(p);
+    if(action==='getInvoices')          return getInvoices(p);
+    if(action==='getPayments')          return getPayments(p);
   }catch(err){return jr('error','Read failed: '+err.toString());}
   return jr('error','Unknown action: '+action);
 }
@@ -1796,5 +1800,124 @@ function getRecipients(p) {
   }
   
   return jr('success', r);
+}
+
+// ─────────────── PAYMENTS & INVOICES ──────────────────────────
+function logPayment(d) {
+  d = d || {};
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(e) {}
+  try {
+    const sheet = getOrCreateSheet(SHEETS.PAYMENTS, HEADERS.Payments);
+    const id = d.payment_id || ('PAY-' + Utilities.getUuid().slice(0, 8).toUpperCase());
+    const now = getNow();
+    sheet.appendRow([
+      id,
+      d.order_id || '',
+      d.payment_id || id,
+      d.invoice_id || '',
+      d.customer_id || '',
+      d.amount || 0,
+      d.currency || 'INR',
+      d.status || 'PAID',
+      d.signature || '',
+      d.paid_at || (now.date + ' ' + now.time)
+    ]);
+    return jr('success', { payment_id: id });
+  } catch(err) {
+    return jr('error', 'Payment logging failed: ' + err.toString());
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
+  }
+}
+
+function getPayments(p) {
+  p = p || {};
+  try {
+    const sheet = getOrCreateSheet(SHEETS.PAYMENTS, HEADERS.Payments);
+    const last = sheet.getLastRow();
+    if (last < 2) return jr('success', []);
+    const rows = sheet.getRange(2, 1, last - 1, 10).getValues();
+    let list = rows.map(r => ({
+      payment_id: String(r[0]),
+      order_id: String(r[1]),
+      gateway_payment_id: String(r[2]),
+      invoice_id: String(r[3]),
+      customer_id: String(r[4]),
+      amount: Number(r[5]) || 0,
+      currency: String(r[6]),
+      status: String(r[7]),
+      paid_at: String(r[9])
+    })).filter(x => x.payment_id);
+
+    if (p.customer_id) list = list.filter(x => x.customer_id === p.customer_id);
+    return jr('success', list.reverse());
+  } catch(err) {
+    return jr('error', 'Failed to retrieve payments: ' + err.toString());
+  }
+}
+
+function createInvoice(d) {
+  d = d || {};
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(e) {}
+  try {
+    const sheet = getOrCreateSheet(SHEETS.INVOICES, HEADERS.Invoices);
+    const now = getNow();
+    const id = d.invoice_id || ('INV-' + Utilities.getUuid().slice(0, 8).toUpperCase());
+    sheet.appendRow([
+      id,
+      d.project_id || '',
+      d.project_name || '',
+      d.customer_id || '',
+      d.customer_name || '',
+      d.customer_email || '',
+      d.amount || 0,
+      d.gst_amount || 0,
+      d.total_amount || d.amount || 0,
+      d.status || 'UNPAID',
+      d.due_date || '',
+      d.paid_at || '',
+      d.order_id || '',
+      d.payment_id || '',
+      now.date + ' ' + now.time,
+      now.date + ' ' + now.time
+    ]);
+    return jr('success', { invoice_id: id });
+  } catch(err) {
+    return jr('error', 'Invoice creation failed: ' + err.toString());
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
+  }
+}
+
+function getInvoices(p) {
+  p = p || {};
+  try {
+    const sheet = getOrCreateSheet(SHEETS.INVOICES, HEADERS.Invoices);
+    const last = sheet.getLastRow();
+    if (last < 2) return jr('success', []);
+    const rows = sheet.getRange(2, 1, last - 1, 16).getValues();
+    let list = rows.map(r => ({
+      invoice_id: String(r[0]),
+      project_id: String(r[1]),
+      project_name: String(r[2]),
+      customer_id: String(r[3]),
+      customer_name: String(r[4]),
+      customer_email: String(r[5]),
+      amount: Number(r[6]) || 0,
+      gst_amount: Number(r[7]) || 0,
+      total_amount: Number(r[8]) || 0,
+      status: String(r[9]),
+      due_date: String(r[10]),
+      paid_at: String(r[11]),
+      created_date: String(r[14])
+    })).filter(x => x.invoice_id);
+
+    if (p.customer_id) list = list.filter(x => x.customer_id === p.customer_id);
+    return jr('success', list.reverse());
+  } catch(err) {
+    return jr('error', 'Failed to retrieve invoices: ' + err.toString());
+  }
 }
 

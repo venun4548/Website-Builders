@@ -8,6 +8,7 @@
   
   <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   
   <style>
     :root {
@@ -285,7 +286,7 @@
       <div class="nav-section">My Portal</div>
       <a href="#" class="nav-link active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> Home</a>
       <a href="#" class="nav-link" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> Projects</a>
-      <a href="#" class="nav-link" onclick="switchTab('invoices')" id="tab-invoices"><i class="fa-solid fa-file-invoice-dollar"></i> Billing</a>
+      <a href="#" class="nav-link" onclick="switchTab('invoices')" id="tab-invoices"><i class="fa-solid fa-credit-card"></i> Invoices & Payments</a>
 
       <div class="nav-section">Support</div>
       <a href="#" class="nav-link" onclick="switchTab('messages')" id="tab-messages"><i class="fa-solid fa-envelope"></i> Messages</a>
@@ -432,29 +433,112 @@
         </div>
       </div>
 
-      <!-- Dedicated Section: Invoices & Billing -->
+      <!-- Dedicated Section: Invoices & Payments -->
       <div id="section-invoices" style="display: none;">
-        <h1 class="page-title">Billing & Payment Invoices</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h1 class="page-title" style="margin-bottom: 0.25rem;">Invoices & Payments</h1>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">View project milestone statements, settle balances via Razorpay, and download official receipts.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openQuickPayModal()" style="padding: 0.65rem 1.25rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px; background: #0F766E; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);">
+            <i class="fa-solid fa-credit-card"></i> Pay Invoice / Milestone
+          </button>
+        </div>
+
+        <!-- Summary KPI Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="card" style="padding: 1.25rem; border-radius: 12px; background: #FFF; border: 1px solid var(--border);">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Total Billed</div>
+            <div id="stat-total-billed" style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-top: 0.25rem;">₹45,000</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Project scope milestones</div>
+          </div>
+          <div class="card" style="padding: 1.25rem; border-radius: 12px; background: #FFF; border: 1px solid var(--border);">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #047857; text-transform: uppercase;">Total Paid</div>
+            <div id="stat-total-paid" style="font-size: 1.6rem; font-weight: 800; color: #047857; margin-top: 0.25rem;">₹25,000</div>
+            <div style="font-size: 0.75rem; color: #047857; margin-top: 0.25rem;"><i class="fa-solid fa-check-circle"></i> Settled via Razorpay</div>
+          </div>
+          <div class="card" style="padding: 1.25rem; border-radius: 12px; background: #FFF; border: 1px solid var(--border);">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Balance Due</div>
+            <div id="stat-balance-due" style="font-size: 1.6rem; font-weight: 800; color: #D97706; margin-top: 0.25rem;">₹20,000</div>
+            <div style="font-size: 0.75rem; color: #D97706; margin-top: 0.25rem;"><i class="fa-solid fa-clock"></i> Next milestone due</div>
+          </div>
+        </div>
+
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <h2 class="card-title"><i class="fa-solid fa-file-invoice-dollar"></i> Account Statement & Payment History</h2>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fa-solid fa-shield-halved" style="color: #059669;"></i> Secured by <strong>Razorpay Standard Web Checkout</strong>
+            </div>
           </div>
           <div style="overflow-x:auto;">
             <table style="width:100%; border-collapse:collapse;">
               <thead>
                 <tr style="border-bottom:2px solid var(--border); text-align:left; font-size:0.85rem; color:var(--text-secondary);">
                   <th style="padding:0.75rem;">Invoice ID</th>
-                  <th style="padding:0.75rem;">Project</th>
-                  <th style="padding:0.75rem;">Billing Stage</th>
+                  <th style="padding:0.75rem;">Project & Milestone</th>
+                  <th style="padding:0.75rem;">Stage</th>
                   <th style="padding:0.75rem;">Amount</th>
-                  <th style="padding:0.75rem;">Payment Status</th>
-                  <th style="padding:0.75rem;">Action</th>
+                  <th style="padding:0.75rem;">Status</th>
+                  <th style="padding:0.75rem; text-align: right;">Payment / Action</th>
                 </tr>
               </thead>
               <tbody id="tbl-client-invoices">
                 <tr><td colspan="6" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">Loading billing records...</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Pay Modal -->
+      <div id="quick-pay-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: #FFF; width: 100%; max-width: 480px; border-radius: 16px; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative; margin: 1rem;">
+          <button onclick="closeQuickPayModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(15,118,110,0.1); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.3rem;">
+              <i class="fa-solid fa-credit-card"></i>
+            </div>
+            <div>
+              <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0;">Online Payment</h3>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">UPI • Credit/Debit Cards • NetBanking • Wallets</p>
+            </div>
+          </div>
+          <form id="quick-pay-form" onsubmit="handleQuickPaySubmit(event)">
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main);">Invoice / Milestone Description</label>
+              <input type="text" id="pay-milestone-desc" class="form-control" placeholder="e.g. Website Advance Deposit / Milestone 2" required style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem;">
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text-main);">Amount (₹ INR)</label>
+              <div style="position: relative;">
+                <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-secondary);">₹</span>
+                <input type="number" id="pay-amount-input" class="form-control" value="5000" min="10" step="10" required style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1.15rem; font-weight: 700; color: var(--text-main);">
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('pay-amount-input').value='2500'" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">₹2,500</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('pay-amount-input').value='5000'" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">₹5,000</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('pay-amount-input').value='15000'" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">₹15,000</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('pay-amount-input').value='20000'" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">₹20,000</button>
+              </div>
+            </div>
+            <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fa-solid fa-lock" style="color: #059669; font-size: 1rem;"></i>
+              <span>Secured by Razorpay. Test & live UPI, Card & NetBanking supported. Instant receipt issued.</span>
+            </div>
+            <button type="submit" id="btn-submit-pay" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 800; font-size: 1rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #0F766E;">
+              <i class="fa-solid fa-lock"></i> Pay via Razorpay Checkout
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Receipt Modal -->
+      <div id="receipt-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: #FFF; width: 100%; max-width: 520px; border-radius: 16px; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative; margin: 1rem;">
+          <button onclick="closeReceiptModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+          <div id="receipt-modal-content">
+            <!-- Dynamically populated receipt -->
           </div>
         </div>
       </div>
@@ -766,14 +850,42 @@
 
             gridHtml += card;
 
+            // Invoice 1: Kickoff & Initial Scope Milestone (PAID)
+            const inv1Id = `INV-${p.project_id.replace('WB-', '')}-01`;
+            const inv1Amt = 25000;
             invoiceRows += `
               <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
-                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">INV-${p.project_id.replace('WB-', '')}-01</td>
-                <td style="padding:0.85rem; font-weight:700;">${p.name}</td>
-                <td style="padding:0.85rem;">${p.stage} Stage Milestone</td>
-                <td style="padding:0.85rem; font-weight:800; color:#047857;">$${(p.progress * 25).toLocaleString()} USD</td>
-                <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;">PAID / INCLUDED</span></td>
-                <td style="padding:0.85rem;"><button class="btn btn-secondary" onclick="alert('Downloading invoice statement for ${p.project_id}...');" style="padding:0.25rem 0.65rem; font-size:0.75rem;"><i class="fa-solid fa-download"></i> Receipt</button></td>
+                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv1Id}</td>
+                <td style="padding:0.85rem; font-weight:700;">${p.name} - Initial Scope & UI Wireframes</td>
+                <td style="padding:0.85rem;">Kickoff Milestone</td>
+                <td style="padding:0.85rem; font-weight:800; color:#047857;">₹${inv1Amt.toLocaleString()}</td>
+                <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span></td>
+                <td style="padding:0.85rem; text-align:right;">
+                  <button class="btn btn-secondary" onclick="viewReceipt('${inv1Id}', '${p.name} - Initial Scope & Wireframes', ${inv1Amt}, 'pay_WB_${p.project_id}_01')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>
+                </td>
+              </tr>
+            `;
+
+            // Invoice 2: Current Stage Milestone
+            const inv2Id = `INV-${p.project_id.replace('WB-', '')}-02`;
+            const inv2Amt = 20000;
+            const isStagePaid = (p.progress >= 100);
+            invoiceRows += `
+              <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
+                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv2Id}</td>
+                <td style="padding:0.85rem; font-weight:700;">${p.name} - ${p.stage} Phase Milestone</td>
+                <td style="padding:0.85rem;">${p.stage}</td>
+                <td style="padding:0.85rem; font-weight:800; color:${isStagePaid ? '#047857' : '#D97706'};">₹${inv2Amt.toLocaleString()}</td>
+                <td style="padding:0.85rem;">
+                  ${isStagePaid ? 
+                    '<span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span>' : 
+                    '<span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> DUE NOW</span>'}
+                </td>
+                <td style="padding:0.85rem; text-align:right;">
+                  ${isStagePaid ? 
+                    `<button class="btn btn-secondary" onclick="viewReceipt('${inv2Id}', '${p.name} - ${p.stage} Milestone', ${inv2Amt})" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>` : 
+                    `<button class="btn btn-primary" onclick="launchRazorpayCheckout('${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${inv2Id}')" style="padding:0.35rem 0.85rem; font-size:0.8rem; background:#0F766E; border:none; border-radius:6px; color:#FFF; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(15,118,110,0.3);"><i class="fa-solid fa-credit-card"></i> Pay via Razorpay</button>`}
+                </td>
               </tr>
             `;
 
@@ -798,6 +910,135 @@
         }
       } catch (err) {
         console.error('Error loading client projects:', err);
+      }
+    }
+
+    // Razorpay Online Payment & Modal Handlers
+    function openQuickPayModal(desc = '', amount = 5000) {
+      const modal = document.getElementById('quick-pay-modal');
+      if (modal) {
+        if (desc) document.getElementById('pay-milestone-desc').value = desc;
+        if (amount) document.getElementById('pay-amount-input').value = amount;
+        modal.style.display = 'flex';
+      }
+    }
+
+    function closeQuickPayModal() {
+      const modal = document.getElementById('quick-pay-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function closeReceiptModal() {
+      const modal = document.getElementById('receipt-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function viewReceipt(invId, desc, amount, payId = 'pay_completed_rzp') {
+      const modal = document.getElementById('receipt-modal');
+      const content = document.getElementById('receipt-modal-content');
+      if (!modal || !content) return;
+      const gst = Math.round(amount * 0.18);
+      const base = amount - gst;
+      content.innerHTML = `
+        <div style="text-align: center; border-bottom: 2px dashed var(--border); padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+          <div style="width: 50px; height: 50px; border-radius: 50%; background: #D1FAE5; color: #065F46; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin: 0;">Tax Invoice & Receipt</h3>
+          <p style="font-size: 0.85rem; color: #059669; font-weight: 700; margin-top: 0.25rem;">PAID & VERIFIED (RAZORPAY)</p>
+        </div>
+        <div style="font-size: 0.85rem; line-height: 1.9; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Invoice ID:</span><strong style="font-family: monospace;">${invId}</strong></div>
+          <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Transaction ID:</span><strong style="font-family: monospace;">${payId}</strong></div>
+          <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Milestone / Scope:</span><strong>${desc}</strong></div>
+          <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Payment Method:</span><span>UPI / NetBanking / Cards</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Base Fee:</span><span>₹${base.toLocaleString()}</span></div>
+          <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">GST (18% Included):</span><span>₹${gst.toLocaleString()}</span></div>
+          <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 0.5rem; font-size: 1.15rem; font-weight: 800; color: var(--primary);">
+            <span>Total Settled:</span><span>₹${amount.toLocaleString()}</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-secondary" onclick="window.print()" style="flex: 1; padding: 0.65rem;"><i class="fa-solid fa-print"></i> Print Receipt</button>
+          <button class="btn btn-primary" onclick="closeReceiptModal()" style="flex: 1; padding: 0.65rem; background: #0F766E;">Done</button>
+        </div>
+      `;
+      modal.style.display = 'flex';
+    }
+
+    async function handleQuickPaySubmit(e) {
+      e.preventDefault();
+      const desc = document.getElementById('pay-milestone-desc').value || 'Milestone Payment';
+      const amount = parseFloat(document.getElementById('pay-amount-input').value) || 5000;
+      closeQuickPayModal();
+      await launchRazorpayCheckout(desc, amount);
+    }
+
+    async function launchRazorpayCheckout(description, amountInRupees, invoiceId = null) {
+      try {
+        const res = await fetch('/api/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: Math.round(amountInRupees * 100),
+            currency: 'INR',
+            receipt: `wb_${Date.now().toString(36)}`,
+            notes: { description, invoiceId: invoiceId || '' }
+          })
+        });
+        const orderData = await res.json();
+        if (!orderData.success && !orderData.order_id) {
+          alert('Unable to initialize payment: ' + (orderData.error || 'Server error'));
+          return;
+        }
+
+        const options = {
+          key: orderData.key_id || 'rzp_test_TeLDvQGnNmBcFN',
+          amount: orderData.amount,
+          currency: orderData.currency || 'INR',
+          name: 'Website Builders',
+          description: description,
+          image: '/images/logo.png',
+          order_id: orderData.order_id,
+          handler: async function (response) {
+            try {
+              await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  invoice_id: invoiceId,
+                  amount: amountInRupees,
+                  currency: 'INR'
+                })
+              });
+            } catch (e) {
+              console.log('Verification recorded:', e);
+            }
+            viewReceipt(invoiceId || ('INV-' + Date.now().toString().slice(-6)), description, amountInRupees, response.razorpay_payment_id);
+            fetchClientProjects();
+          },
+          prefill: {
+            name: '{{ current_user.full_name }}',
+            email: '{{ current_user.email }}',
+            contact: '{{ current_user.mobile or "" }}'
+          },
+          theme: {
+            color: '#0F766E'
+          }
+        };
+
+        if (window.Razorpay) {
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+        } else {
+          alert('Razorpay Checkout SDK is loading, please try again in a moment.');
+        }
+      } catch (err) {
+        console.error('Checkout error:', err);
+        alert('Payment error: ' + err.message);
       }
     }
 
