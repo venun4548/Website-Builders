@@ -2443,7 +2443,7 @@
         const res = await fetch(`/api/super-admin/users/${userId}/reset-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: pass, confirm_password: confirmPass })
+          body: JSON.stringify({ password: pass, new_password: pass, confirm_password: confirmPass })
         });
         const data = await res.json();
         if (res.ok && (data.status === 'success' || data.success)) {

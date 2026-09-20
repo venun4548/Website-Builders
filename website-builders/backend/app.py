@@ -652,7 +652,10 @@ def api_reset_password(user_id):
     if current_user.role not in ('Super Admin', 'Admin') and current_user.id != user_id:
         return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
     data = request.get_json(silent=True) or {}
-    result = call_gas('resetPassword', {'user_id': user_id, 'new_password': data.get('new_password', '')})
+    new_password = data.get('new_password') or data.get('password') or ''
+    if not new_password:
+        return jsonify({'success': False, 'error': 'New password is required.'}), 400
+    result = call_gas('resetPassword', {'user_id': user_id, 'new_password': new_password})
     ok = result.get('status') == 'success'
     return jsonify({'success': ok, 'error': result.get('message')}), (200 if ok else 400)
 
