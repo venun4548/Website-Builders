@@ -81,6 +81,39 @@ function repairAllHeaders(){
   Logger.log('All sheet headers reset and aligned with standard schema.');
 }
 
+function createAllPaymentAndRemainingSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  
+  const NEW_SHEETS = {
+    'Invoices': ['Invoice ID','Project ID','Project Name','Customer ID','Customer Name','Customer Email','Amount','GST Amount','Total Amount','Status','Due Date','Paid At','Razorpay Order ID','Razorpay Payment ID','Created Date','Updated Date'],
+    'InvoiceItems': ['Item ID','Invoice ID','Description','Quantity','Rate','Amount'],
+    'Payments': ['Payment ID','Razorpay Order ID','Razorpay Payment ID','Invoice ID','Customer ID','Amount','Currency','Status','Signature','Paid At'],
+    'Files': ['File ID','Project ID','Uploaded By','File Name','File URL','File Size','File Type','Category','Uploaded At'],
+    'Tickets': ['Ticket ID','Customer ID','Customer Name','Customer Email','Subject','Priority','Status','Assigned To','Created At','Updated At'],
+    'TicketMessages': ['Message ID','Ticket ID','Sender Email','Sender Role','Message','Timestamp'],
+    'BrandInfo': ['Brand ID','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At']
+  };
+
+  for (const [name, headers] of Object.entries(NEW_SHEETS)) {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+    }
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers])
+      .setBackground('#0f172a')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    Logger.log('Created/verified sheet: ' + name);
+  }
+
+  try {
+    SpreadsheetApp.getUi().alert('All Payment, Invoice, File, and Ticket sheets created successfully!');
+  } catch(e) {
+    Logger.log('All Payment, Invoice, File, and Ticket sheets created successfully!');
+  }
+}
+
 function repairUsersHeaders(){
   const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   let sheet=ss.getSheetByName(SHEETS.USERS);
