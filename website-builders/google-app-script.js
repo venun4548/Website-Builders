@@ -3452,16 +3452,46 @@ function updateTeam(d) {
 }
 
 function deleteTeam(d) {
-  if(!d.team_id) return jr('error', 'Team ID required');
-  const sheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
-  const rows = sheet.getDataRange().getValues();
-  for(let i=1; i<rows.length; i++) {
-    if(rows[i][0] === d.team_id) {
-      sheet.deleteRow(i+1);
-      return jr('success', 'Team deleted');
+  d = d || {};
+  const teamId = String(d.team_id || d.id || '').trim();
+  if(!teamId) return jr('error', 'Team ID required');
+  
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(10000); } catch(e) {}
+  
+  try {
+    const sheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
+    const rows = sheet.getDataRange().getValues();
+    let deletedCount = 0;
+    
+    for(let i = rows.length - 1; i >= 1; i--) {
+      if(String(rows[i][0]).trim().toLowerCase() === teamId.toLowerCase()) {
+        sheet.deleteRow(i + 1);
+        deletedCount++;
+      }
     }
+    
+    // Also clean up any associated memberships in TeamMembers sheet
+    try {
+      const tmSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.TEAM_MEMBERS || 'TeamMembers');
+      if (tmSheet && tmSheet.getLastRow() >= 2) {
+        const tmRows = tmSheet.getDataRange().getValues();
+        for (let j = tmRows.length - 1; j >= 1; j--) {
+          if (String(tmRows[j][1]).trim().toLowerCase() === teamId.toLowerCase()) {
+            tmSheet.deleteRow(j + 1);
+          }
+        }
+      }
+    } catch(errTm) {
+      Logger.log('Error cleaning team members: ' + errTm.toString());
+    }
+    
+    return jr('success', { message: 'Team deleted successfully', deleted_rows: deletedCount });
+  } catch(err) {
+    return jr('error', 'deleteTeam failed: ' + err.toString());
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
   }
-  return jr('error', 'Team not found');
 }
 
 function getTeams(p) {

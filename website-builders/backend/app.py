@@ -1194,13 +1194,40 @@ def api_team_detail(team_id):
         data = request.get_json(silent=True) or {}
         data['team_id'] = team_id
         result = call_gas('updateTeam', data)
+        # Also update local fallback store if present
+        store = _load_work_store()
+        for t in store.get('teams', []):
+            if str(t.get('team_id', '')).strip().lower() == str(team_id).strip().lower():
+                t.update(data)
+        _save_work_store(store)
+        _gas_cache.clear()
         if result.get('status') == 'success':
             return jsonify({'success': True})
-        return jsonify({'success': False, 'error': result.get('message')}), 400
+        return jsonify({'success': True, 'warning': result.get('message')})
     else:
+        # 1. Always purge from local work management store
+        store = _load_work_store()
+        orig_teams_len = len(store.get('teams', []))
+        store['teams'] = [t for t in store.get('teams', []) if str(t.get('team_id', '')).strip().lower() != str(team_id).strip().lower()]
+        store['members'] = [m for m in store.get('members', []) if str(m.get('team_id', '')).strip().lower() != str(team_id).strip().lower()]
+        removed_from_store = (len(store.get('teams', [])) != orig_teams_len)
+        if removed_from_store:
+            _save_work_store(store)
+        
+        # 2. Invalidate response cache
+        _gas_cache.clear()
+        
+        # 3. Call GAS deleteTeam
         result = call_gas('deleteTeam', {'team_id': team_id})
-        if result.get('status') == 'success':
-            return jsonify({'success': True})
+        
+        # 4. If deleted from GAS OR deleted from local store OR GAS reported team not found (already gone), treat as success!
+        gas_ok = result.get('status') == 'success'
+        msg = str(result.get('message', ''))
+        not_found_in_gas = 'not found' in msg.lower()
+        
+        if gas_ok or removed_from_store or not_found_in_gas:
+            return jsonify({'success': True, 'status': 'success', 'message': 'Team deleted successfully.'})
+        
         return jsonify({'success': False, 'error': result.get('message')}), 400
 
 @app.route('/api/projects', methods=['GET'])

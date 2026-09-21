@@ -1170,9 +1170,10 @@
                   <th>Leader</th>
                   <th>Members</th>
                   <th>Description</th>
+                  <th>Action</th>
                 </tr>
               </thead>
-              <tbody id="tbl-teams"><tr><td colspan="4">Loading teams...</td></tr></tbody>
+              <tbody id="tbl-teams"><tr><td colspan="5">Loading teams...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -4191,13 +4192,13 @@
 
     async function loadTeams() {
       try {
-        const res = await fetch('/api/teams');
+        const res = await fetch('/api/teams?_t=' + Date.now());
         const data = await res.json();
         const tbody = document.getElementById('tbl-teams');
         if(data.status === 'success' || data.success) {
           const list = data.data || [];
           if(list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4">No teams found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5">No teams found.</td></tr>';
             return;
           }
           tbody.innerHTML = list.map(t => `
@@ -4206,10 +4207,28 @@
               <td>${t.leader_id}</td>
               <td>${t.members}</td>
               <td>${t.description}</td>
+              <td>
+                <button class="btn btn-sm btn-outline" onclick="deleteTeam('${t.team_id}')" style="color:var(--danger, #ef4444); border-color:rgba(239,68,68,0.3);" title="Delete Team">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </td>
             </tr>
           `).join('');
         }
       } catch(e) { console.error(e); }
+    }
+
+    async function deleteTeam(id) {
+      if (!confirm('Are you sure you want to delete this team?')) return;
+      try {
+        const res = await fetch(`/api/teams/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success || data.status === 'success') {
+          await loadTeams();
+        } else {
+          alert('Error: ' + (data.error || data.message || 'Failed to delete team'));
+        }
+      } catch (e) { alert('Network error: ' + e); }
     }
 
 </script>
