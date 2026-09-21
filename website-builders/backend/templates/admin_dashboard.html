@@ -304,6 +304,7 @@
                   <th>Assigned Staff</th>
                   <th>Progress</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="tbl-op-projects">
@@ -340,6 +341,7 @@
                   <th>On-Time %</th>
                   <th>Workload Meter</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="tbl-team-perf">
@@ -415,7 +417,7 @@
       <!-- Section: Projects -->
       <div id="sec-projects" class="view-section" style="display:none;">
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Operations Projects</h2></div>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;"><h2 class="card-title">Operations Projects</h2><button class="btn btn-primary btn-sm" onclick="openProjectModal()"><i class="fa-solid fa-plus"></i> Create Project</button></div>
           <div class="table-responsive">
             <table>
               <thead><tr><th>Project ID</th><th>Name</th><th>Client</th><th>Assigned Staff</th><th>Progress</th><th>Status</th></tr></thead>
@@ -441,7 +443,7 @@
       <!-- Section: Tasks -->
       <div id="sec-tasks" class="view-section" style="display:none;">
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Tasks Board</h2></div>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;"><h2 class="card-title">Tasks Board</h2><button class="btn btn-primary btn-sm" onclick="openTaskModal()"><i class="fa-solid fa-plus"></i> Create Task</button></div>
           <div class="table-responsive">
             <table>
               <thead><tr><th>Task Title</th><th>Assigned Staff</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
@@ -784,6 +786,7 @@
       if (secId === 'notifications') loadAdminNotifications();
       if (secId === 'meetings') loadAdminMeetings();
       if (secId === 'tickets') loadAdminTickets();
+if (secId === 'team') loadTeams();
     }
     
     async function loadAdminMeetings() {
@@ -1064,6 +1067,159 @@
       }));
     }
   </script>
-  <script src="/js/messages.js?v=3"></script>
+  <script src="/js/messages.js?v=3">
+    async function loadTeams() {
+      try {
+        const res = await fetch('/api/teams');
+        const data = await res.json();
+        const tbody = document.getElementById('tbl-teams');
+        if(data.status === 'success' || data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">No teams found.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(t => `
+            <tr>
+              <td><strong>${t.team_name}</strong></td>
+              <td>${t.leader_id}</td>
+              <td>${t.members}</td>
+              <td>${t.description}</td>
+              <td>
+                <button class="btn btn-sm btn-outline" onclick="editTeam('${t.team_id}', '${t.team_name}', '${t.description}', '${t.leader_id}', '${t.members}')">Edit</button>
+                <button class="btn btn-sm btn-outline" onclick="deleteTeam('${t.team_id}')" style="color:var(--danger); border-color:var(--danger);">Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    function openTeamModal() {
+      document.getElementById('team-form').reset();
+      document.getElementById('team-id').value = '';
+      document.getElementById('team-modal-title').innerText = 'Create Team';
+      document.getElementById('modal-team').style.display = 'flex';
+    }
+
+    function editTeam(id, name, desc, leader, members) {
+      document.getElementById('team-id').value = id;
+      document.getElementById('team-name').value = name;
+      document.getElementById('team-desc').value = desc;
+      document.getElementById('team-leader').value = leader;
+      document.getElementById('team-members').value = members;
+      document.getElementById('team-modal-title').innerText = 'Edit Team';
+      document.getElementById('modal-team').style.display = 'flex';
+    }
+
+    async function saveTeam() {
+      const id = document.getElementById('team-id').value;
+      const payload = {
+        team_name: document.getElementById('team-name').value,
+        description: document.getElementById('team-desc').value,
+        leader_id: document.getElementById('team-leader').value,
+        members: document.getElementById('team-members').value
+      };
+      
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/teams/${id}` : '/api/teams';
+      
+      try {
+        const res = await fetch(url, {
+          method: method,
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.success || data.status === 'success') {
+          closeModal('modal-team');
+          loadTeams();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch(e) { alert(e); }
+    }
+
+    async function deleteTeam(id) {
+      if(!confirm('Delete this team?')) return;
+      try {
+        const res = await fetch(`/api/teams/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if(data.success || data.status === 'success') loadTeams();
+        else alert('Error: ' + data.error);
+      } catch(e) { alert(e); }
+    }
+
+    function openProjectModal() {
+      document.getElementById('project-form').reset();
+      document.getElementById('project-id').value = '';
+      document.getElementById('project-modal-title').innerText = 'Create Project';
+      document.getElementById('modal-project').style.display = 'flex';
+    }
+
+    // Projects Edit button injection: we update tbl-projects in JS logic (rows += ...)
+    // Wait, let's inject an Edit button into the tbl-projects mapping.
+    
+    function openTaskModal() {
+      document.getElementById('task-form').reset();
+      document.getElementById('task-id').value = '';
+      document.getElementById('task-modal-title').innerText = 'Create Task';
+      document.getElementById('modal-task').style.display = 'flex';
+    }
+    
+    
+    function editProject(id, name, customer, stage, progress) {
+      document.getElementById('project-id').value = id;
+      document.getElementById('project-name').value = name;
+      document.getElementById('project-customer').value = customer;
+      document.getElementById('project-stage').value = stage;
+      document.getElementById('project-progress').value = progress;
+      document.getElementById('project-modal-title').innerText = 'Edit Project';
+      document.getElementById('modal-project').style.display = 'flex';
+    }
+
+    function editTask(id, title, proj, assigned, status) {
+      document.getElementById('task-id').value = id;
+      document.getElementById('task-title').value = title;
+      document.getElementById('task-project').value = proj;
+      document.getElementById('task-assigned').value = assigned;
+      document.getElementById('task-status').value = status;
+      document.getElementById('task-modal-title').innerText = 'Edit Task';
+      document.getElementById('modal-task').style.display = 'flex';
+    }
+
+    async function saveProject() {
+      const id = document.getElementById('project-id').value;
+      const payload = {
+        name: document.getElementById('project-name').value,
+        customer_id: document.getElementById('project-customer').value,
+        stage: document.getElementById('project-stage').value,
+        progress: document.getElementById('project-progress').value
+      };
+      const url = id ? `/api/projects/${id}` : `/api/projects`;
+      const method = id ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+      });
+      if(res.ok) { closeModal('modal-project'); location.reload(); }
+    }
+
+    async function saveTask() {
+      const id = document.getElementById('task-id').value;
+      const payload = {
+        title: document.getElementById('task-title').value,
+        project_id: document.getElementById('task-project').value,
+        assigned_to: document.getElementById('task-assigned').value,
+        status: document.getElementById('task-status').value
+      };
+      const url = id ? `/api/tasks/${id}` : `/api/tasks`;
+      const method = id ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+      });
+      if(res.ok) { closeModal('modal-task'); location.reload(); }
+    }
+
+</script>
 </body>
 </html>

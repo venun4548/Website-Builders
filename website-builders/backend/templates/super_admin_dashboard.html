@@ -629,6 +629,9 @@
       </a>
 
       <div class="nav-group-label">PEOPLE & ACCESS</div>
+      <a href="/admin/team" class="nav-link" onclick="switchSection('team', event)">
+        <i class="fa-solid fa-users"></i> Teams
+      </a>
       <a href="/admin/people" class="nav-link" onclick="switchSection('people', event)">
         <i class="fa-solid fa-users"></i> All People
       </a>
@@ -665,6 +668,25 @@
       <div class="nav-group-label">FINANCE & BILLING</div>
       <a href="/admin/payments" class="nav-link" id="nav-payments" onclick="switchSection('payments', event)">
         <i class="fa-solid fa-receipt"></i> Payments & Revenue
+      </a>
+
+      <div class="nav-group-label">MARKETING & SALES</div>
+      <a href="/admin/leads" class="nav-link" onclick="switchSection('leads', event)">
+        <i class="fa-solid fa-bullseye"></i> Leads CRM
+      </a>
+      <a href="/admin/portfolio" class="nav-link" onclick="switchSection('portfolio', event)">
+        <i class="fa-solid fa-images"></i> Portfolio
+      </a>
+      <a href="/admin/pricing" class="nav-link" onclick="switchSection('pricing', event)">
+        <i class="fa-solid fa-tags"></i> Pricing Plans
+      </a>
+      <a href="/admin/brand-info" class="nav-link" onclick="switchSection('brandinfo', event)">
+        <i class="fa-solid fa-paint-roller"></i> Brand Info
+      </a>
+
+      <div class="nav-group-label">LEGAL</div>
+      <a href="/admin/documents" class="nav-link" onclick="switchSection('documents', event)">
+        <i class="fa-solid fa-file-signature"></i> Documents & Signing
       </a>
 
       <div class="nav-group-label">ANALYTICS</div>
@@ -1134,7 +1156,28 @@
         </div>
       </div>
 
-      <!-- Section: Tasks -->
+      
+        <!-- Section: Teams -->
+        <div id="sec-team" class="view-section" style="display:none;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="card-title">Staff Teams (Monitor Only)</h2>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Team Name</th>
+                  <th>Leader</th>
+                  <th>Members</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-teams"><tr><td colspan="4">Loading teams...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section: Tasks -->
       <div id="sec-tasks" class="view-section" style="display:none;">
         <div class="card-header" style="margin-bottom:1rem;">
           <h2 class="card-title">Tasks Overview</h2>
@@ -1574,6 +1617,134 @@
           </div>
         </div>
       </div>
+
+
+    <!-- ─── BRAND INFO SECTION ─── -->
+    <div id="section-brandinfo" class="dashboard-section" style="display:none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-paint-roller"></i> Brand Information</div>
+      </div>
+      <div class="card">
+        <div class="table-responsive">
+          <table id="tbl-brand">
+            <thead>
+              <tr>
+                <th>Brand ID</th>
+                <th>Client ID</th>
+                <th>Brand Name</th>
+                <th>Primary Color</th>
+                <th>Fonts</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="brand-list-body">
+              <tr><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── LEADS SECTION ─── -->
+    <div id="section-leads" class="dashboard-section" style="display:none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-bullseye"></i> Leads CRM</div>
+      </div>
+      <div class="card">
+        <div class="table-responsive">
+          <table id="tbl-leads">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Company</th>
+                <th>Status</th>
+                <th>Source</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leads-list-body">
+              <tr><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PORTFOLIO SECTION ─── -->
+    <div id="section-portfolio" class="dashboard-section" style="display:none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-images"></i> Portfolio</div>
+      </div>
+      <div class="card">
+        <div class="table-responsive">
+          <table id="tbl-portfolio">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Sort Order</th>
+                <th>Link</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="portfolio-list-body">
+              <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PRICING SECTION ─── -->
+    <div id="section-pricing" class="dashboard-section" style="display:none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-tags"></i> Pricing Plans</div>
+      </div>
+      <div class="card">
+        <div class="table-responsive">
+          <table id="tbl-pricing">
+            <thead>
+              <tr>
+                <th>Plan Name</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pricing-list-body">
+              <tr><td colspan="4">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── DOCUMENTS SECTION ─── -->
+    <div id="section-documents" class="dashboard-section" style="display:none;">
+      <div class="card-header">
+        <div class="card-title"><i class="fa-solid fa-file-signature"></i> Legal Documents</div>
+      </div>
+      <div class="card">
+        <div class="table-responsive">
+          <table id="tbl-documents">
+            <thead>
+              <tr>
+                <th>Doc ID</th>
+                <th>Title</th>
+                <th>Client ID</th>
+                <th>Status</th>
+                <th>Signed At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="documents-list-body">
+              <tr><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
     </main>
   </div>
@@ -3875,5 +4046,171 @@
     }
   </script>
   <script src="/js/messages.js?v=3"></script>
+<script>
+    async function loadBrandInfo() {
+      try {
+        const res = await fetch('/api/brand-info');
+        const data = await res.json();
+        const tbody = document.getElementById('brand-list-body');
+        if (data.status === 'success' || data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">No brand profiles found.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(b => `
+            <tr>
+              <td>${b.id}</td>
+              <td>${b.user_id}</td>
+              <td><strong>${b.brand_name}</strong></td>
+              <td><span style="display:inline-block;width:12px;height:12px;background:${b.primary_color};border-radius:50%;margin-right:5px;"></span>${b.primary_color}</td>
+              <td>${b.font_family}</td>
+              <td><button class="btn btn-sm btn-outline">Edit</button></td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadLeads() {
+      try {
+        const res = await fetch('/api/leads');
+        const data = await res.json();
+        const tbody = document.getElementById('leads-list-body');
+        if (data.status === 'success' || data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">No leads found.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(l => `
+            <tr>
+              <td><strong>${l.name}</strong></td>
+              <td>${l.email}</td>
+              <td>${l.company}</td>
+              <td><span class="badge ${l.status==='NEW'?'badge-info':'badge-success'}">${l.status}</span></td>
+              <td>${l.source}</td>
+              <td><button class="btn btn-sm btn-outline">View</button></td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadPortfolio() {
+      try {
+        const res = await fetch('/api/portfolio');
+        const data = await res.json();
+        const tbody = document.getElementById('portfolio-list-body');
+        if (data.status === 'success' || data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">No portfolio items found.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(p => `
+            <tr>
+              <td><strong>${p.title}</strong></td>
+              <td>${p.category}</td>
+              <td>${p.sort_order}</td>
+              <td><a href="${p.link}" target="_blank">Link</a></td>
+              <td><button class="btn btn-sm btn-outline">Edit</button></td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadPricing() {
+      try {
+        const res = await fetch('/api/pricing');
+        const data = await res.json();
+        const tbody = document.getElementById('pricing-list-body');
+        if (data.status === 'success' || data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No pricing plans found.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(p => `
+            <tr>
+              <td><strong>${p.plan_name}</strong></td>
+              <td>${p.price}</td>
+              <td><span class="badge ${p.status==='ACTIVE'?'badge-success':'badge-warning'}">${p.status}</span></td>
+              <td><button class="btn btn-sm btn-outline">Edit</button></td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadDocumentsAdmin() {
+      try {
+        const res = await fetch('/api/documents/admin');
+        const data = await res.json();
+        const tbody = document.getElementById('documents-list-body');
+        if (data.status === 'success' || data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6">No documents found.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(d => `
+            <tr>
+              <td style="font-family:monospace;">${d.document_id}</td>
+              <td><strong>${d.title}</strong></td>
+              <td>${d.client_id}</td>
+              <td><span class="badge ${d.status==='SIGNED'?'badge-success':'badge-warning'}">${d.status}</span></td>
+              <td>${d.signed_at || '-'}</td>
+              <td>
+                <a href="${d.file_url}" target="_blank" class="btn btn-sm btn-outline">View</a>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+    
+    // Inject hook into switchSection
+    const originalSwitchSection = window.switchSection;
+    window.switchSection = function(sectionId, event) {
+      if (event && event.preventDefault) event.preventDefault();
+      
+      if(sectionId === 'brandinfo') loadBrandInfo();
+      if(sectionId === 'leads') loadLeads();
+      if(sectionId === 'portfolio') loadPortfolio();
+      if(sectionId === 'pricing') loadPricing();
+      if(sectionId === 'documents') loadDocumentsAdmin();
+      
+      if(originalSwitchSection) {
+        originalSwitchSection(sectionId, event);
+      }
+    };
+
+
+    async function loadTeams() {
+      try {
+        const res = await fetch('/api/teams');
+        const data = await res.json();
+        const tbody = document.getElementById('tbl-teams');
+        if(data.status === 'success' || data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No teams found.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = list.map(t => `
+            <tr>
+              <td><strong>${t.team_name}</strong></td>
+              <td>${t.leader_id}</td>
+              <td>${t.members}</td>
+              <td>${t.description}</td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+</script>
 </body>
 </html>

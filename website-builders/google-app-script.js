@@ -29,7 +29,7 @@ const SHEETS = {
   TICKET_MESSAGES:'TicketMessages', BRAND_INFO:'BrandInfo',
   STAGE_HISTORY:'StageHistory', LEADS:'Leads', LEAD_NOTES:'LeadNotes',
   PORTFOLIO:'Portfolio', PRICING:'Pricing', NOTIFICATIONS:'Notifications',
-  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings', DOCUMENTS:'Documents'
+  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings', DOCUMENTS:'Documents', TEAMS:'Teams'
 };
 
 // Column indexes (1-based)
@@ -77,7 +77,8 @@ const HEADERS={
   PasswordResets:['Reset ID','User ID','Token','Expires At','Used','Created At'],
   EmailVerifications:['Verification ID','User ID','Token','Expires At','Verified','Created At'],
   Meetings:['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At'],
-  Documents:['Document ID','Project ID','Client ID','Title','File URL','Status','OTP','OTP Expires At','Signed At','Created At']
+  Documents:['Document ID','Project ID','Client ID','Title','File URL','Status','OTP','OTP Expires At','Signed At','Created At'],
+  Teams:['Team ID','Team Name','Description','Leader ID','Members','Created At']
 };
 
 function initialSetup(){
@@ -123,7 +124,8 @@ function createAllPaymentAndRemainingSheets() {
     'Notifications':['Notification ID','User ID','Title','Message','Link','Is Read','Created At'],
     'PasswordResets':['Reset ID','User ID','Token','Expires At','Used','Created At'],
     'EmailVerifications':['Verification ID','User ID','Token','Expires At','Verified','Created At'],
-    'Documents': ['Document ID', 'Project ID', 'Client ID', 'Title', 'File URL', 'Status', 'OTP', 'OTP Expires At', 'Signed At', 'Created At']
+    'Documents': ['Document ID', 'Project ID', 'Client ID', 'Title', 'File URL', 'Status', 'OTP', 'OTP Expires At', 'Signed At', 'Created At'],
+    'Teams': ['Team ID','Team Name','Description','Leader ID','Members','Created At']
   };
 
   for (const [name, headers] of Object.entries(NEW_SHEETS)) {
@@ -250,6 +252,9 @@ function doPost(e){
       if(action==='createMeeting') return createMeeting(data);
       if(action==='createTicket') return createTicket(data);
       if(action==='createDocument') return createDocument(data);
+      if(action==='updateDocument') return updateDocument(data);
+      if(action==='createBrandInfo') return createBrandInfo(data);
+      if(action==='updateBrandInfo') return updateBrandInfo(data);
       if(action==='requestDocumentSignature') return requestDocumentSignature(data);
       if(action==='signDocument') return signDocument(data);
 
@@ -294,6 +299,8 @@ function doGet(e){
     if(action==='getMeetings')          return getMeetings(p);
     if(action==='getTickets')           return getTickets(p);
     if(action==='getDocuments')         return getDocuments(p);
+    if(action==='getBrandInfo')         return getBrandInfo(p);
+    if(action==='getTeams')             return getTeams(p);
 
   }catch(err){return jr('error','Read failed: '+err.toString());}
   return jr('error','Unknown action: '+action);
@@ -2506,3 +2513,128 @@ function getEmailVerifications(p) {
   return jr('success', res);
 }
 
+// ─── Brand Info ────────────────────────────────
+function createBrandInfo(d) {
+  const sheet = getOrCreateSheet('BrandInfo', HEADERS.BrandInfo);
+  const id = generateId('BI', 'BrandInfo', 1);
+  const now = getNow();
+  const dt = now.date + ' ' + now.time;
+  sheet.appendRow([id, d.user_id||'', d.brand_name||'', d.tagline||'', d.primary_color||'', d.secondary_color||'', d.font_family||'', d.target_audience||'', d.competitors||'', d.brand_values||'', d.assets_url||'', dt]);
+  return jr('success', {id: id});
+}
+
+function updateBrandInfo(d) {
+  if(!d.id) return jr('error', 'Brand ID required');
+  const sheet = getOrCreateSheet('BrandInfo', HEADERS.BrandInfo);
+  const rows = sheet.getDataRange().getValues();
+  let row = -1;
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === d.id) { row = i+1; break; }
+  }
+  if(row === -1) return jr('error', 'Brand not found');
+  
+  if(d.brand_name!==undefined) sheet.getRange(row, 3).setValue(d.brand_name);
+  if(d.tagline!==undefined) sheet.getRange(row, 4).setValue(d.tagline);
+  if(d.primary_color!==undefined) sheet.getRange(row, 5).setValue(d.primary_color);
+  if(d.secondary_color!==undefined) sheet.getRange(row, 6).setValue(d.secondary_color);
+  if(d.font_family!==undefined) sheet.getRange(row, 7).setValue(d.font_family);
+  if(d.target_audience!==undefined) sheet.getRange(row, 8).setValue(d.target_audience);
+  if(d.competitors!==undefined) sheet.getRange(row, 9).setValue(d.competitors);
+  if(d.brand_values!==undefined) sheet.getRange(row, 10).setValue(d.brand_values);
+  if(d.assets_url!==undefined) sheet.getRange(row, 11).setValue(d.assets_url);
+  
+  const now = getNow();
+  sheet.getRange(row, 12).setValue(now.date + ' ' + now.time);
+  return jr('success', 'Updated');
+}
+
+function getBrandInfo(p) {
+  const sheet = getOrCreateSheet('BrandInfo', HEADERS.BrandInfo);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  const list = sheet.getRange(2, 1, last - 1, 12).getValues().map(r => ({
+    id: String(r[0]), user_id: String(r[1]), brand_name: String(r[2]),
+    tagline: String(r[3]), primary_color: String(r[4]), secondary_color: String(r[5]),
+    font_family: String(r[6]), target_audience: String(r[7]), competitors: String(r[8]),
+    brand_values: String(r[9]), assets_url: String(r[10]), updated_at: String(r[11])
+  })).filter(t => t.id);
+  return jr('success', list);
+}
+
+// ─── Documents update ────────────────────────────────
+function updateDocument(d) {
+  if(!d.document_id) return jr('error', 'Document ID required');
+  const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+  const rows = sheet.getDataRange().getValues();
+  let row = -1;
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === d.document_id) { row = i+1; break; }
+  }
+  if(row === -1) return jr('error', 'Document not found');
+  
+  if(d.title!==undefined) sheet.getRange(row, 4).setValue(d.title);
+  if(d.file_url!==undefined) sheet.getRange(row, 5).setValue(d.file_url);
+  if(d.status!==undefined) sheet.getRange(row, 6).setValue(d.status);
+  
+  return jr('success', 'Updated');
+}
+
+
+// ─── Teams ────────────────────────────────
+function createTeam(d) {
+  if(!d.team_name || !d.leader_id) return jr('error', 'Team Name and Leader ID are required');
+  const sheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
+  const id = generateId('TM', 'Teams', 1);
+  const now = getNow();
+  const dt = now.date + ' ' + now.time;
+  sheet.appendRow([id, d.team_name, d.description||'', d.leader_id, d.members||'[]', dt]);
+  return jr('success', {id: id});
+}
+
+function updateTeam(d) {
+  if(!d.team_id) return jr('error', 'Team ID required');
+  const sheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
+  const rows = sheet.getDataRange().getValues();
+  let row = -1;
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === d.team_id) { row = i+1; break; }
+  }
+  if(row === -1) return jr('error', 'Team not found');
+  
+  if(d.team_name) sheet.getRange(row, 2).setValue(d.team_name);
+  if(d.description !== undefined) sheet.getRange(row, 3).setValue(d.description);
+  if(d.leader_id) sheet.getRange(row, 4).setValue(d.leader_id);
+  if(d.members) sheet.getRange(row, 5).setValue(d.members);
+  
+  return jr('success', 'Team updated');
+}
+
+function deleteTeam(d) {
+  if(!d.team_id) return jr('error', 'Team ID required');
+  const sheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === d.team_id) {
+      sheet.deleteRow(i+1);
+      return jr('success', 'Team deleted');
+    }
+  }
+  return jr('error', 'Team not found');
+}
+
+function getTeams(p) {
+  const sheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  const list = sheet.getRange(2, 1, last - 1, 6).getValues().map(r => ({
+    team_id: String(r[0]),
+    team_name: String(r[1]),
+    description: String(r[2]),
+    leader_id: String(r[3]),
+    members: String(r[4]),
+    created_at: String(r[5])
+  })).filter(t => t.team_id);
+  
+  return jr('success', list);
+}

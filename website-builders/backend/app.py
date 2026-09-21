@@ -598,6 +598,14 @@ def admin_dashboard():
         return redirect(url_for('super_admin_dashboard'))
     return render_template('admin_dashboard.html', user=current_user)
 
+@app.route('/admin/operations')
+@app.route('/operations')
+@login_required
+def admin_operations():
+    if current_user.role not in ('Admin', 'Super Admin'):
+        return redirect(url_for('login'))
+    return render_template('admin_dashboard.html', user=current_user)
+
 @app.route('/staff/dashboard')
 @login_required
 def staff_dashboard():
@@ -862,6 +870,43 @@ def api_update_enquiry(enquiry_id):
     return jsonify({'success': ok, 'error': result.get('message'), 'message': result.get('message')}), (200 if ok else 400)
 
 # ─── API: Projects ────────────────────────────────────────────
+
+@app.route('/api/teams', methods=['GET', 'POST'])
+@login_required
+def api_teams():
+    if request.method == 'GET':
+        result = gas_get('getTeams')
+        if result.get('status') == 'success':
+            return jsonify({'success': True, 'data': result.get('data', [])})
+        return jsonify({'success': False, 'error': result.get('message')}), 400
+    else:
+        if current_user.role not in ('Admin', 'Super Admin'):
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        data = request.get_json(silent=True) or {}
+        result = call_gas('createTeam', data)
+        if result.get('status') == 'success':
+            return jsonify({'success': True, 'data': result.get('data')})
+        return jsonify({'success': False, 'error': result.get('message')}), 400
+
+@app.route('/api/teams/<team_id>', methods=['PUT', 'DELETE'])
+@login_required
+def api_team_detail(team_id):
+    if current_user.role not in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    if request.method == 'PUT':
+        data = request.get_json(silent=True) or {}
+        data['team_id'] = team_id
+        result = call_gas('updateTeam', data)
+        if result.get('status') == 'success':
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': result.get('message')}), 400
+    else:
+        result = call_gas('deleteTeam', {'team_id': team_id})
+        if result.get('status') == 'success':
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': result.get('message')}), 400
+
 @app.route('/api/projects', methods=['GET'])
 @login_required
 def api_get_projects():
@@ -1440,6 +1485,37 @@ def pricing_dashboard():
     return render_template('pricing_dashboard.html')
 
 # ─── NEW API ENDPOINTS ───────────────────────────────────────
+
+@app.route('/api/brand-info', methods=['GET', 'POST', 'PUT'])
+@login_required
+def api_brand_info():
+    if request.method == 'GET':
+        client_id = request.args.get('client_id')
+        res = gas_get('getBrandInfo', {'client_id': client_id})
+        return jsonify(res)
+    elif request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        res = call_gas('createBrandInfo', data)
+        return jsonify(res)
+    else:
+        data = request.get_json(silent=True) or {}
+        res = call_gas('updateBrandInfo', data)
+        return jsonify(res)
+
+@app.route('/api/documents/admin', methods=['GET', 'POST', 'PUT'])
+@login_required
+def api_documents_admin():
+    if request.method == 'GET':
+        res = gas_get('getDocuments')
+        return jsonify(res)
+    elif request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        res = call_gas('createDocument', data)
+        return jsonify(res)
+    else:
+        data = request.get_json(silent=True) or {}
+        res = call_gas('updateDocument', data)
+        return jsonify(res)
 
 @app.route('/api/stage-history', methods=['GET', 'POST'])
 @login_required
