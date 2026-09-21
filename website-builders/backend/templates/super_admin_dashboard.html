@@ -3065,8 +3065,26 @@
         return;
       }
 
-      const dateStr = p.paid_date || p.date || (p.paid_at ? p.paid_at.split('T')[0] : new Date().toISOString().split('T')[0]);
-      const timeStr = p.paid_time || (p.paid_at && p.paid_at.includes('T') ? p.paid_at.split('T')[1].substring(0, 8) : '');
+      let dateStr = p.paid_date || p.date;
+      let timeStr = p.paid_time;
+      if (!dateStr || !timeStr) {
+        if (p.paid_at) {
+          const paStr = String(p.paid_at);
+          if (paStr.includes('T')) {
+            dateStr = dateStr || paStr.split('T')[0];
+            const timePart = paStr.split('T')[1];
+            timeStr = timeStr || (timePart ? timePart.substring(0, 8) : '');
+          } else {
+            // Might be a unix timestamp or other format
+            dateStr = dateStr || new Date().toISOString().split('T')[0];
+            timeStr = timeStr || '';
+          }
+        } else {
+          dateStr = dateStr || new Date().toISOString().split('T')[0];
+          timeStr = timeStr || '';
+        }
+      }
+
       const totalAmt = Number(p.amount || 0);
       const subtotal = Math.round((totalAmt / 1.18) * 100) / 100;
       const gst = Math.round((totalAmt - subtotal) * 100) / 100;
