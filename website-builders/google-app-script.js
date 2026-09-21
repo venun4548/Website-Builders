@@ -144,7 +144,8 @@ function createAllPaymentAndRemainingSheets() {
     'DocumentVerification': ['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
     'DocumentAuditLogs': ['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
     'DocumentTemplates': ['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At'],
-    'PasswordOTPs': ['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt']
+    'PasswordOTPs': ['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt'],
+    'Meetings': ['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At']
   };
 
   for (const [name, headers] of Object.entries(NEW_SHEETS)) {
