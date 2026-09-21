@@ -1,0 +1,74 @@
+{
+  "teams": [
+    {
+      "team_id": "TEAM-2026-001",
+      "team_name": "E2E Test Development Team",
+      "description": "End-to-end verification team",
+      "leader_id": "USR-ADMIN",
+      "team_lead_name": "",
+      "members": "USR-ADMIN",
+      "members_count": 1,
+      "active_projects_count": 0,
+      "pending_tasks_count": 0,
+      "status": "ACTIVE",
+      "created_at": "2026-09-21 20:21:40"
+    },
+    {
+      "team_id": "TEAM-2026-002",
+      "team_name": "E2E Test Development Team",
+      "description": "End-to-end verification team",
+      "leader_id": "USR-ADMIN",
+      "team_lead_name": "",
+      "members": "USR-ADMIN",
+      "members_count": 1,
+      "active_projects_count": 0,
+      "pending_tasks_count": 0,
+      "status": "ACTIVE",
+      "created_at": "2026-09-21 20:23:57"
+    }
+  ],
+  "members": [],
+  "updates": [
+    {
+      "update_id": "UPD-2026-0001",
+      "task_id": "TSK-2026-000001",
+      "staff_id": "USR-999",
+      "staff_name": "",
+      "update_text": "Completed initial responsive layout design.",
+      "progress": 40,
+      "visibility": "CLIENT_VISIBLE",
+      "created_at": "2026-09-21 20:21:51"
+    },
+    {
+      "update_id": "UPD-2026-0002",
+      "task_id": "TSK-2026-000002",
+      "staff_id": "USR-999",
+      "staff_name": "",
+      "update_text": "Completed initial responsive layout design.",
+      "progress": 40,
+      "visibility": "CLIENT_VISIBLE",
+      "created_at": "2026-09-21 20:24:06"
+    }
+  ],
+  "assignments": [
+    {
+      "assignment_id": "TASG-2026-0001",
+      "task_id": "TSK-2026-000001",
+      "staff_id": "USR-STAFF-TEST",
+      "staff_name": "Arjun Staff",
+      "reassigned_by": "USR-999",
+      "reason": "Balanced work distribution assignment.",
+      "date": "2026-09-21 20:21:56"
+    },
+    {
+      "assignment_id": "TASG-2026-0002",
+      "task_id": "TSK-2026-000002",
+      "staff_id": "USR-STAFF-TEST",
+      "staff_name": "Arjun Staff",
+      "reassigned_by": "USR-999",
+      "reason": "Balanced work distribution assignment.",
+      "date": "2026-09-21 20:24:10"
+    }
+  ],
+  "archived_projects": []
+}
