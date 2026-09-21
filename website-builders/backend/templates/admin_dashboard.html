@@ -155,6 +155,18 @@
       border-color: var(--primary-green) !important;
       box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
     }
+
+    .modal-backdrop {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5); display: none; z-index: 9999;
+      align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .modal-drawer {
+      background: #FFFFFF; border: 1px solid var(--border-color);
+      border-radius: 16px; width: 100%; max-width: 500px; padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.18); position: relative;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
   </style>
 </head>
 <body>
@@ -417,7 +429,7 @@
       <!-- Section: Projects -->
       <div id="sec-projects" class="view-section" style="display:none;">
         <div class="card">
-          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;"><h2 class="card-title">Operations Projects</h2><button class="btn btn-primary btn-sm" onclick="openProjectModal()"><i class="fa-solid fa-plus"></i> Create Project</button></div>
+          <div class="card-header"><h2 class="card-title">Operations Projects</h2></div>
           <div class="table-responsive">
             <table>
               <thead><tr><th>Project ID</th><th>Name</th><th>Client</th><th>Assigned Staff</th><th>Progress</th><th>Status</th></tr></thead>
@@ -1151,23 +1163,17 @@ if (secId === 'team') loadTeams();
       } catch(e) { alert(e); }
     }
 
-    function openProjectModal() {
-      document.getElementById('project-form').reset();
-      document.getElementById('project-id').value = '';
-      document.getElementById('project-modal-title').innerText = 'Create Project';
-      document.getElementById('modal-project').style.display = 'flex';
+    function closeModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.style.display = 'none';
     }
 
-    // Projects Edit button injection: we update tbl-projects in JS logic (rows += ...)
-    // Wait, let's inject an Edit button into the tbl-projects mapping.
-    
     function openTaskModal() {
       document.getElementById('task-form').reset();
       document.getElementById('task-id').value = '';
       document.getElementById('task-modal-title').innerText = 'Create Task';
       document.getElementById('modal-task').style.display = 'flex';
     }
-    
     
     function editProject(id, name, customer, stage, progress) {
       document.getElementById('project-id').value = id;
@@ -1191,16 +1197,15 @@ if (secId === 'team') loadTeams();
 
     async function saveProject() {
       const id = document.getElementById('project-id').value;
+      if (!id) return;
       const payload = {
         name: document.getElementById('project-name').value,
         customer_id: document.getElementById('project-customer').value,
         stage: document.getElementById('project-stage').value,
         progress: document.getElementById('project-progress').value
       };
-      const url = id ? `/api/projects/${id}` : `/api/projects`;
-      const method = id ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+      const res = await fetch(`/api/projects/${id}`, {
+        method: 'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
       });
       if(res.ok) { closeModal('modal-project'); location.reload(); }
     }
@@ -1223,12 +1228,12 @@ if (secId === 'team') loadTeams();
 
 </script>
 
-  <!-- Project Modal -->
+  <!-- Project Modal (Edit Only) -->
   <div class="modal-backdrop" id="modal-project" style="display:none;">
     <div class="modal-drawer">
       <div class="modal-header">
-        <h2 id="project-modal-title">Create Project</h2>
-        <button onclick="closeModal('modal-project')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+        <h2 id="project-modal-title">Edit Project</h2>
+        <button type="button" onclick="closeModal('modal-project')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
         <form id="project-form" onsubmit="event.preventDefault(); saveProject();">
@@ -1255,7 +1260,7 @@ if (secId === 'team') loadTeams();
             <label>Progress (%)</label>
             <input type="number" id="project-progress" min="0" max="100" class="filter-input">
           </div>
-          <button type="submit" class="btn btn-primary" style="width:100%">Save Project</button>
+          <button type="submit" class="btn btn-primary" style="width:100%">Update Project</button>
         </form>
       </div>
     </div>
