@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Pricing Management</h1>
+    
+    <div class="bg-white p-4 rounded shadow mb-6">
+        <h2 class="text-xl mb-2">Add Pricing Plan</h2>
+        <form id="pricingForm" class="space-y-4">
+            <div><label>Plan Name</label><input type="text" id="prName" class="border p-2 w-full" required></div>
+            <div><label>Description</label><textarea id="prDesc" class="border p-2 w-full"></textarea></div>
+            <div><label>Price</label><input type="number" id="prPrice" class="border p-2 w-full" step="0.01" required></div>
+            <div><label>Features (comma separated)</label><input type="text" id="prFeatures" class="border p-2 w-full"></div>
+            <div><label>Status</label>
+                <select id="prStatus" class="border p-2 w-full">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                </select>
+            </div>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Add Plan</button>
+        </form>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl mb-2">Current Plans</h2>
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr>
+                    <th class="border-b p-2">Name</th>
+                    <th class="border-b p-2">Price</th>
+                    <th class="border-b p-2">Status</th>
+                    <th class="border-b p-2">Features</th>
+                </tr>
+            </thead>
+            <tbody id="prTableBody">
+                <!-- Data populated by JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    fetchPricing();
+
+    document.getElementById('pricingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            name: document.getElementById('prName').value,
+            desc: document.getElementById('prDesc').value,
+            price: parseFloat(document.getElementById('prPrice').value || 0),
+            features: document.getElementById('prFeatures').value,
+            status: document.getElementById('prStatus').value
+        };
+
+        const res = await fetch('/api/pricing', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if(res.ok) {
+            e.target.reset();
+            fetchPricing();
+        } else {
+            alert('Error creating pricing plan');
+        }
+    });
+});
+
+async function fetchPricing() {
+    const res = await fetch('/api/pricing');
+    const data = await res.json();
+    const tbody = document.getElementById('prTableBody');
+    tbody.innerHTML = '';
+    
+    if (data && data.length > 0) {
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="border-b p-2">${item.name}</td>
+                <td class="border-b p-2">${item.price}</td>
+                <td class="border-b p-2">${item.status}</td>
+                <td class="border-b p-2">${item.features}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-2 text-center text-gray-500">No plans found.</td></tr>';
+    }
+}
+</script>
+{% endblock %}

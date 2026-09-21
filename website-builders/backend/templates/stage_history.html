@@ -1,0 +1,88 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Stage History</h1>
+    
+    <div class="bg-white p-4 rounded shadow mb-6">
+        <h2 class="text-xl mb-2">Record Stage Change</h2>
+        <form id="stageForm" class="space-y-4">
+            <div><label>Project ID</label><input type="text" id="shProjectId" class="border p-2 w-full" required></div>
+            <div><label>Old Stage</label><input type="text" id="shOldStage" class="border p-2 w-full"></div>
+            <div><label>New Stage</label><input type="text" id="shNewStage" class="border p-2 w-full" required></div>
+            <div><label>Remarks</label><input type="text" id="shRemarks" class="border p-2 w-full"></div>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Add Record</button>
+        </form>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl mb-2">History Records</h2>
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr>
+                    <th class="border-b p-2">Project ID</th>
+                    <th class="border-b p-2">Old Stage</th>
+                    <th class="border-b p-2">New Stage</th>
+                    <th class="border-b p-2">Changed By</th>
+                    <th class="border-b p-2">Timestamp</th>
+                    <th class="border-b p-2">Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="shTableBody">
+                <!-- Data populated by JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    fetchStageHistory();
+
+    document.getElementById('stageForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            project_id: document.getElementById('shProjectId').value,
+            old_stage: document.getElementById('shOldStage').value,
+            new_stage: document.getElementById('shNewStage').value,
+            remarks: document.getElementById('shRemarks').value
+        };
+
+        const res = await fetch('/api/stage-history', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if(res.ok) {
+            e.target.reset();
+            fetchStageHistory();
+        } else {
+            alert('Error recording stage history');
+        }
+    });
+});
+
+async function fetchStageHistory() {
+    const res = await fetch('/api/stage-history');
+    const data = await res.json();
+    const tbody = document.getElementById('shTableBody');
+    tbody.innerHTML = '';
+    
+    if (data && data.length > 0) {
+        data.forEach(record => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="border-b p-2">${record.project_id}</td>
+                <td class="border-b p-2">${record.old_stage}</td>
+                <td class="border-b p-2">${record.new_stage}</td>
+                <td class="border-b p-2">${record.changed_by}</td>
+                <td class="border-b p-2">${record.timestamp}</td>
+                <td class="border-b p-2">${record.remarks}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } else {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-2 text-center text-gray-500">No records found.</td></tr>';
+    }
+}
+</script>
+{% endblock %}
