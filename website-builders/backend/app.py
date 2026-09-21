@@ -1038,6 +1038,11 @@ def api_request_signature_fallback():
     ok = result.get('status') == 'success'
     return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
 
+@app.route('/api/stats', methods=['GET'])
+@login_required
+def api_get_stats():
+    return jsonify({'success': True, 'data': {'unread': 0, 'inbox': 0, 'sent': 0}})
+
 @app.route('/api/tickets', methods=['GET'])
 @login_required
 def api_get_tickets():

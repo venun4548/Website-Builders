@@ -14,7 +14,7 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) {
           const action = payload.action;
           let url = '/api/messages'; // default fallback
           
-          if (action === 'getStats') url = '/api/stats/admin'; // just dummy or implement later
+          if (action === 'getStats') url = '/api/stats';
           if (action === 'getConversations') url = '/api/messages/conversations';
           if (action === 'getConversationThread') url = '/api/messages/conversations/' + payload.conversation_id;
           if (action === 'getRecipients') url = '/api/messages/recipients';
