@@ -1098,6 +1098,24 @@ def api_user_document_verify(doc_id):
     result = call_gas('verifyDocumentOtp', data)
     return jsonify(result)
 
+@app.route('/api/user/documents/<doc_id>/request-signature', methods=['POST'])
+@login_required
+def api_user_document_request_sig(doc_id):
+    if not current_user.is_user():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    data = {'document_id': doc_id, 'sent_by': current_user.id, 'sent_by_name': current_user.full_name}
+    result = call_gas('requestDocumentSignature', data)
+    
+    if result.get('status') == 'success':
+        otp = result.get('data', {}).get('otp')
+        send_email_notification(
+            to_email=current_user.email,
+            subject=f"Signature Required - Document {doc_id}",
+            body=f"Please use this secure OTP to view and sign your document: {otp}. It expires in 15 minutes."
+        )
+    return jsonify(result)
+
 @app.route('/api/user/documents/<doc_id>/sign', methods=['POST'])
 @login_required
 def api_user_document_sign(doc_id):

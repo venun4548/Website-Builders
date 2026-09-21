@@ -1447,7 +1447,7 @@
       const container = document.getElementById('documents-list');
       if (!container) return;
       try {
-        const res = await fetch('/api/documents');
+        const res = await fetch('/api/user/documents');
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {
           container.innerHTML = data.data.map(doc => `
@@ -1490,7 +1490,7 @@
     async function requestDocumentSignature(docId) {
       if(!confirm('Request an OTP to your email to sign this document?')) return;
       try {
-        const res = await fetch(`/api/documents/${docId}/request-signature`, { method: 'POST' });
+        const res = await fetch(`/api/user/documents/${docId}/request-signature`, { method: 'POST' });
         const data = await res.json();
         if(data.success) {
           document.getElementById('otp-doc-id').value = docId;
@@ -1509,7 +1509,7 @@
       if(!otp || otp.length < 6) return alert('Please enter a valid 6-digit OTP.');
 
       try {
-        const res = await fetch(`/api/documents/${docId}/sign`, {
+        const res = await fetch(`/api/user/documents/${docId}/sign`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ otp })

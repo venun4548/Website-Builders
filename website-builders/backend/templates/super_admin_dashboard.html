@@ -4147,7 +4147,7 @@
 
     async function loadDocumentsAdmin() {
       try {
-        const res = await fetch('/api/documents/admin');
+        const res = await fetch('/api/admin/documents');
         const data = await res.json();
         const tbody = document.getElementById('documents-list-body');
         if (data.status === 'success' || data.success) {
