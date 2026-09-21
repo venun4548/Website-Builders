@@ -33,7 +33,10 @@ const SHEETS = {
   DOC_VERIFICATION:'DocumentVerification',
   DOC_AUDIT:'DocumentAuditLogs',
   DOC_TEMPLATES:'DocumentTemplates',
-  PASSWORD_OTPS:'PasswordOTPs'
+  PASSWORD_OTPS:'PasswordOTPs',
+  TEAM_MEMBERS:'TeamMembers',
+  TASK_UPDATES:'TaskUpdates',
+  TASK_ASSIGNMENTS:'TaskAssignments'
 };
 
 // Column indexes (1-based)
@@ -86,7 +89,10 @@ const HEADERS={
   DocumentVerification:['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
   DocumentAuditLogs:['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
   DocumentTemplates:['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At'],
-  PasswordOTPs:['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt']
+  PasswordOTPs:['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt'],
+  TeamMembers:['Membership ID','Team ID','Team Name','Staff ID','Staff Name','Staff Email','Role','Status','Added By','Added Date','Added Time','Removed Date','Removed Time'],
+  TaskUpdates:['Update ID','Task ID','Project ID','Staff ID','Staff Name','Update Text','Progress','Visibility','Created Date','Created Time'],
+  TaskAssignments:['Assignment ID','Task ID','Project ID','Staff ID','Staff Name','Team ID','Team Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Unassigned Time','Status','Reassignment Reason']
 };
 
 function initialSetup(){
@@ -289,6 +295,16 @@ function doPost(e){
       if(action==='updatePasswordOtp') return updatePasswordOtp(data);
       if(action==='updateUserPassword') return updateUserPassword(data);
 
+      // WORK MANAGEMENT POST ACTIONS
+      if(action==='createTeam')       return createTeam(data);
+      if(action==='updateTeam')       return updateTeam(data);
+      if(action==='deleteTeam')       return deleteTeam(data);
+      if(action==='addTeamMember')    return addTeamMember(data);
+      if(action==='removeTeamMember') return removeTeamMember(data);
+      if(action==='reassignTask')     return reassignTask(data);
+      if(action==='addTaskUpdate')    return addTaskUpdate(data);
+      if(action==='archiveProject')   return archiveProject(data);
+
     }catch(err){return jr('error','Action failed: '+err.toString());}
     return jr('error','Unknown action: '+action);
   }
@@ -334,6 +350,16 @@ function doGet(e){
     if(action==='getDocumentAuditLogs') return getDocumentAuditLogs(p);
     if(action==='getBrandInfo')         return getBrandInfo(p);
     if(action==='getTeams')             return getTeams(p);
+    if(action==='getTeamById')          return getTeamById(p);
+    if(action==='getTeamMembers')       return getTeamMembers(p);
+    if(action==='getProjectById')       return getProjectById(p);
+    if(action==='getTaskById')          return getTaskById(p);
+    if(action==='getTaskUpdates')       return getTaskUpdates(p);
+    if(action==='getTaskAssignments')   return getTaskAssignments(p);
+    if(action==='getWorkDistribution')  return getWorkDistribution(p);
+    if(action==='getStaffWorkload')     return getWorkDistribution(p);
+    if(action==='getProjectProgress')   return getProjectProgress(p);
+    if(action==='getWorkManagementStats') return getWorkManagementStats(p);
 
   }catch(err){return jr('error','Read failed: '+err.toString());}
   return jr('error','Unknown action: '+action);
@@ -3136,3 +3162,698 @@ function sendPasswordResetOtpEmail(d) {
   }
 }
 
+
+
+// ═══════════════════════════════════════════════════════════════════
+// WORK MANAGEMENT EXTENSIONS (PROJECTS, TEAMS, TASKS, WORK DISTRIBUTION)
+// ═══════════════════════════════════════════════════════════════════
+
+function generateTeamId() {
+  const year = new Date().getFullYear();
+  const pfx = 'TEAM-' + year + '-';
+  const sheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
+  const last = sheet.getLastRow();
+  let max = 0;
+  if (last >= 2) {
+    sheet.getRange(2, 1, last - 1, 1).getValues().forEach(r => {
+      const id = String(r[0]);
+      if (id.startsWith(pfx)) {
+        const n = parseInt(id.substring(pfx.length), 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+    });
+  }
+  return pfx + ('000' + (max + 1)).slice(-3);
+}
+
+function generateTaskId() {
+  const year = new Date().getFullYear();
+  const pfx = 'TASK-' + year + '-';
+  const sheet = getOrCreateSheet(SHEETS.TASKS || 'Tasks', HEADERS.Tasks);
+  const last = sheet.getLastRow();
+  let max = 0;
+  if (last >= 2) {
+    sheet.getRange(2, 1, last - 1, 1).getValues().forEach(r => {
+      const id = String(r[0]);
+      if (id.startsWith(pfx)) {
+        const n = parseInt(id.substring(pfx.length), 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+    });
+  }
+  return pfx + ('0000' + (max + 1)).slice(-4);
+}
+
+function generateMembershipId() {
+  const year = new Date().getFullYear();
+  const pfx = 'MEM-' + year + '-';
+  const sheet = getOrCreateSheet(SHEETS.TEAM_MEMBERS || 'TeamMembers', HEADERS.TeamMembers);
+  const last = sheet.getLastRow();
+  let max = 0;
+  if (last >= 2) {
+    sheet.getRange(2, 1, last - 1, 1).getValues().forEach(r => {
+      const id = String(r[0]);
+      if (id.startsWith(pfx)) {
+        const n = parseInt(id.substring(pfx.length), 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+    });
+  }
+  return pfx + ('0000' + (max + 1)).slice(-4);
+}
+
+function generateTaskUpdateId() {
+  const year = new Date().getFullYear();
+  const pfx = 'UPD-' + year + '-';
+  const sheet = getOrCreateSheet(SHEETS.TASK_UPDATES || 'TaskUpdates', HEADERS.TaskUpdates);
+  const last = sheet.getLastRow();
+  let max = 0;
+  if (last >= 2) {
+    sheet.getRange(2, 1, last - 1, 1).getValues().forEach(r => {
+      const id = String(r[0]);
+      if (id.startsWith(pfx)) {
+        const n = parseInt(id.substring(pfx.length), 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+    });
+  }
+  return pfx + ('0000' + (max + 1)).slice(-4);
+}
+
+function generateTaskAssignmentId() {
+  const year = new Date().getFullYear();
+  const pfx = 'TASG-' + year + '-';
+  const sheet = getOrCreateSheet(SHEETS.TASK_ASSIGNMENTS || 'TaskAssignments', HEADERS.TaskAssignments);
+  const last = sheet.getLastRow();
+  let max = 0;
+  if (last >= 2) {
+    sheet.getRange(2, 1, last - 1, 1).getValues().forEach(r => {
+      const id = String(r[0]);
+      if (id.startsWith(pfx)) {
+        const n = parseInt(id.substring(pfx.length), 10);
+        if (!isNaN(n) && n > max) max = n;
+      }
+    });
+  }
+  return pfx + ('0000' + (max + 1)).slice(-4);
+}
+
+// ─── Extended Teams Functions ────────────────────────────────────
+
+function addTeamMember(d) {
+  d = d || {};
+  if (!d.team_id || !d.staff_id) return jr('error', 'Team ID and Staff ID are required.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet(SHEETS.TEAM_MEMBERS || 'TeamMembers', HEADERS.TeamMembers);
+    const last = sheet.getLastRow();
+    
+    // Check if staff already member of this team
+    if (last >= 2) {
+      const rows = sheet.getRange(2, 1, last - 1, 13).getValues();
+      for (let i = 0; i < rows.length; i++) {
+        if (String(rows[i][1]) === String(d.team_id) && String(rows[i][3]) === String(d.staff_id)) {
+          if (String(rows[i][7]).toUpperCase() === 'ACTIVE') {
+            return jr('error', 'Staff member is already active in this team.');
+          } else {
+            // Re-activate
+            sheet.getRange(i + 2, 8).setValue('ACTIVE');
+            sheet.getRange(i + 2, 12).setValue('');
+            sheet.getRange(i + 2, 13).setValue('');
+            return jr('success', { message: 'Staff member re-activated in team.' });
+          }
+        }
+      }
+    }
+    
+    // Lookup staff name & email from Users sheet
+    let sName = d.staff_name || '';
+    let sEmail = d.staff_email || '';
+    if (!sName || !sEmail) {
+      const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+      const uRow = findRowByValue(uSheet, U.ID, d.staff_id);
+      if (uRow > 0) {
+        sName = String(uSheet.getRange(uRow, U.NAME).getValue() || '');
+        sEmail = String(uSheet.getRange(uRow, U.EMAIL).getValue() || '');
+      }
+    }
+    
+    // Lookup team name
+    let tName = d.team_name || '';
+    if (!tName) {
+      const tSheet = getOrCreateSheet(SHEETS.TEAMS || 'Teams', HEADERS.Teams);
+      const tRow = findRowByValue(tSheet, 1, d.team_id);
+      if (tRow > 0) {
+        tName = String(tSheet.getRange(tRow, 2).getValue() || '');
+      }
+    }
+    
+    const memId = generateMembershipId();
+    const now = getNow();
+    sheet.appendRow([
+      memId, d.team_id, tName, d.staff_id, sName, sEmail,
+      d.role || 'Member', 'ACTIVE', d.added_by || '', now.date, now.time, '', ''
+    ]);
+    
+    logActivity({
+      userId: d.added_by || '',
+      userName: sName,
+      role: 'Admin',
+      action: 'STAFF_ADDED_TO_TEAM',
+      relatedId: d.team_id,
+      description: 'Added staff ' + sName + ' to team ' + tName,
+      status: 'SUCCESS'
+    });
+    
+    return jr('success', { id: memId, message: 'Staff added to team successfully.' });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function removeTeamMember(d) {
+  d = d || {};
+  if (!d.team_id || !d.staff_id) return jr('error', 'Team ID and Staff ID are required.');
+  const sheet = getOrCreateSheet(SHEETS.TEAM_MEMBERS || 'TeamMembers', HEADERS.TeamMembers);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('error', 'No team memberships found.');
+  
+  const now = getNow();
+  const rows = sheet.getRange(2, 1, last - 1, 13).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][1]) === String(d.team_id) && String(rows[i][3]) === String(d.staff_id) && String(rows[i][7]).toUpperCase() === 'ACTIVE') {
+      sheet.getRange(i + 2, 8).setValue('REMOVED');
+      sheet.getRange(i + 2, 12).setValue(now.date);
+      sheet.getRange(i + 2, 13).setValue(now.time);
+      
+      logActivity({
+        userId: d.removed_by || '',
+        userName: String(rows[i][4] || ''),
+        role: 'Admin',
+        action: 'STAFF_REMOVED_FROM_TEAM',
+        relatedId: d.team_id,
+        description: 'Removed staff from team ' + String(rows[i][2] || ''),
+        status: 'SUCCESS'
+      });
+      return jr('success', { message: 'Staff member removed from team.' });
+    }
+  }
+  return jr('error', 'Active team membership not found.');
+}
+
+function getTeamMembers(p) {
+  p = p || {};
+  const sheet = getOrCreateSheet(SHEETS.TEAM_MEMBERS || 'TeamMembers', HEADERS.TeamMembers);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  let list = sheet.getRange(2, 1, last - 1, 13).getValues().map(r => ({
+    membership_id: String(r[0]),
+    team_id: String(r[1]),
+    team_name: String(r[2]),
+    staff_id: String(r[3]),
+    staff_name: String(r[4]),
+    staff_email: String(r[5]),
+    role: String(r[6]),
+    status: String(r[7]),
+    added_by: String(r[8]),
+    added_date: String(r[9]),
+    added_time: String(r[10]),
+    removed_date: String(r[11]),
+    removed_time: String(r[12])
+  })).filter(m => m.membership_id && m.status === 'ACTIVE');
+  
+  if (p.team_id) list = list.filter(m => m.team_id === String(p.team_id));
+  if (p.staff_id) list = list.filter(m => m.staff_id === String(p.staff_id));
+  return jr('success', list);
+}
+
+function getTeamById(p) {
+  p = p || {};
+  const teamId = p.team_id || p.id;
+  if (!teamId) return jr('error', 'Team ID is required.');
+  
+  const teamsRes = getTeams();
+  const teams = teamsRes.data || [];
+  const team = teams.find(t => String(t.team_id) === String(teamId));
+  if (!team) return jr('error', 'Team not found.');
+  
+  // Get members with their individual task counts
+  const memRes = getTeamMembers({ team_id: teamId });
+  const members = memRes.data || [];
+  
+  // Get tasks to compute individual member workload
+  const tasksRes = getTasks();
+  const allTasks = tasksRes.data || [];
+  
+  const enrichedMembers = members.map(m => {
+    const mTasks = allTasks.filter(t => String(t.assigned_staff_id) === String(m.staff_id) && String(t.status).toUpperCase() !== 'COMPLETED' && String(t.status).toUpperCase() !== 'CANCELLED');
+    const highPri = mTasks.filter(t => ['HIGH', 'URGENT'].includes(String(t.priority).toUpperCase())).length;
+    const nowStr = getNow().date;
+    const overdue = mTasks.filter(t => t.due_date && t.due_date < nowStr).length;
+    
+    let tier = 'AVAILABLE';
+    let loadPct = 25;
+    if (mTasks.length >= 8 || overdue >= 2) { tier = 'OVERLOADED'; loadPct = 95; }
+    else if (mTasks.length >= 6) { tier = 'HIGH'; loadPct = 75; }
+    else if (mTasks.length >= 3) { tier = 'NORMAL'; loadPct = 50; }
+    
+    return {
+      ...m,
+      active_tasks_count: mTasks.length,
+      high_priority_count: highPri,
+      overdue_count: overdue,
+      workload_tier: tier,
+      workload_percentage: loadPct
+    };
+  });
+  
+  // Get active projects for this team
+  const projRes = getProjects();
+  const teamProjects = (projRes.data || []).filter(pr => String(pr.team_id) === String(teamId) || String(pr.team_name) === String(team.team_name));
+  
+  return jr('success', {
+    ...team,
+    members: enrichedMembers,
+    projects: teamProjects
+  });
+}
+
+// ─── Extended Task & Assignment Functions ─────────────────────────
+
+function reassignTask(d) {
+  d = d || {};
+  const taskId = d.task_id || d.id;
+  const newStaffId = d.new_staff_id || d.staff_id;
+  if (!taskId || !newStaffId) return jr('error', 'Task ID and new Staff ID required.');
+  
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const tSheet = getOrCreateSheet(SHEETS.TASKS || 'Tasks', HEADERS.Tasks);
+    const tRow = findRowByValue(tSheet, 1, taskId);
+    if (tRow < 0) return jr('error', 'Task not found: ' + taskId);
+    
+    const now = getNow();
+    const oldStaffId = String(tSheet.getRange(tRow, 6).getValue() || '');
+    const oldStaffName = String(tSheet.getRange(tRow, 7).getValue() || '');
+    const projId = String(tSheet.getRange(tRow, 2).getValue() || '');
+    
+    // Lookup new staff name
+    let newStaffName = d.new_staff_name || '';
+    if (!newStaffName) {
+      const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+      const uRow = findRowByValue(uSheet, U.ID, newStaffId);
+      if (uRow > 0) newStaffName = String(uSheet.getRange(uRow, U.NAME).getValue() || '');
+    }
+    
+    // Update task row
+    tSheet.getRange(tRow, 6).setValue(newStaffId);
+    tSheet.getRange(tRow, 7).setValue(newStaffName);
+    tSheet.getRange(tRow, 14).setValue(now.date);
+    tSheet.getRange(tRow, 15).setValue(now.time);
+    
+    // Mark previous active assignment in TaskAssignments as unassigned
+    const asgSheet = getOrCreateSheet(SHEETS.TASK_ASSIGNMENTS || 'TaskAssignments', HEADERS.TaskAssignments);
+    const asgLast = asgSheet.getLastRow();
+    if (asgLast >= 2) {
+      const asgRows = asgSheet.getRange(2, 1, asgLast - 1, 14).getValues();
+      for (let i = 0; i < asgRows.length; i++) {
+        if (String(asgRows[i][1]) === String(taskId) && String(asgRows[i][12]).toUpperCase() === 'ACTIVE') {
+          asgSheet.getRange(i + 2, 11).setValue(now.date);
+          asgSheet.getRange(i + 2, 12).setValue(now.time);
+          asgSheet.getRange(i + 2, 13).setValue('REASSIGNED');
+        }
+      }
+    }
+    
+    // Insert new assignment record
+    const asgId = generateTaskAssignmentId();
+    asgSheet.appendRow([
+      asgId, taskId, projId, newStaffId, newStaffName,
+      d.team_id || '', d.team_name || '',
+      d.reassigned_by || '', now.date, now.time, '', '', 'ACTIVE',
+      d.reassignment_reason || d.reason || 'Reassigned by Admin'
+    ]);
+    
+    // Activity log
+    logActivity({
+      userId: d.reassigned_by || '',
+      userName: newStaffName,
+      role: 'Admin',
+      action: 'TASK_REASSIGNED',
+      relatedId: taskId,
+      description: 'Reassigned from ' + oldStaffName + ' to ' + newStaffName + '. Reason: ' + (d.reassignment_reason || 'N/A'),
+      status: 'SUCCESS'
+    });
+    
+    return jr('success', {
+      task_id: taskId,
+      assigned_staff_id: newStaffId,
+      assigned_staff_name: newStaffName,
+      message: 'Task reassigned successfully.'
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function addTaskUpdate(d) {
+  d = d || {};
+  const taskId = d.task_id || d.id;
+  if (!taskId || !d.update_text) return jr('error', 'Task ID and update text are required.');
+  
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const tSheet = getOrCreateSheet(SHEETS.TASKS || 'Tasks', HEADERS.Tasks);
+    const tRow = findRowByValue(tSheet, 1, taskId);
+    if (tRow < 0) return jr('error', 'Task not found: ' + taskId);
+    
+    const now = getNow();
+    const projId = String(tSheet.getRange(tRow, 2).getValue() || d.project_id || '');
+    const updId = generateTaskUpdateId();
+    const progressVal = d.progress !== undefined ? parseInt(d.progress, 10) : 0;
+    const visibility = (d.visibility || 'INTERNAL').toUpperCase();
+    
+    // Append to TaskUpdates sheet
+    const updSheet = getOrCreateSheet(SHEETS.TASK_UPDATES || 'TaskUpdates', HEADERS.TaskUpdates);
+    updSheet.appendRow([
+      updId, taskId, projId,
+      d.staff_id || '', d.staff_name || '',
+      d.update_text.trim(), progressVal, visibility,
+      now.date, now.time
+    ]);
+    
+    // Update task row progress & latest update
+    if (d.progress !== undefined) {
+      tSheet.getRange(tRow, 14).setValue(now.date);
+      tSheet.getRange(tRow, 15).setValue(now.time);
+    }
+    
+    // Update parent project progress
+    if (projId) {
+      recalculateProjectProgress(projId);
+    }
+    
+    return jr('success', { update_id: updId, message: 'Task update recorded successfully.' });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getTaskUpdates(p) {
+  p = p || {};
+  const sheet = getOrCreateSheet(SHEETS.TASK_UPDATES || 'TaskUpdates', HEADERS.TaskUpdates);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  let list = sheet.getRange(2, 1, last - 1, 10).getValues().map(r => ({
+    update_id: String(r[0]),
+    task_id: String(r[1]),
+    project_id: String(r[2]),
+    staff_id: String(r[3]),
+    staff_name: String(r[4]),
+    update_text: String(r[5]),
+    progress: parseInt(r[6], 10) || 0,
+    visibility: String(r[7]),
+    created_date: String(r[8]),
+    created_time: String(r[9]),
+    created_at: String(r[8]) + ' ' + String(r[9])
+  })).filter(u => u.update_id);
+  
+  if (p.task_id) list = list.filter(u => u.task_id === String(p.task_id));
+  if (p.project_id) list = list.filter(u => u.project_id === String(p.project_id));
+  if (p.client_view || p.role === 'User' || p.role === 'Client') {
+    list = list.filter(u => u.visibility === 'CLIENT_VISIBLE');
+  }
+  return jr('success', list);
+}
+
+function getTaskAssignments(p) {
+  p = p || {};
+  const sheet = getOrCreateSheet(SHEETS.TASK_ASSIGNMENTS || 'TaskAssignments', HEADERS.TaskAssignments);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  let list = sheet.getRange(2, 1, last - 1, 14).getValues().map(r => ({
+    assignment_id: String(r[0]),
+    task_id: String(r[1]),
+    project_id: String(r[2]),
+    staff_id: String(r[3]),
+    staff_name: String(r[4]),
+    team_id: String(r[5]),
+    team_name: String(r[6]),
+    assigned_by: String(r[7]),
+    assigned_date: String(r[8]),
+    assigned_time: String(r[9]),
+    unassigned_date: String(r[10]),
+    unassigned_time: String(r[11]),
+    status: String(r[12]),
+    reassignment_reason: String(r[13])
+  })).filter(a => a.assignment_id);
+  
+  if (p.task_id) list = list.filter(a => a.task_id === String(p.task_id));
+  if (p.project_id) list = list.filter(a => a.project_id === String(p.project_id));
+  return jr('success', list);
+}
+
+// ─── Automatic Progress Calculation ──────────────────────────────
+
+function recalculateProjectProgress(projId) {
+  if (!projId) return;
+  try {
+    const tSheet = getOrCreateSheet(SHEETS.TASKS || 'Tasks', HEADERS.Tasks);
+    const last = tSheet.getLastRow();
+    if (last < 2) return;
+    
+    const rows = tSheet.getRange(2, 1, last - 1, 10).getValues();
+    let total = 0;
+    let completed = 0;
+    for (let i = 0; i < rows.length; i++) {
+      if (String(rows[i][1]) === String(projId)) {
+        total++;
+        if (String(rows[i][8]).toUpperCase() === 'COMPLETED') {
+          completed++;
+        }
+      }
+    }
+    
+    if (total > 0) {
+      const calcProgress = Math.round((completed / total) * 100);
+      const pSheet = getOrCreateSheet(SHEETS.PROJECTS, HEADERS.Projects);
+      const pRow = findRowByValue(pSheet, P.ID, projId);
+      if (pRow > 0) {
+        pSheet.getRange(pRow, P.PROGRESS).setValue(calcProgress);
+        if (calcProgress === 100) {
+          pSheet.getRange(pRow, P.STATUS).setValue('Completed');
+        }
+      }
+    }
+  } catch (err) {
+    Logger.log('Error recalculating project progress: ' + err);
+  }
+}
+
+function getProjectProgress(p) {
+  p = p || {};
+  const projId = p.project_id || p.id;
+  if (!projId) return jr('error', 'Project ID required.');
+  
+  const tasksRes = getTasks({ project_id: projId });
+  const tasks = tasksRes.data || [];
+  const total = tasks.length;
+  const completed = tasks.filter(t => String(t.status).toUpperCase() === 'COMPLETED').length;
+  const pending = tasks.filter(t => ['PENDING', 'TODO'].includes(String(t.status).toUpperCase())).length;
+  const inProgress = tasks.filter(t => String(t.status).toUpperCase() === 'IN PROGRESS' || String(t.status).toUpperCase() === 'IN_PROGRESS').length;
+  const nowStr = getNow().date;
+  const overdue = tasks.filter(t => t.due_date && t.due_date < nowStr && String(t.status).toUpperCase() !== 'COMPLETED').length;
+  
+  const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return jr('success', {
+    project_id: projId,
+    progress: progressPct,
+    total_tasks: total,
+    completed_tasks: completed,
+    pending_tasks: pending,
+    in_progress_tasks: inProgress,
+    overdue_tasks: overdue
+  });
+}
+
+function getProjectById(p) {
+  p = p || {};
+  const projId = p.project_id || p.id;
+  if (!projId) return jr('error', 'Project ID required.');
+  
+  const projRes = getProjects();
+  const projects = projRes.data || [];
+  const proj = projects.find(pr => String(pr.project_id) === String(projId));
+  if (!proj) return jr('error', 'Project not found: ' + projId);
+  
+  const tasksRes = getTasks({ project_id: projId });
+  const tasks = tasksRes.data || [];
+  
+  const updatesRes = getTaskUpdates({ project_id: projId });
+  const updates = updatesRes.data || [];
+  
+  const actRes = getActivityLogs();
+  const allActs = actRes.data || [];
+  const activities = allActs.filter(a => String(a.related_id) === String(projId));
+  
+  return jr('success', {
+    ...proj,
+    tasks: tasks,
+    updates: updates,
+    activities: activities,
+    team: {
+      team_id: proj.team_id || '',
+      team_name: proj.team_name || ''
+    }
+  });
+}
+
+function archiveProject(d) {
+  d = d || {};
+  const projId = d.project_id || d.id;
+  if (!projId) return jr('error', 'Project ID required.');
+  
+  const pSheet = getOrCreateSheet(SHEETS.PROJECTS, HEADERS.Projects);
+  const pRow = findRowByValue(pSheet, P.ID, projId);
+  if (pRow < 0) return jr('error', 'Project not found: ' + projId);
+  
+  const now = getNow();
+  pSheet.getRange(pRow, P.STATUS).setValue('ARCHIVED');
+  pSheet.getRange(pRow, P.UPD_DATE).setValue(now.date);
+  pSheet.getRange(pRow, P.UPD_TIME).setValue(now.time);
+  
+  logActivity({
+    userId: d.archived_by || '',
+    userName: '',
+    role: 'Admin',
+    action: 'PROJECT_ARCHIVED',
+    relatedId: projId,
+    description: 'Project archived: ' + projId,
+    status: 'SUCCESS'
+  });
+  
+  return jr('success', { message: 'Project archived successfully.' });
+}
+
+// ─── Work Distribution & Staff Workload ───────────────────────────
+
+function getWorkDistribution(p) {
+  p = p || {};
+  const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+  const uLast = uSheet.getLastRow();
+  if (uLast < 2) return jr('success', []);
+  
+  // Get all Staff users
+  const users = uSheet.getRange(2, 1, uLast - 1, U.TOTAL).getValues().filter(r => String(r[U.ROLE - 1]).toLowerCase() === 'staff').map(r => ({
+    staff_id: String(r[U.ID - 1]),
+    name: String(r[U.NAME - 1]),
+    email: String(r[U.EMAIL - 1]),
+    mobile: String(r[U.MOBILE - 1]),
+    status: String(r[U.STATUS - 1])
+  }));
+  
+  // Get all team memberships
+  const memSheet = getOrCreateSheet(SHEETS.TEAM_MEMBERS || 'TeamMembers', HEADERS.TeamMembers);
+  const memLast = memSheet.getLastRow();
+  const teamMap = {};
+  if (memLast >= 2) {
+    memSheet.getRange(2, 1, memLast - 1, 8).getValues().forEach(r => {
+      if (String(r[7]).toUpperCase() === 'ACTIVE') {
+        const sid = String(r[3]);
+        const tname = String(r[2]);
+        if (!teamMap[sid]) teamMap[sid] = [];
+        if (!teamMap[sid].includes(tname)) teamMap[sid].push(tname);
+      }
+    });
+  }
+  
+  // Get all tasks
+  const tSheet = getOrCreateSheet(SHEETS.TASKS || 'Tasks', HEADERS.Tasks);
+  const tLast = tSheet.getLastRow();
+  const tasks = tLast >= 2 ? tSheet.getRange(2, 1, tLast - 1, 10).getValues() : [];
+  
+  const nowStr = getNow().date;
+  
+  const distribution = users.map(u => {
+    const sTasks = tasks.filter(r => String(r[5]) === u.staff_id && String(r[8]).toUpperCase() !== 'COMPLETED' && String(r[8]).toUpperCase() !== 'CANCELLED');
+    const highPri = sTasks.filter(r => ['HIGH', 'URGENT'].includes(String(r[7]).toUpperCase())).length;
+    const overdue = sTasks.filter(r => r[9] && String(r[9]) < nowStr).length;
+    
+    let tier = 'AVAILABLE';
+    let loadPct = 25;
+    if (sTasks.length >= 8 || overdue >= 2) {
+      tier = 'OVERLOADED';
+      loadPct = 95;
+    } else if (sTasks.length >= 6) {
+      tier = 'HIGH';
+      loadPct = 75;
+    } else if (sTasks.length >= 3) {
+      tier = 'NORMAL';
+      loadPct = 50;
+    }
+    
+    return {
+      staff_id: u.staff_id,
+      name: u.name,
+      email: u.email,
+      mobile: u.mobile,
+      team: (teamMap[u.staff_id] || ['General']).join(', '),
+      active_tasks: sTasks.length,
+      high_priority: highPri,
+      overdue: overdue,
+      workload_percentage: loadPct,
+      workload_tier: tier,
+      status: u.status
+    };
+  });
+  
+  return jr('success', distribution);
+}
+
+function getWorkManagementStats(p) {
+  p = p || {};
+  const projRes = getProjects();
+  const projs = projRes.data || [];
+  
+  const tasksRes = getTasks();
+  const tasks = tasksRes.data || [];
+  
+  const teamsRes = getTeams();
+  const teams = teamsRes.data || [];
+  
+  const distRes = getWorkDistribution();
+  const staff = distRes.data || [];
+  
+  const nowStr = getNow().date;
+  
+  const totalProjects = projs.length;
+  const activeProjects = projs.filter(p => ['ACTIVE', 'IN PROGRESS', 'IN_PROGRESS'].includes(String(p.status).toUpperCase())).length;
+  const completedProjects = projs.filter(p => String(p.status).toUpperCase() === 'COMPLETED').length;
+  const pendingProjects = projs.filter(p => ['PLANNING', 'PENDING'].includes(String(p.status).toUpperCase())).length;
+  
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => String(t.status).toUpperCase() === 'COMPLETED').length;
+  const inProgressTasks = tasks.filter(t => ['IN PROGRESS', 'IN_PROGRESS'].includes(String(t.status).toUpperCase())).length;
+  const pendingTasks = tasks.filter(t => ['TODO', 'PENDING'].includes(String(t.status).toUpperCase())).length;
+  const overdueTasks = tasks.filter(t => t.due_date && t.due_date < nowStr && String(t.status).toUpperCase() !== 'COMPLETED').length;
+  
+  return jr('success', {
+    total_projects: totalProjects,
+    active_projects: activeProjects,
+    completed_projects: completedProjects,
+    pending_projects: pendingProjects,
+    total_tasks: totalTasks,
+    pending_tasks: pendingTasks,
+    in_progress_tasks: inProgressTasks,
+    completed_tasks: completedTasks,
+    overdue_tasks: overdueTasks,
+    total_teams: teams.length,
+    active_staff: staff.length
+  });
+}

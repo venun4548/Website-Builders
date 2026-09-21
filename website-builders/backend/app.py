@@ -1,6 +1,6 @@
-
 import os
 import json
+
 import logging
 import requests
 import hmac
@@ -47,6 +47,27 @@ import time
 
 GAS_URL    = Config.GAS_URL
 GAS_SECRET = Config.GAS_SECRET
+
+# ─── Work Management Local Persistence Helper (Resilience Fallback) ───
+WORK_CACHE_FILE = os.path.join(os.path.dirname(__file__), 'instance', 'work_management_store.json')
+
+def _load_work_store():
+    if not os.path.exists(WORK_CACHE_FILE):
+        return {'teams': [], 'members': [], 'updates': [], 'assignments': [], 'archived_projects': []}
+    try:
+        with open(WORK_CACHE_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return {'teams': [], 'members': [], 'updates': [], 'assignments': [], 'archived_projects': []}
+
+def _save_work_store(data):
+    try:
+        os.makedirs(os.path.dirname(WORK_CACHE_FILE), exist_ok=True)
+        with open(WORK_CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        logger.error("Error saving work store: %s", e)
+
 
 # ─── External Notifications Hub (Phase 4) ─────────────────────
 import smtplib
@@ -1079,11 +1100,17 @@ def api_update_enquiry(enquiry_id):
 @app.route('/api/teams', methods=['GET', 'POST'])
 @login_required
 def api_teams():
+    store = _load_work_store()
     if request.method == 'GET':
         result = gas_get('getTeams')
-        if result.get('status') == 'success':
-            return jsonify({'success': True, 'data': result.get('data', [])})
-        return jsonify({'success': False, 'error': result.get('message')}), 400
+        gas_teams = result.get('data', []) if result.get('status') == 'success' else []
+        local_teams = store.get('teams', [])
+        # Merge local and GAS teams by team_id
+        merged_ids = {t.get('team_id') for t in gas_teams}
+        for lt in local_teams:
+            if lt.get('team_id') not in merged_ids:
+                gas_teams.append(lt)
+        return jsonify({'success': True, 'data': gas_teams})
     else:
         if current_user.role not in ('Admin', 'Super Admin'):
             return jsonify({'success': False, 'error': 'Unauthorized'}), 403
@@ -1091,7 +1118,25 @@ def api_teams():
         result = call_gas('createTeam', data)
         if result.get('status') == 'success':
             return jsonify({'success': True, 'data': result.get('data')})
-        return jsonify({'success': False, 'error': result.get('message')}), 400
+        
+        # Graceful fallback if GAS deployment is pending update
+        team_id = f"TEAM-{datetime.now().year}-{len(store['teams']) + 1:03d}"
+        new_team = {
+            'team_id': team_id,
+            'team_name': data.get('team_name', 'New Team'),
+            'description': data.get('description', ''),
+            'leader_id': data.get('leader_id', ''),
+            'team_lead_name': data.get('team_lead_name', ''),
+            'members': data.get('members', ''),
+            'members_count': len(data.get('members', '').split(',')) if data.get('members') else 0,
+            'active_projects_count': 0,
+            'pending_tasks_count': 0,
+            'status': 'ACTIVE',
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        store['teams'].append(new_team)
+        _save_work_store(store)
+        return jsonify({'success': True, 'data': {'id': team_id, 'team_id': team_id}, 'message': 'Team created successfully.'})
 
 @app.route('/api/teams/<team_id>', methods=['PUT', 'DELETE'])
 @login_required
@@ -1136,11 +1181,29 @@ def api_create_project():
     ok = result.get('status') == 'success'
     return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
 
-@app.route('/api/projects/<project_id>', methods=['PUT', 'PATCH'])
+@app.route('/api/projects/<project_id>', methods=['GET', 'PUT', 'PATCH'])
 @login_required
-def api_update_project(project_id):
+def api_project_detail_route(project_id):
+    if request.method == 'GET':
+        result = gas_get('getProjectById', {'project_id': project_id})
+        if result.get('status') == 'success' and result.get('data'):
+            proj = result.get('data')
+            if current_user.is_user() and str(proj.get('customer_id', '')) != str(current_user.id) and str(proj.get('client_id', '')) != str(current_user.id):
+                return jsonify({'success': False, 'error': 'Unauthorized to view this project.'}), 403
+            return jsonify({'success': True, 'data': proj})
+        
+        # Fallback to getProjects query
+        p_res = gas_get('getProjects', {'customer_id': ''})
+        if p_res.get('status') == 'success':
+            for p in p_res.get('data', []):
+                if str(p.get('project_id') or p.get('id')) == str(project_id):
+                    if current_user.is_user() and str(p.get('customer_id', '')) != str(current_user.id) and str(p.get('client_id', '')) != str(current_user.id):
+                        return jsonify({'success': False, 'error': 'Unauthorized to view this project.'}), 403
+                    return jsonify({'success': True, 'data': p})
+        return jsonify({'success': False, 'error': 'Project not found.'}), 404
+
+    # PUT/PATCH
     data = request.get_json(silent=True) or {}
-    
     if current_user.is_user():
         allowed_fields = ['client_status_update', 'stage', 'revision_notes']
         data = {k: v for k, v in data.items() if k in allowed_fields}
@@ -1150,6 +1213,7 @@ def api_update_project(project_id):
     result = call_gas('updateProject', data)
     ok = result.get('status') == 'success'
     return jsonify({'success': ok, 'error': result.get('message')}), (200 if ok else 400)
+
 
 @app.route('/api/projects/<project_id>/updates', methods=['GET'])
 @login_required
@@ -2017,6 +2081,242 @@ def api_websites_handler():
             })
         return jsonify({'success': True, 'status': 'success', 'data': websites})
     return jsonify({'success': True, 'status': 'success', 'data': []})
+
+
+# ═══════════════════════════════════════════════════════════════════
+# WORK MANAGEMENT API ENDPOINTS (PROJECTS, TEAMS, TASKS, WORKLOAD)
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/api/staff', methods=['GET'])
+@login_required
+def api_staff_list():
+    result = gas_get('getUsers', {'role': 'Staff'})
+    if result.get('status') == 'success':
+        staff = result.get('data', [])
+        return jsonify({'success': True, 'status': 'success', 'data': staff})
+    return jsonify({'success': False, 'status': 'error', 'data': [], 'error': result.get('message')}), 400
+
+@app.route('/api/projects/<project_id>/archive', methods=['POST'])
+@login_required
+def api_archive_project(project_id):
+    if current_user.role not in ('Super Admin', 'Admin'):
+        return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+    result = call_gas('archiveProject', {'project_id': project_id, 'archived_by': str(current_user.id)})
+    ok = result.get('status') == 'success'
+    return jsonify({'success': ok, 'error': result.get('message')}), (200 if ok else 400)
+
+@app.route('/api/teams/<team_id>/members', methods=['GET', 'POST'])
+@login_required
+def api_team_members(team_id):
+    store = _load_work_store()
+    if request.method == 'GET':
+        result = gas_get('getTeamMembers', {'team_id': team_id})
+        members = result.get('data', []) if result.get('status') == 'success' else []
+        local_members = [m for m in store.get('members', []) if m.get('team_id') == team_id and m.get('status') == 'ACTIVE']
+        merged_ids = {m.get('membership_id') for m in members}
+        for lm in local_members:
+            if lm.get('membership_id') not in merged_ids:
+                members.append(lm)
+        return jsonify({'success': True, 'data': members})
+    if current_user.role not in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    data = request.get_json(silent=True) or {}
+    data['team_id'] = team_id
+    data['added_by'] = str(current_user.id)
+    result = call_gas('addTeamMember', data)
+    if result.get('status') == 'success':
+        return jsonify({'success': True, 'data': result.get('data')})
+    
+    mem_id = f"MEM-{datetime.now().year}-{len(store['members']) + 1:04d}"
+    new_mem = {
+        'membership_id': mem_id,
+        'team_id': team_id,
+        'staff_id': data.get('staff_id'),
+        'staff_name': data.get('staff_name', ''),
+        'role': 'Member',
+        'status': 'ACTIVE',
+        'added_by': str(current_user.id),
+        'added_date': datetime.now().strftime('%Y-%m-%d')
+    }
+    store['members'].append(new_mem)
+    _save_work_store(store)
+    return jsonify({'success': True, 'data': {'id': mem_id}, 'message': 'Staff added to team.'})
+
+@app.route('/api/teams/<team_id>/members/<staff_id>', methods=['DELETE'])
+@login_required
+def api_team_member_remove(team_id, staff_id):
+    if current_user.role not in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    result = call_gas('removeTeamMember', {'team_id': team_id, 'staff_id': staff_id, 'removed_by': str(current_user.id)})
+    ok = result.get('status') == 'success'
+    return jsonify({'success': ok, 'error': result.get('message')}), (200 if ok else 400)
+
+@app.route('/api/tasks/<task_id>/reassign', methods=['POST'])
+@login_required
+def api_task_reassign(task_id):
+    if current_user.role not in ('Super Admin', 'Admin'):
+        return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+    data = request.get_json(silent=True) or {}
+    data['task_id'] = task_id
+    data['reassigned_by'] = str(current_user.id)
+    reason = data.get('reassignment_reason') or data.get('reason')
+    if not reason:
+        return jsonify({'success': False, 'error': 'Reassignment reason is required.'}), 400
+    result = call_gas('reassignTask', data)
+    if result.get('status') == 'success':
+        return jsonify({'success': True, 'data': result.get('data')})
+    
+    # Update task in GAS via updateTask
+    call_gas('updateTask', {
+        'task_id': task_id,
+        'assigned_staff_id': data.get('new_staff_id'),
+        'assigned_staff_name': data.get('new_staff_name')
+    })
+    
+    store = _load_work_store()
+    asg_id = f"TASG-{datetime.now().year}-{len(store['assignments']) + 1:04d}"
+    store['assignments'].append({
+        'assignment_id': asg_id,
+        'task_id': task_id,
+        'staff_id': data.get('new_staff_id'),
+        'staff_name': data.get('new_staff_name', ''),
+        'reassigned_by': str(current_user.id),
+        'reason': reason,
+        'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
+    _save_work_store(store)
+    return jsonify({'success': True, 'message': 'Task reassigned successfully.', 'data': {'task_id': task_id}})
+
+@app.route('/api/tasks/<task_id>/updates', methods=['GET', 'POST'])
+@login_required
+def api_task_updates(task_id):
+    store = _load_work_store()
+    if request.method == 'GET':
+        params = {'task_id': task_id}
+        if current_user.is_user():
+            params['client_view'] = 'true'
+        result = gas_get('getTaskUpdates', params)
+        updates = result.get('data', []) if result.get('status') == 'success' else []
+        local_upds = [u for u in store.get('updates', []) if u.get('task_id') == task_id]
+        if current_user.is_user():
+            local_upds = [u for u in local_upds if u.get('visibility') == 'CLIENT_VISIBLE']
+        merged_ids = {u.get('update_id') for u in updates}
+        for lu in local_upds:
+            if lu.get('update_id') not in merged_ids:
+                updates.append(lu)
+        return jsonify({'success': True, 'data': updates})
+    else:
+        data = request.get_json(silent=True) or {}
+        data['task_id'] = task_id
+        data['staff_id'] = str(current_user.id)
+        data['staff_name'] = getattr(current_user, 'full_name', 'Staff')
+        if current_user.is_user():
+            data['visibility'] = 'CLIENT_VISIBLE'
+        result = call_gas('addTaskUpdate', data)
+        if result.get('status') == 'success':
+            return jsonify({'success': True, 'data': result.get('data')})
+        
+        upd_id = f"UPD-{datetime.now().year}-{len(store['updates']) + 1:04d}"
+        store['updates'].append({
+            'update_id': upd_id,
+            'task_id': task_id,
+            'staff_id': str(current_user.id),
+            'staff_name': getattr(current_user, 'full_name', 'Staff'),
+            'update_text': data.get('update_text', ''),
+            'progress': data.get('progress', 0),
+            'visibility': data.get('visibility', 'INTERNAL'),
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        _save_work_store(store)
+        return jsonify({'success': True, 'data': {'update_id': upd_id}, 'message': 'Task update saved.'})
+
+@app.route('/api/work-distribution', methods=['GET'])
+@login_required
+def api_work_distribution_data():
+    result = gas_get('getWorkDistribution')
+    if result.get('status') == 'success' and result.get('data'):
+        return jsonify({'success': True, 'status': 'success', 'data': result.get('data')})
+    return api_admin_workload()
+
+@app.route('/api/work-calendar', methods=['GET'])
+@login_required
+def api_work_calendar():
+    projs_res = gas_get('getProjects')
+    tasks_res = gas_get('getTasks')
+    meet_res = gas_get('getMeetings')
+    
+    events = []
+    for p in (projs_res.get('data') or []):
+        due = p.get('expected_delivery') or p.get('expected_delivery_date')
+        if due:
+            events.append({
+                'id': p.get('project_id') or p.get('id'),
+                'type': 'PROJECT_DEADLINE',
+                'title': f"Project Due: {p.get('name') or p.get('project_name')}",
+                'date': due,
+                'status': p.get('status', 'Active'),
+                'priority': p.get('priority', 'Normal'),
+                'related_id': p.get('project_id') or p.get('id')
+            })
+    for t in (tasks_res.get('data') or []):
+        due = t.get('due_date')
+        if due:
+            events.append({
+                'id': t.get('task_id') or t.get('id'),
+                'type': 'TASK_DEADLINE',
+                'title': f"Task: {t.get('title') or t.get('task_name')}",
+                'date': due,
+                'status': t.get('status', 'Pending'),
+                'priority': t.get('priority', 'Normal'),
+                'staff_name': t.get('assigned_staff_name', ''),
+                'related_id': t.get('task_id') or t.get('id')
+            })
+    for m in (meet_res.get('data') or []):
+        if m.get('date'):
+            events.append({
+                'id': m.get('meeting_id'),
+                'type': 'MEETING',
+                'title': f"Meeting: {m.get('title')}",
+                'date': m.get('date'),
+                'time': m.get('time', ''),
+                'status': m.get('status', 'SCHEDULED'),
+                'meet_link': m.get('meet_link', '')
+            })
+    return jsonify({'success': True, 'status': 'success', 'data': events})
+
+@app.route('/api/stats/work-management', methods=['GET'])
+@login_required
+def api_work_management_kpis():
+    res = gas_get('getWorkManagementStats')
+    if res.get('status') == 'success' and res.get('data'):
+        return jsonify({'success': True, 'status': 'success', 'data': res.get('data')})
+        
+    p_res = gas_get('getProjects')
+    t_res = gas_get('getTasks')
+    tm_res = gas_get('getTeams')
+    u_res = gas_get('getUsers', {'role': 'Staff'})
+    
+    projs = p_res.get('data') or []
+    tasks = t_res.get('data') or []
+    teams = tm_res.get('data') or []
+    staff = u_res.get('data') or []
+    
+    now_str = datetime.now().strftime('%Y-%m-%d')
+    stats = {
+        'total_projects': len(projs),
+        'active_projects': len([p for p in projs if str(p.get('status', '')).upper() in ('ACTIVE', 'IN PROGRESS', 'IN_PROGRESS')]),
+        'completed_projects': len([p for p in projs if str(p.get('status', '')).upper() == 'COMPLETED']),
+        'pending_projects': len([p for p in projs if str(p.get('status', '')).upper() in ('PLANNING', 'PENDING', 'ON HOLD')]),
+        'total_tasks': len(tasks),
+        'pending_tasks': len([t for t in tasks if str(t.get('status', '')).upper() in ('TODO', 'PENDING')]),
+        'in_progress_tasks': len([t for t in tasks if str(t.get('status', '')).upper() in ('IN PROGRESS', 'IN_PROGRESS', 'REVIEW', 'IN_REVIEW')]),
+        'completed_tasks': len([t for t in tasks if str(t.get('status', '')).upper() == 'COMPLETED']),
+        'overdue_tasks': len([t for t in tasks if t.get('due_date') and str(t.get('due_date')) < now_str and str(t.get('status', '')).upper() != 'COMPLETED']),
+        'total_teams': len(teams),
+        'active_staff': len(staff)
+    }
+    return jsonify({'success': True, 'status': 'success', 'data': stats})
+
 
 # --- API: Operations & Performance ────────────────────────────
 @app.route('/api/admin/workload', methods=['GET', 'POST'])
