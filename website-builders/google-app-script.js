@@ -214,6 +214,108 @@ function seedSuperAdmin(){
   }finally{lock.releaseLock();}
 }
 
+function clearAllDataAndResetHeaders() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  Logger.log('Starting complete data wipe and header reset across all sheets...');
+  
+  const allSheetNames = Object.keys(HEADERS);
+  let clearedCount = 0;
+  
+  allSheetNames.forEach(name => {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+    }
+    
+    // Clear all existing data rows (from row 2 downwards)
+    const lastRow = sheet.getLastRow();
+    if (lastRow >= 2) {
+      sheet.deleteRows(2, lastRow - 1);
+    }
+    
+    // Reset Row 1 headers to standardized schema
+    const headerCols = HEADERS[name];
+    sheet.getRange(1, 1, 1, headerCols.length).setValues([headerCols])
+      .setBackground('#0f172a')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    clearedCount++;
+  });
+
+  // Re-seed essential accounts so authentication immediately works
+  seedInitialUsers();
+
+  Logger.log('Successfully cleared all data and reset headers across ' + clearedCount + ' sheets.');
+  return {
+    success: true,
+    message: 'All sheets cleared and standardized headers reset successfully.',
+    cleared_sheets: clearedCount,
+    super_admin: CONFIG.SUPER_ADMIN_EMAIL
+  };
+}
+
+function seedInitialUsers() {
+  const sheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+  const now = getNow();
+  
+  const initialUsers = [
+    {
+      id: 'USR-2026-000001',
+      name: 'Super Administrator',
+      email: CONFIG.SUPER_ADMIN_EMAIL,
+      mobile: '+91 7386204885',
+      pass: CONFIG.SUPER_ADMIN_PASS,
+      role: 'Super Admin'
+    },
+    {
+      id: 'USR-2026-000002',
+      name: 'Operations Admin',
+      email: 'admin@websitebuilders.com',
+      mobile: '+91 7386204885',
+      pass: 'Admin@1234',
+      role: 'Admin'
+    },
+    {
+      id: 'USR-2026-000003',
+      name: 'Senior Developer Staff',
+      email: 'staff@websitebuilders.com',
+      mobile: '+91 9876543210',
+      pass: 'Staff@1234',
+      role: 'Staff'
+    },
+    {
+      id: 'USR-2026-000004',
+      name: 'Acme Client User',
+      email: 'user@websitebuilders.com',
+      mobile: '+91 9123456789',
+      pass: 'User@1234',
+      role: 'User'
+    }
+  ];
+
+  initialUsers.forEach(u => {
+    if (findRowByValue(sheet, U.EMAIL, u.email.toLowerCase()) < 0) {
+      sheet.appendRow([
+        u.id,
+        u.name,
+        u.email.toLowerCase(),
+        u.mobile,
+        hashPassword(u.pass),
+        u.role,
+        'ACTIVE',
+        now.date,
+        now.time,
+        '', '', '', '',
+        now.date,
+        now.time,
+        ''
+      ]);
+      Logger.log('Seeded account: ' + u.email + ' (' + u.role + ')');
+    }
+  });
+}
+
 // ─────────────── HTTP HANDLERS ────────────────────────────────
 function doPost(e){
   if(!e) return jr('error','Invalid request.');
@@ -260,7 +362,13 @@ function doPost(e){
       if(action==='logActivity')      return logActivity(data);
       if(action==='logPayment')       return logPayment(data);
       if(action==='createInvoice')    return createInvoice(data);
+      if(action==='clearAllData' || action==='resetDatabase') return jr('success', clearAllDataAndResetHeaders());
       if(action==='sync_user')        return syncLegacyUser(data);
+      if(action==='sync_project')     return syncProject(data);
+      if(action==='sync_task')        return syncTask(data);
+      if(action==='sync_meeting')     return syncMeeting(data);
+      if(action==='sync_invoice')     return syncInvoice(data);
+      if(action==='sync_payment')     return logPayment(data);
       if(action==='sync_message')     return sendMessage({sender_id:data.sender_id,sender_name:data.sender_name,sender_role:data.sender_role,receiver_id:data.receiver_id,receiver_name:data.receiver_name,receiver_role:data.receiver_role,conversation_id:data.conversation_id,body:data.body||data.message,subject:data.subject,project_id:data.project_id,customer_id:data.customer_id,recipient_type:data.recipient_type,message_type:data.message_type});
       if(action==='sync_audit')       return logActivity({userId:'',userName:data.user_email||'',role:'',action:data.action||'AUDIT',relatedId:'',description:data.action||'',status:data.status||'SUCCESS'});
       if(action==='update_enquiry')   return updateEnquiry({enquiry_id:p.submissionId,status:p.ticketStatus,assigned_to:p.assignedTo});
@@ -354,6 +462,7 @@ function doGet(e){
     if(action==='getBrandInfo')         return getBrandInfo(p);
     if(action==='getFiles')             return getFiles(p);
     if(action==='migrateAllSheets')     return jr('success', migrateAllSheetsToStandardFormat());
+    if(action==='clearAllData' || action==='resetDatabase') return jr('success', clearAllDataAndResetHeaders());
     if(action==='getTeams')             return getTeams(p);
     if(action==='getTeamById')          return getTeamById(p);
     if(action==='getTeamMembers')       return getTeamMembers(p);
@@ -1695,13 +1804,11 @@ function updateDocument(d) {
     if (d.title) sheet.getRange(row, 8).setValue(d.title);
     if (d.type) sheet.getRange(row, 9).setValue(d.type);
     if (d.contentHtml) sheet.getRange(row, 11).setValue(d.contentHtml);
-    if (d.client_id) {
-        sheet.getRange(row, 4).setValue(d.client_id);
-        sheet.getRange(row, 5).setValue(d.client_name||'');
-        sheet.getRange(row, 6).setValue(d.client_email||'');
-        sheet.getRange(row, 7).setValue(d.client_mobile||'');
-    }
-    if (d.project_id) sheet.getRange(row, 3).setValue(d.project_id);
+    if (d.client_name) sheet.getRange(row, 2).setValue(d.client_name);
+    if (d.client_email) sheet.getRange(row, 3).setValue(d.client_email);
+    if (d.project_id) sheet.getRange(row, 5).setValue(d.project_id);
+    if (d.client_id) sheet.getRange(row, 6).setValue(d.client_id);
+    if (d.client_mobile) sheet.getRange(row, 7).setValue(d.client_mobile);
     if (d.expires_at) sheet.getRange(row, 23).setValue(d.expires_at);
     
     // Bump version for draft edits
@@ -1746,7 +1853,7 @@ function requestDocumentSignature(d) {
     } else {
       const vId = generateId('VER', 'DocumentVerification', 1);
       verifSheet.appendRow([
-        vId, d.document_id, String(sheet.getRange(row, 4).getValue()), '', otpHash, expiresAt, '', 0, '', '', dt, dt
+        vId, d.document_id, String(sheet.getRange(row, 6).getValue()), '', otpHash, expiresAt, '', 0, '', '', dt, dt
       ]);
     }
     
@@ -1846,9 +1953,9 @@ function signDocument(d) {
     sheet.getRange(row, 19).setValue(timeStr); // verifiedAt mapped to signing time for document
     sheet.getRange(row, 20).setValue(timeStr); // signedAt
     sheet.getRange(row, 24).setValue('TRUE'); // signed bool
-    sheet.getRange(row, 25).setValue(d.signer_id || sheet.getRange(row, 4).getValue()); // signer id
-    sheet.getRange(row, 26).setValue(d.signer_name || sheet.getRange(row, 5).getValue()); // signer name
-    sheet.getRange(row, 27).setValue(d.signer_email || sheet.getRange(row, 6).getValue()); // signer email
+    sheet.getRange(row, 25).setValue(d.signer_id || sheet.getRange(row, 6).getValue()); // signer id (Col 6: Client ID)
+    sheet.getRange(row, 26).setValue(d.signer_name || sheet.getRange(row, 2).getValue()); // signer name (Col 2: Client Name)
+    sheet.getRange(row, 27).setValue(d.signer_email || sheet.getRange(row, 3).getValue()); // signer email (Col 3: Client Email)
     sheet.getRange(row, 28).setValue(d.signature_data); // signature base64
     
     logAudit(d.document_id, d.signer_id, d.signer_name, 'Client', 'DOCUMENT_SIGNED', {});
@@ -1974,16 +2081,322 @@ function getDocumentAuditLogs(p) {
 }
 
 function syncLegacyUser(u){
-  const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
-  const row=findRowByValue(sheet,U.EMAIL,String(u.email||'').toLowerCase());
-  if(row>0){
-    if(u.full_name)sheet.getRange(row,U.NAME).setValue(u.full_name);
-    if(u.mobile)   sheet.getRange(row,U.MOBILE).setValue(u.mobile);
-    if(u.role)     sheet.getRange(row,U.ROLE).setValue(normalizeRole(u.role));
-    if(u.is_active!==undefined)sheet.getRange(row,U.STATUS).setValue(u.is_active?'ACTIVE':'INACTIVE');
-    const now=getNow();sheet.getRange(row,U.UPD_DATE).setValue(now.date);sheet.getRange(row,U.UPD_TIME).setValue(now.time);
+  u = u || {};
+  const sheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+  const email = String(u.email || '').trim().toLowerCase();
+  if (!email) return jr('error', 'Email required for user sync.');
+  const row = findRowByValue(sheet, U.EMAIL, email);
+  const now = getNow();
+  if(row > 0){
+    if(u.full_name) sheet.getRange(row, U.NAME).setValue(u.full_name);
+    if(u.mobile) sheet.getRange(row, U.MOBILE).setValue(u.mobile);
+    if(u.role) sheet.getRange(row, U.ROLE).setValue(normalizeRole(u.role));
+    if(u.is_active !== undefined) sheet.getRange(row, U.STATUS).setValue(u.is_active ? 'ACTIVE' : 'INACTIVE');
+    sheet.getRange(row, U.UPD_DATE).setValue(now.date);
+    sheet.getRange(row, U.UPD_TIME).setValue(now.time);
+    return jr('success', { message: 'User synced (updated).', email: email });
+  } else {
+    const id = u.id || u.user_id || generateId('USR', SHEETS.USERS, U.ID);
+    sheet.appendRow([
+      id,
+      u.full_name || 'User',
+      email,
+      u.mobile || '',
+      u.password ? hashPassword(u.password) : (u.password_hash || hashPassword('User@1234')),
+      normalizeRole(u.role || 'User'),
+      u.is_active === false ? 'INACTIVE' : 'ACTIVE',
+      now.date,
+      now.time,
+      '', '', '', '',
+      now.date,
+      now.time,
+      u.assigned_staff_id || ''
+    ]);
+    return jr('success', { message: 'User synced (created).', id: id, email: email });
   }
-  return jr('success','User synced.');
+}
+
+function syncProject(d) {
+  d = d || {};
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(e) {}
+  try {
+    const sheet = getOrCreateSheet(SHEETS.PROJECTS, HEADERS.Projects);
+    const projId = d.project_id || d.id || generateProjectId();
+    const row = findRowByValue(sheet, P.ID, projId);
+    const now = getNow();
+    
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
+    if ((!clientName || !clientEmail) && d.customer_id) {
+      try {
+        const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.USERS);
+        if (uSheet) {
+          const uRows = uSheet.getDataRange().getValues();
+          for (let i = 1; i < uRows.length; i++) {
+            if (String(uRows[i][0]).trim() === String(d.customer_id).trim()) {
+              if (!clientName) clientName = String(uRows[i][1] || '');
+              if (!clientEmail) clientEmail = String(uRows[i][2] || '');
+              break;
+            }
+          }
+        }
+      } catch(e) {}
+    }
+
+    if (row > 0) {
+      if (clientName) sheet.getRange(row, P.CUST_NAME).setValue(clientName);
+      if (clientEmail) sheet.getRange(row, P.CUST_EMAIL).setValue(clientEmail);
+      if (d.customer_id) sheet.getRange(row, P.CUST_ID).setValue(d.customer_id);
+      if (d.project_name || d.name) sheet.getRange(row, P.PROJ_NAME).setValue(d.project_name || d.name);
+      if (d.description !== undefined) sheet.getRange(row, P.DESC).setValue(d.description);
+      if (d.stage) sheet.getRange(row, P.STAGE).setValue(d.stage);
+      if (d.progress !== undefined) sheet.getRange(row, P.PROGRESS).setValue(parseInt(d.progress) || 0);
+      if (d.expected_delivery || d.expected_delivery_date) sheet.getRange(row, P.DELIVERY).setValue(d.expected_delivery || d.expected_delivery_date);
+      if (d.status) sheet.getRange(row, P.STATUS).setValue(d.status);
+      if (d.latest_update) sheet.getRange(row, P.LATEST_UPDATE).setValue(d.latest_update);
+      sheet.getRange(row, P.UPD_DATE).setValue(now.date);
+      sheet.getRange(row, P.UPD_TIME).setValue(now.time);
+      return jr('success', { project_id: projId, message: 'Project synced (updated).' });
+    } else {
+      sheet.appendRow([
+        projId,
+        clientName,
+        clientEmail,
+        d.customer_id || '',
+        (d.project_name || d.name || 'Untitled Project').trim(),
+        (d.description || '').trim(),
+        d.stage || 'Planning',
+        parseInt(d.progress || 0),
+        d.expected_delivery || d.expected_delivery_date || '',
+        d.status || 'Active',
+        d.created_by || '',
+        now.date,
+        now.time,
+        now.date,
+        now.time,
+        d.latest_update || ''
+      ]);
+      if (d.staff_id) assignStaff({ project_id: projId, staff_id: d.staff_id, staff_name: d.staff_name || '', assigned_by: d.created_by || '' });
+      return jr('success', { project_id: projId, message: 'Project synced (created).' });
+    }
+  } catch(err) {
+    return jr('error', 'syncProject failed: ' + err.toString());
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
+  }
+}
+
+function syncTask(d) {
+  d = d || {};
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(e) {}
+  try {
+    const sheet = getOrCreateSheet(SHEETS.TASKS, HEADERS.Tasks);
+    const taskId = d.task_id || d.id || generateTaskId();
+    const row = findRowByValue(sheet, T.ID, taskId);
+    const now = getNow();
+
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
+    let projName = d.project_name || '';
+    const projId = d.project_id || '';
+    if (projId && (!clientName || !clientEmail || !projName)) {
+      const pSheet = getOrCreateSheet(SHEETS.PROJECTS, HEADERS.Projects);
+      const pRow = findRowByValue(pSheet, P.ID, projId);
+      if (pRow > 0) {
+        if (!projName) projName = String(pSheet.getRange(pRow, P.PROJ_NAME).getValue() || '');
+        if (!clientName) clientName = String(pSheet.getRange(pRow, P.CUST_NAME).getValue() || '');
+        if (!clientEmail) clientEmail = String(pSheet.getRange(pRow, P.CUST_EMAIL).getValue() || '');
+      }
+    }
+
+    let staffName = d.assigned_staff_name || d.staff_name || '';
+    const staffId = d.assigned_staff_id !== undefined ? d.assigned_staff_id : (d.staff_id !== undefined ? d.staff_id : '');
+    if (!staffName && staffId) {
+      const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+      const uRow = findRowByValue(uSheet, U.ID, staffId);
+      if (uRow > 0) staffName = String(uSheet.getRange(uRow, U.NAME).getValue() || '');
+    }
+
+    if (row > 0) {
+      if (clientName) sheet.getRange(row, T.CLIENT_NAME).setValue(clientName);
+      if (clientEmail) sheet.getRange(row, T.CLIENT_EMAIL).setValue(clientEmail);
+      if (projId) sheet.getRange(row, T.PROJ_ID).setValue(projId);
+      if (projName) sheet.getRange(row, T.PROJ_NAME).setValue(projName);
+      if (d.title) sheet.getRange(row, T.TITLE).setValue(d.title.trim());
+      if (d.description !== undefined) sheet.getRange(row, T.DESC).setValue(d.description);
+      if (staffId !== undefined) sheet.getRange(row, T.STAFF_ID).setValue(staffId);
+      if (staffName) sheet.getRange(row, T.STAFF_NAME).setValue(staffName);
+      if (d.priority) sheet.getRange(row, T.PRIORITY).setValue(d.priority);
+      if (d.status) sheet.getRange(row, T.STATUS).setValue(d.status);
+      if (d.due_date !== undefined) sheet.getRange(row, T.DUE_DATE).setValue(d.due_date);
+      sheet.getRange(row, T.UPD_DATE).setValue(now.date);
+      sheet.getRange(row, T.UPD_TIME).setValue(now.time);
+      return jr('success', { task_id: taskId, message: 'Task synced (updated).' });
+    } else {
+      sheet.appendRow([
+        taskId,
+        clientName,
+        clientEmail,
+        projId,
+        projName,
+        (d.title || d.name || 'Untitled Task').trim(),
+        (d.description || '').trim(),
+        staffId || '',
+        staffName || '',
+        d.priority || 'Normal',
+        d.status || 'Pending',
+        d.due_date || '',
+        d.created_by || '',
+        now.date,
+        now.time,
+        now.date,
+        now.time
+      ]);
+      return jr('success', { task_id: taskId, message: 'Task synced (created).' });
+    }
+  } catch(err) {
+    return jr('error', 'syncTask failed: ' + err.toString());
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
+  }
+}
+
+function syncMeeting(d) {
+  d = d || {};
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(e) {}
+  try {
+    const sheet = getOrCreateSheet(SHEETS.MEETINGS, HEADERS.Meetings);
+    const meetId = d.meeting_id || d.id || generateId('MT', SHEETS.MEETINGS, MT.ID);
+    const row = findRowByValue(sheet, MT.ID, meetId);
+    const now = getNow();
+    
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
+    if ((!clientName || !clientEmail) && d.customer_id) {
+      try {
+        const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.USERS);
+        if (uSheet) {
+          const uRows = uSheet.getDataRange().getValues();
+          for (let i = 1; i < uRows.length; i++) {
+            if (String(uRows[i][0]).trim() === String(d.customer_id).trim()) {
+              if (!clientName) clientName = String(uRows[i][1] || '');
+              if (!clientEmail) clientEmail = String(uRows[i][2] || '');
+              break;
+            }
+          }
+        }
+      } catch(e) {}
+    }
+
+    if (row > 0) {
+      if (clientName) sheet.getRange(row, MT.CLIENT_NAME).setValue(clientName);
+      if (clientEmail) sheet.getRange(row, MT.CLIENT_EMAIL).setValue(clientEmail);
+      if (d.project_id) sheet.getRange(row, MT.PROJ_ID).setValue(d.project_id);
+      if (d.customer_id) sheet.getRange(row, MT.CUST_ID).setValue(d.customer_id);
+      if (d.staff_id) sheet.getRange(row, MT.STAFF_ID).setValue(d.staff_id);
+      if (d.title) sheet.getRange(row, MT.TITLE).setValue(d.title);
+      if (d.date) sheet.getRange(row, MT.DATE).setValue(d.date);
+      if (d.time) sheet.getRange(row, MT.TIME).setValue(d.time);
+      if (d.meet_link) sheet.getRange(row, MT.MEET_LINK).setValue(d.meet_link);
+      if (d.status) sheet.getRange(row, MT.STATUS).setValue(d.status);
+      return jr('success', { meeting_id: meetId, message: 'Meeting synced (updated).' });
+    } else {
+      sheet.appendRow([
+        meetId,
+        clientName,
+        clientEmail,
+        d.project_id || '',
+        d.customer_id || '',
+        d.staff_id || '',
+        d.title || 'Project Consultation',
+        d.date || now.date,
+        d.time || now.time,
+        d.meet_link || 'https://meet.google.com/new',
+        d.status || 'SCHEDULED',
+        now.date + ' ' + now.time
+      ]);
+      return jr('success', { meeting_id: meetId, message: 'Meeting synced (created).' });
+    }
+  } catch(err) {
+    return jr('error', 'syncMeeting failed: ' + err.toString());
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
+  }
+}
+
+function syncInvoice(d) {
+  d = d || {};
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch(e) {}
+  try {
+    const sheet = getOrCreateSheet(SHEETS.INVOICES, HEADERS.Invoices);
+    const invId = d.invoice_id || d.id || ('INV-' + Utilities.getUuid().slice(0, 8).toUpperCase());
+    const row = findRowByValue(sheet, 1, invId);
+    const now = getNow();
+    
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
+    if ((!clientName || !clientEmail) && d.customer_id) {
+      try {
+        const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.USERS);
+        if (uSheet) {
+          const uRows = uSheet.getDataRange().getValues();
+          for (let i = 1; i < uRows.length; i++) {
+            if (String(uRows[i][0]).trim() === String(d.customer_id).trim()) {
+              if (!clientName) clientName = String(uRows[i][1] || '');
+              if (!clientEmail) clientEmail = String(uRows[i][2] || '');
+              break;
+            }
+          }
+        }
+      } catch(e) {}
+    }
+
+    if (row > 0) {
+      if (clientName) sheet.getRange(row, 2).setValue(clientName);
+      if (clientEmail) sheet.getRange(row, 3).setValue(clientEmail);
+      if (d.project_id) sheet.getRange(row, 4).setValue(d.project_id);
+      if (d.project_name) sheet.getRange(row, 5).setValue(d.project_name);
+      if (d.customer_id) sheet.getRange(row, 6).setValue(d.customer_id);
+      if (d.amount !== undefined) sheet.getRange(row, 7).setValue(d.amount);
+      if (d.gst_amount !== undefined) sheet.getRange(row, 8).setValue(d.gst_amount);
+      if (d.total_amount !== undefined) sheet.getRange(row, 9).setValue(d.total_amount);
+      if (d.status) sheet.getRange(row, 10).setValue(d.status);
+      if (d.due_date) sheet.getRange(row, 11).setValue(d.due_date);
+      if (d.paid_at) sheet.getRange(row, 12).setValue(d.paid_at);
+      if (d.order_id) sheet.getRange(row, 13).setValue(d.order_id);
+      if (d.payment_id) sheet.getRange(row, 14).setValue(d.payment_id);
+      sheet.getRange(row, 16).setValue(now.date + ' ' + now.time);
+      return jr('success', { invoice_id: invId, message: 'Invoice synced (updated).' });
+    } else {
+      sheet.appendRow([
+        invId,
+        clientName,
+        clientEmail,
+        d.project_id || '',
+        d.project_name || '',
+        d.customer_id || '',
+        d.amount || 0,
+        d.gst_amount || Math.round((d.amount || 0) * 0.18),
+        d.total_amount || d.amount || 0,
+        d.status || 'UNPAID',
+        d.due_date || '',
+        d.paid_at || '',
+        d.order_id || '',
+        d.payment_id || '',
+        now.date + ' ' + now.time,
+        now.date + ' ' + now.time
+      ]);
+      return jr('success', { invoice_id: invId, message: 'Invoice synced (created).' });
+    }
+  } catch(err) {
+    return jr('error', 'syncInvoice failed: ' + err.toString());
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
+  }
 }
 
 // ─────────────── MESSAGING SYSTEM ────────────────────────────

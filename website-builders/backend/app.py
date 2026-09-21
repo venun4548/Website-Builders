@@ -177,6 +177,10 @@ def call_gas(action: str, data: dict = None, timeout: int = 12) -> dict:
         logger.error('GAS error (%s): %s', action, str(e))
         return {'status': 'error', 'message': str(e)}
 
+def sync_to_google_sheets(action: str, data: dict = None, timeout: int = 20) -> dict:
+    """Helper to dispatch synchronized data updates to Google Apps Script."""
+    return call_gas(action, data, timeout=timeout)
+
 
 def gas_get(action: str, params: dict = None, timeout: int = 10, use_cache: bool = True) -> dict:
     """GET from Google Apps Script with connection pooling & 30s cache."""
@@ -1056,6 +1060,22 @@ def api_reset_password(user_id):
         return jsonify({'success': True, 'status': 'success', 'message': f'Password updated successfully for {user_id}.'}), 200
     
     return jsonify({'success': False, 'error': result.get('message')}), 400
+
+@app.route('/api/admin/clear-sheets', methods=['POST'])
+@login_required
+def api_clear_sheets():
+    """Clear all data rows across all sheets and reset headers with seed users (Super Admin only)."""
+    if current_user.role != 'Super Admin':
+        return jsonify({'success': False, 'error': 'Only Super Admin can reset or clear sheets.'}), 403
+    
+    result = call_gas('clearAllData', timeout=30)
+    _gas_cache.clear()
+    ok = result.get('status') == 'success'
+    return jsonify({
+        'success': ok,
+        'message': result.get('message', 'Sheets cleared successfully' if ok else 'Failed to clear sheets'),
+        'data': result.get('data')
+    }), (200 if ok else 400)
 
 # ─── API: Stats ───────────────────────────────────────────────
 @app.route('/api/stats')
