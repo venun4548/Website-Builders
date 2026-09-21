@@ -32,7 +32,8 @@ const SHEETS = {
   PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings', DOCUMENTS:'Documents', TEAMS:'Teams',
   DOC_VERIFICATION:'DocumentVerification',
   DOC_AUDIT:'DocumentAuditLogs',
-  DOC_TEMPLATES:'DocumentTemplates'
+  DOC_TEMPLATES:'DocumentTemplates',
+  PASSWORD_OTPS:'PasswordOTPs'
 };
 
 // Column indexes (1-based)
@@ -84,7 +85,8 @@ const HEADERS={
   Teams:['Team ID','Team Name','Description','Leader ID','Members','Created At'],
   DocumentVerification:['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
   DocumentAuditLogs:['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
-  DocumentTemplates:['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At']
+  DocumentTemplates:['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At'],
+  PasswordOTPs:['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt']
 };
 
 function initialSetup(){
@@ -92,6 +94,7 @@ function initialSetup(){
   repairAllHeaders();
   Logger.log('All 8 sheets initialized, headers verified and aligned.');
 }
+
 
 function repairAllHeaders(){
   const ss=SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
@@ -134,7 +137,8 @@ function createAllPaymentAndRemainingSheets() {
     'Teams': ['Team ID','Team Name','Description','Leader ID','Members','Created At'],
     'DocumentVerification': ['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
     'DocumentAuditLogs': ['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
-    'DocumentTemplates': ['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At']
+    'DocumentTemplates': ['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At'],
+    'PasswordOTPs': ['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt']
   };
 
   for (const [name, headers] of Object.entries(NEW_SHEETS)) {
@@ -205,12 +209,23 @@ function seedSuperAdmin(){
 
 // ─────────────── HTTP HANDLERS ────────────────────────────────
 function doPost(e){
-  if(!e||!e.parameter) return jr('error','Invalid request.');
-  const p=e.parameter;
-  if(p.token&&p.token===CONFIG.SHARED_SECRET){
-    const action=p.action||'';
-    let data={};
-    try{if(p.data)data=JSON.parse(p.data);}catch(err){}
+  if(!e) return jr('error','Invalid request.');
+  let p = e.parameter || {};
+  let body = {};
+  if (e.postData && e.postData.contents) {
+    try { body = JSON.parse(e.postData.contents); } catch(err) {}
+  }
+  const token = p.token || body.token || p.secret || body.secret;
+  if(token && token === CONFIG.SHARED_SECRET){
+    const action = p.action || body.action || '';
+    let data = {};
+    if (p.data) {
+      try { data = JSON.parse(p.data); } catch(err) {}
+    } else if (body.data) {
+      data = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
+    } else {
+      data = body;
+    }
     try{
       if(action==='createUser')       return createUser(data);
       if(action==='updateUser')       return updateUser(data);
@@ -267,6 +282,13 @@ function doPost(e){
       if(action==='requestDocumentSignature') return requestDocumentSignature(data);
       if(action==='signDocument') return signDocument(data);
 
+      // PASSWORD OTP POST ACTIONS
+      if(action==='SEND_PASSWORD_RESET_OTP') return sendPasswordResetOtpEmail(data);
+      if(action==='savePasswordOtp') return savePasswordOtp(data);
+      if(action==='getPasswordOtp') return getPasswordOtp(data);
+      if(action==='updatePasswordOtp') return updatePasswordOtp(data);
+      if(action==='updateUserPassword') return updateUserPassword(data);
+
     }catch(err){return jr('error','Action failed: '+err.toString());}
     return jr('error','Unknown action: '+action);
   }
@@ -279,6 +301,7 @@ function doGet(e){
   if(!p.token||p.token!==CONFIG.SHARED_SECRET) return jr('error','Unauthorized.');
   const action=p.action||'getEnquiries';
   try{
+    if(action==='getPasswordOtp')       return getPasswordOtp(p);
     if(action==='getUsers')             return getUsers(p);
     if(action==='getUser')              return getUser(p);
     if(action==='getEnquiries')         return getEnquiries(p);
@@ -2898,3 +2921,218 @@ function getTeams(p) {
   
   return jr('success', list);
 }
+
+// ─────────────── PASSWORD OTPS (FORGOT PASSWORD) ─────────────
+function savePasswordOtp(d) {
+  d = d || {};
+  if (!d.email || !d.otp_hash) return jr('error', 'Email and OTP hash required.');
+  const email = String(d.email).trim().toLowerCase();
+  const purpose = d.purpose || 'PASSWORD_RESET';
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet(SHEETS.PASSWORD_OTPS, HEADERS.PasswordOTPs);
+    const lastRow = sheet.getLastRow();
+    
+    // Mark previous ACTIVE OTPs for this email and purpose as SUPERSEDED
+    if (lastRow >= 2) {
+      const values = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+      for (let i = 0; i < values.length; i++) {
+        const rowEmail = String(values[i][1]).trim().toLowerCase();
+        const rowPurpose = String(values[i][3]);
+        const rowStatus = String(values[i][7]);
+        if (rowEmail === email && rowPurpose === purpose && rowStatus === 'ACTIVE') {
+          sheet.getRange(i + 2, 8).setValue('SUPERSEDED');
+        }
+      }
+    }
+    
+    const otpId = d.otp_id || generateId('POTP', SHEETS.PASSWORD_OTPS, 1);
+    const createdAt = d.created_at || new Date().toISOString();
+    const expiresAt = d.expires_at || new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const verifiedAt = '';
+    const status = 'ACTIVE';
+    const attempts = 0;
+    const ipAddress = d.ip_address || '';
+    const usedAt = '';
+    
+    sheet.appendRow([otpId, email, d.otp_hash, purpose, createdAt, expiresAt, verifiedAt, status, attempts, ipAddress, usedAt]);
+    return jr('success', { otp_id: otpId, status: 'ACTIVE' });
+  } catch(err) {
+    return jr('error', 'Failed to save OTP: ' + err.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getPasswordOtp(d) {
+  d = d || {};
+  if (!d.email) return jr('error', 'Email required.');
+  const email = String(d.email).trim().toLowerCase();
+  const purpose = d.purpose || 'PASSWORD_RESET';
+  const sheet = getOrCreateSheet(SHEETS.PASSWORD_OTPS, HEADERS.PasswordOTPs);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return jr('error', 'No active OTP found.');
+  
+  const values = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
+  // Search from bottom up for latest active OTP
+  for (let i = values.length - 1; i >= 0; i--) {
+    const rowEmail = String(values[i][1]).trim().toLowerCase();
+    const rowPurpose = String(values[i][3]);
+    const rowStatus = String(values[i][7]);
+    if (rowEmail === email && rowPurpose === purpose) {
+      const expiresAt = new Date(values[i][5]);
+      const now = new Date();
+      if (rowStatus === 'ACTIVE' && expiresAt < now) {
+        sheet.getRange(i + 2, 8).setValue('EXPIRED');
+        continue;
+      }
+      return jr('success', {
+        row_index: i + 2,
+        otp_id: String(values[i][0]),
+        email: rowEmail,
+        otp_hash: String(values[i][2]),
+        purpose: rowPurpose,
+        created_at: String(values[i][4]),
+        expires_at: String(values[i][5]),
+        verified_at: String(values[i][6]),
+        status: rowStatus,
+        attempts: Number(values[i][8]) || 0,
+        ip_address: String(values[i][9]),
+        used_at: String(values[i][10])
+      });
+    }
+  }
+  return jr('error', 'No active OTP found.');
+}
+
+function updatePasswordOtp(d) {
+  d = d || {};
+  if (!d.otp_id) return jr('error', 'OTP ID required.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet(SHEETS.PASSWORD_OTPS, HEADERS.PasswordOTPs);
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return jr('error', 'OTP record not found.');
+    
+    const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    let rowIndex = -1;
+    for (let i = 0; i < ids.length; i++) {
+      if (String(ids[i][0]) === String(d.otp_id)) {
+        rowIndex = i + 2;
+        break;
+      }
+    }
+    if (rowIndex < 0) return jr('error', 'OTP record not found.');
+    
+    if (d.status !== undefined) sheet.getRange(rowIndex, 8).setValue(d.status);
+    if (d.attempts !== undefined) sheet.getRange(rowIndex, 9).setValue(d.attempts);
+    if (d.verified_at !== undefined) sheet.getRange(rowIndex, 7).setValue(d.verified_at);
+    if (d.used_at !== undefined) sheet.getRange(rowIndex, 11).setValue(d.used_at);
+    
+    return jr('success', { message: 'OTP updated successfully.' });
+  } catch(err) {
+    return jr('error', 'Failed to update OTP: ' + err.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function updateUserPassword(d) {
+  d = d || {};
+  if (!d.email || !d.new_password) return jr('error', 'Email and new password required.');
+  const email = String(d.email).trim().toLowerCase();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+    const row = findRowByValue(sheet, U.EMAIL, email);
+    if (row < 0) return jr('error', 'User not found.');
+    
+    const hashed = hashPassword(d.new_password);
+    sheet.getRange(row, U.PASS).setValue(hashed);
+    const now = getNow();
+    sheet.getRange(row, U.UPD_DATE).setValue(now.date);
+    sheet.getRange(row, U.UPD_TIME).setValue(now.time);
+    
+    const userId = String(sheet.getRange(row, U.ID).getValue());
+    logActivity({
+      userId: userId,
+      userName: String(sheet.getRange(row, U.NAME).getValue()),
+      role: String(sheet.getRange(row, U.ROLE).getValue()),
+      action: 'PASSWORD_RESET',
+      relatedId: userId,
+      description: 'Password reset via OTP verification',
+      status: 'SUCCESS'
+    });
+    
+    return jr('success', { message: 'Password updated successfully.' });
+  } catch(err) {
+    return jr('error', 'Failed to update password: ' + err.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function sendPasswordResetOtpEmail(d) {
+  d = d || {};
+  const email = String(d.email || '').trim().toLowerCase();
+  const otp = String(d.otp || '').trim();
+  if (!email || !otp || otp.length !== 6) {
+    return jr('error', 'Valid email and 6-digit OTP required.');
+  }
+
+  const subject = 'Website Builders - Password Reset OTP';
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b1120; margin: 0; padding: 24px; color: #f8fafc; }
+  .card { max-width: 520px; margin: 0 auto; background: #0f172a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); padding: 36px 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+  .logo { text-align: center; margin-bottom: 24px; font-size: 24px; font-weight: 800; color: #ffffff; }
+  .logo span { color: #22c55e; }
+  h2 { color: #ffffff; font-size: 20px; margin-top: 0; margin-bottom: 12px; }
+  p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0; }
+  .otp-box { background: rgba(34, 197, 94, 0.1); border: 2px dashed #22c55e; border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0; }
+  .otp-code { font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #22c55e; font-family: Courier, monospace; }
+  .otp-expiry { font-size: 12px; color: #64748b; margin-top: 6px; }
+  .warning-box { background: rgba(239, 68, 68, 0.1); border-left: 3px solid #ef4444; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #fca5a5; margin: 20px 0; }
+  .footer { text-align: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 12px; color: #64748b; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Website <span>Builders</span></div>
+    <h2>Password Reset Verification</h2>
+    <p>Hello,</p>
+    <p>We received a request to reset the password for your Website Builders account. Use the one-time verification code (OTP) below to proceed:</p>
+    <div class="otp-box">
+      <div class="otp-code">${otp}</div>
+      <div class="otp-expiry">Valid for 5 minutes only</div>
+    </div>
+    <div class="warning-box">
+      <strong>Security Notice:</strong> Never share this OTP with anyone. Our staff will never ask for your verification code.
+    </div>
+    <p>If you did not request a password reset, you can safely ignore this email. Your existing password will remain unchanged.</p>
+    <div class="footer">
+      &copy; ${new Date().getFullYear()} Website Builders &bull; Support: websitebuildeers@gmail.com
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    MailApp.sendEmail({
+      to: email,
+      subject: subject,
+      htmlBody: htmlBody
+    });
+    return jr('success', { message: 'OTP email sent successfully.' });
+  } catch(err) {
+    Logger.log('MailApp error: ' + err.toString());
+    return jr('error', 'Failed to send email: ' + err.toString());
+  }
+}
+

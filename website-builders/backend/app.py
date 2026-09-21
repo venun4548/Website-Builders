@@ -383,15 +383,220 @@ def change_password():
     flash('Password change not implemented in proxy version yet.', 'info')
     return redirect(url_for('profile'))
 
-@app.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    flash('Forgot password not implemented in proxy version yet.', 'info')
-    return redirect(url_for('login'))
+# ─── Forgot Password / Password OTP Utilities & APIs ──────────
+import secrets
+import string
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
-@app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    flash('Reset password not implemented in proxy version yet.', 'info')
-    return redirect(url_for('login'))
+pwd_reset_serializer = URLSafeTimedSerializer(app.secret_key or 'default-wb-reset-key', salt='wb-pwd-reset-salt')
+
+# Rate limiting storage: in-memory
+_otp_rate_limits = {}   # {email: [timestamp, ...]}
+_otp_last_sent = {}     # {email: timestamp}
+
+def check_otp_rate_limit(email: str) -> bool:
+    """Allow max 3 OTP requests per email in 15 minutes."""
+    now = datetime.utcnow()
+    window = timedelta(minutes=15)
+    timestamps = _otp_rate_limits.get(email, [])
+    timestamps = [t for t in timestamps if now - t < window]
+    if len(timestamps) >= 3:
+        return False
+    return True
+
+def record_otp_request(email: str):
+    now = datetime.utcnow()
+    timestamps = _otp_rate_limits.get(email, [])
+    timestamps.append(now)
+    _otp_rate_limits[email] = timestamps
+    _otp_last_sent[email] = now
+
+def check_otp_cooldown(email: str) -> int:
+    """Returns remaining seconds for 60-second cooldown, or 0 if cooldown expired."""
+    last = _otp_last_sent.get(email)
+    if not last:
+        return 0
+    elapsed = (datetime.utcnow() - last).total_seconds()
+    if elapsed < 60:
+        return int(60 - elapsed)
+    return 0
+
+def generate_secure_otp() -> str:
+    """Generate cryptographically secure 6-digit OTP."""
+    digits = string.digits
+    return ''.join(secrets.choice(digits) for _ in range(6))
+
+def hash_otp_code(otp: str) -> str:
+    """SHA-256 hash of the OTP."""
+    return hashlib.sha256(otp.encode('utf-8')).hexdigest()
+
+@app.route('/forgot-password', methods=['GET'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('customer_dashboard'))
+    return render_template('forgot_password.html')
+
+@app.route('/api/auth/forgot-password/send-otp', methods=['POST'])
+def api_forgot_password_send_otp():
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    email = (data.get('email') or '').strip().lower()
+
+    if not email or '@' not in email or '.' not in email:
+        return jsonify({'success': False, 'error': 'Please enter a valid email address.'}), 400
+
+    cooldown = check_otp_cooldown(email)
+    if cooldown > 0:
+        return jsonify({'success': False, 'error': f'Please wait {cooldown} seconds before requesting a new OTP.'}), 429
+
+    if not check_otp_rate_limit(email):
+        return jsonify({'success': False, 'error': 'Too many attempts. Please try again later.'}), 429
+
+    # Record attempt timestamp
+    record_otp_request(email)
+
+    # Check if user exists in database
+    user_res = gas_get('getUser', {'email': email})
+    user_exists = False
+    if user_res.get('status') == 'success' and user_res.get('data'):
+        user_exists = True
+
+    # Generic response message per security requirement
+    generic_msg = 'If the email is registered, an OTP has been sent.'
+
+    if user_exists:
+        otp = generate_secure_otp()
+        otp_hash = hash_otp_code(otp)
+        otp_id = f"POTP-{datetime.utcnow().year}-{uuid.uuid4().hex[:8].upper()}"
+        now = datetime.utcnow()
+        expires_at = (now + timedelta(minutes=5)).isoformat() + 'Z'
+
+        save_res = call_gas('savePasswordOtp', {
+            'otp_id': otp_id,
+            'email': email,
+            'otp_hash': otp_hash,
+            'purpose': 'PASSWORD_RESET',
+            'created_at': now.isoformat() + 'Z',
+            'expires_at': expires_at,
+            'ip_address': request.remote_addr or ''
+        })
+
+        if save_res.get('status') == 'success':
+            # Dispatch OTP via Apps Script Web App
+            mail_res = call_gas('SEND_PASSWORD_RESET_OTP', {
+                'email': email,
+                'otp': otp
+            })
+            # Fallback to local SMTP if GAS email fails
+            if mail_res.get('status') != 'success':
+                try:
+                    send_email_notification(
+                        to_email=email,
+                        subject='Website Builders - Password Reset OTP',
+                        body=f"Your password reset OTP is: {otp}. It expires in 5 minutes. Do not share this OTP with anyone."
+                    )
+                except Exception as mail_err:
+                    logger.error("Local email fallback error: %s", mail_err)
+
+    return jsonify({'success': True, 'message': generic_msg})
+
+@app.route('/api/auth/forgot-password/verify-otp', methods=['POST'])
+def api_forgot_password_verify_otp():
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    email = (data.get('email') or '').strip().lower()
+    otp = (data.get('otp') or '').strip()
+
+    if not email or not otp or len(otp) != 6 or not otp.isdigit():
+        return jsonify({'success': False, 'error': 'Valid email and 6-digit OTP are required.'}), 400
+
+    otp_res = call_gas('getPasswordOtp', {'email': email, 'purpose': 'PASSWORD_RESET'})
+    if otp_res.get('status') != 'success' or not otp_res.get('data'):
+        return jsonify({'success': False, 'error': 'Invalid or expired OTP. Please request a new one.'}), 400
+
+    otp_data = otp_res['data']
+    otp_id = otp_data.get('otp_id')
+    status = otp_data.get('status', 'ACTIVE')
+    attempts = int(otp_data.get('attempts', 0))
+
+    if status == 'LOCKED' or attempts >= 5:
+        return jsonify({'success': False, 'error': 'This OTP is locked due to too many failed attempts. Please request a new one.'}), 400
+
+    if status != 'ACTIVE':
+        return jsonify({'success': False, 'error': f'This OTP is no longer valid ({status.lower()}). Please request a new one.'}), 400
+
+    # Verify expiry
+    expires_at_str = otp_data.get('expires_at')
+    try:
+        expires_at = datetime.fromisoformat(expires_at_str.replace('Z', '+00:00'))
+        if datetime.now(expires_at.tzinfo) > expires_at:
+            call_gas('updatePasswordOtp', {'otp_id': otp_id, 'status': 'EXPIRED'})
+            return jsonify({'success': False, 'error': 'This OTP has expired. Please request a new one.'}), 400
+    except Exception as e:
+        logger.warning('Could not parse expires_at: %s', e)
+
+    # Hash and compare
+    provided_hash = hash_otp_code(otp)
+    stored_hash = otp_data.get('otp_hash', '')
+
+    if not hmac.compare_digest(provided_hash, stored_hash):
+        new_attempts = attempts + 1
+        new_status = 'LOCKED' if new_attempts >= 5 else 'ACTIVE'
+        call_gas('updatePasswordOtp', {'otp_id': otp_id, 'attempts': new_attempts, 'status': new_status})
+        if new_attempts >= 5:
+            return jsonify({'success': False, 'error': 'Too many incorrect attempts. This OTP has been locked. Please request a new OTP.'}), 400
+        return jsonify({'success': False, 'error': f'Incorrect OTP. {5 - new_attempts} attempts remaining.'}), 400
+
+    # Successfully verified
+    now_iso = datetime.utcnow().isoformat() + 'Z'
+    call_gas('updatePasswordOtp', {'otp_id': otp_id, 'status': 'VERIFIED', 'verified_at': now_iso})
+
+    # Generate short-lived reset token (valid for 15 minutes)
+    reset_token = pwd_reset_serializer.dumps({'email': email, 'otp_id': otp_id})
+
+    return jsonify({
+        'success': True,
+        'message': 'OTP verified successfully.',
+        'resetToken': reset_token
+    })
+
+@app.route('/api/auth/forgot-password/reset-password', methods=['POST'])
+def api_forgot_password_reset_password():
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    reset_token = data.get('resetToken') or data.get('reset_token') or ''
+    new_password = data.get('newPassword') or data.get('new_password') or ''
+
+    if not reset_token or not new_password:
+        return jsonify({'success': False, 'error': 'Reset token and new password are required.'}), 400
+
+    if len(new_password) < 8:
+        return jsonify({'success': False, 'error': 'Password must be at least 8 characters long.'}), 400
+
+    try:
+        payload = pwd_reset_serializer.loads(reset_token, max_age=900)  # 15 minutes
+    except SignatureExpired:
+        return jsonify({'success': False, 'error': 'Your reset session has expired. Please restart the recovery process.'}), 400
+    except (BadSignature, Exception):
+        return jsonify({'success': False, 'error': 'Invalid reset token. Please request a new OTP.'}), 400
+
+    email = payload.get('email')
+    otp_id = payload.get('otp_id')
+
+    if not email or not otp_id:
+        return jsonify({'success': False, 'error': 'Malformed reset session.'}), 400
+
+    # Update password in Google Sheets
+    upd_res = call_gas('updateUserPassword', {'email': email, 'new_password': new_password})
+    if upd_res.get('status') != 'success':
+        return jsonify({'success': False, 'error': upd_res.get('message', 'Failed to update password.')}), 500
+
+    # Mark OTP as USED
+    now_iso = datetime.utcnow().isoformat() + 'Z'
+    call_gas('updatePasswordOtp', {'otp_id': otp_id, 'status': 'USED', 'used_at': now_iso})
+
+    return jsonify({
+        'success': True,
+        'message': 'Your password has been reset successfully.'
+    })
+
 
 # ─── User (Client) Login ─────────────────────────────────────
 @app.route('/user/login', methods=['GET', 'POST'])
