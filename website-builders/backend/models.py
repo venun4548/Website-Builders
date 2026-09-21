@@ -46,16 +46,16 @@ class SheetsUser(UserMixin):
 
     # Convenience role checks
     def is_super_admin(self):
-        return self.role.lower() in ('super admin', 'super_admin', 'superadmin')
+        return self.role.strip().lower() in ('super admin', 'super_admin', 'superadmin')
 
     def is_admin(self):
-        return self.role.lower() == 'admin'
+        return self.role.strip().lower() == 'admin'
 
     def is_staff(self):
-        return self.role.lower() == 'staff'
+        return self.role.strip().lower() == 'staff'
 
     def is_user(self):
-        return self.role.lower() in ('user', 'client', 'customer')
+        return self.role.strip().lower() in ('user', 'client', 'customer')
 
     def to_dict(self):
         """Return a safe dict (no password) suitable for session caching."""

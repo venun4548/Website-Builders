@@ -4046,6 +4046,7 @@
     }
   </script>
   <script src="/js/messages.js?v=3"></script>
+  <script></script>
 <script>
     async function loadBrandInfo() {
       try {
@@ -4212,5 +4213,37 @@
     }
 
 </script>
+
+  <!-- Team Modal -->
+  <div class="modal-backdrop" id="modal-create-team" style="display:none;">
+    <div class="modal-drawer">
+      <div class="modal-header">
+        <h2>Create Team</h2>
+        <button onclick="closeModal('modal-create-team')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="handleCreateTeam(event)">
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Team Name</label>
+            <input type="text" name="team_name" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Description</label>
+            <input type="text" name="description" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Leader ID</label>
+            <input type="text" name="leader_id" class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Members (comma separated IDs)</label>
+            <input type="text" name="members" class="filter-input">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Create Team</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

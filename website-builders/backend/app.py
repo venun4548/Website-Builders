@@ -995,93 +995,153 @@ def api_add_project_update(project_id):
     return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
 
 # ─── API: Documents & Digital Signatures (Phase 5) ───────────
-@app.route('/api/documents', methods=['GET'])
+@app.route('/api/admin/documents', methods=['GET', 'POST'])
 @login_required
-def api_get_documents():
-    args = {}
-    if current_user.is_user():
-        args['client_id'] = current_user.id
-    result = gas_get('getDocuments', args)
-    if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': False, 'error': result.get('message')}), 400
-
-@app.route('/api/documents', methods=['POST'])
-@login_required
-def api_create_document():
-    if not current_user.is_staff() and not current_user.role in ('Admin', 'Super Admin'):
-        return jsonify({'success': False, 'error': 'Only staff/admins can create documents.'}), 403
-    data = request.get_json(silent=True) or {}
-    result = call_gas('createDocument', data)
-    ok = result.get('status') == 'success'
-    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
-
-@app.route('/api/documents/<doc_id>/request-signature', methods=['POST'])
-@login_required
-def api_request_signature(doc_id):
+def api_admin_documents():
     if not current_user.is_staff() and not current_user.role in ('Admin', 'Super Admin'):
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    result = call_gas('requestDocumentSignature', {'document_id': doc_id})
-    ok = result.get('status') == 'success'
-    if ok:
-        data = result.get('data', {})
-        # Send OTP via Email
-        otp = data.get('otp')
-        # In a real scenario, we'd fetch the document's client_id and then their email.
-        # We will mock sending it to the client for this phase:
-        dispatch_omni_notification(
-            user_email="client@example.com", # mock recipient
-            user_id="CLIENT", 
-            title=f"Signature Required - Document {doc_id}",
-            message=f"Please use this OTP to sign your document: {otp}. It expires in 15 minutes."
-        )
-    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+        
+    if request.method == 'GET':
+        result = gas_get('getDocuments', {'include_content': True})
+        return jsonify(result)
+        
+    elif request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        data['created_by'] = current_user.id
+        data['created_by_name'] = current_user.full_name
+        result = call_gas('createDocument', data)
+        return jsonify(result)
 
-@app.route('/api/documents/<doc_id>/sign', methods=['POST'])
+@app.route('/api/admin/documents/<doc_id>', methods=['GET', 'PUT'])
 @login_required
-def api_sign_document(doc_id):
+def api_admin_document_detail(doc_id):
+    if not current_user.is_staff() and not current_user.role in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    if request.method == 'GET':
+        result = gas_get('getDocuments', {'document_id': doc_id, 'include_content': True})
+        return jsonify(result)
+        
+    elif request.method == 'PUT':
+        data = request.get_json(silent=True) or {}
+        data['document_id'] = doc_id
+        data['updated_by'] = current_user.id
+        data['updated_by_name'] = current_user.full_name
+        result = call_gas('updateDocument', data)
+        return jsonify(result)
+
+@app.route('/api/admin/documents/<doc_id>/send', methods=['POST'])
+@login_required
+def api_admin_document_send(doc_id):
+    if not current_user.is_staff() and not current_user.role in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    data = {'document_id': doc_id, 'sent_by': current_user.id, 'sent_by_name': current_user.full_name}
+    result = call_gas('requestDocumentSignature', data)
+    
+    if result.get('status') == 'success':
+        otp = result.get('data', {}).get('otp')
+        # Fetch document to get client email
+        doc_res = gas_get('getDocuments', {'document_id': doc_id})
+        client_email = "client@example.com" # fallback
+        if doc_res.get('status') == 'success' and isinstance(doc_res.get('data'), dict):
+            client_email = doc_res['data'].get('client_email', client_email)
+            
+        send_email_notification(
+            to_email=client_email,
+            subject=f"Signature Required - Document {doc_id}",
+            body=f"Please use this secure OTP to view and sign your document: {otp}. It expires in 15 minutes."
+        )
+    return jsonify(result)
+
+@app.route('/api/admin/documents/<doc_id>/cancel', methods=['POST'])
+@login_required
+def api_admin_document_cancel(doc_id):
+    if not current_user.is_staff() and not current_user.role in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    result = call_gas('cancelDocument', {'document_id': doc_id, 'admin_id': current_user.id})
+    return jsonify(result)
+
+@app.route('/api/admin/documents/<doc_id>/audit', methods=['GET'])
+@login_required
+def api_admin_document_audit(doc_id):
+    if not current_user.is_staff() and not current_user.role in ('Admin', 'Super Admin'):
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    result = gas_get('getDocumentAuditLogs', {'document_id': doc_id})
+    return jsonify(result)
+
+# Client Routes
+@app.route('/api/user/documents', methods=['GET'])
+@login_required
+def api_user_documents():
+    if not current_user.is_user():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    result = gas_get('getDocuments', {'client_id': current_user.id})
+    return jsonify(result)
+
+@app.route('/api/user/documents/<doc_id>', methods=['GET'])
+@login_required
+def api_user_document_detail(doc_id):
+    if not current_user.is_user():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    result = gas_get('getDocuments', {'document_id': doc_id, 'client_id': current_user.id, 'include_content': True})
+    return jsonify(result)
+
+@app.route('/api/user/documents/<doc_id>/verify', methods=['POST'])
+@login_required
+def api_user_document_verify(doc_id):
+    if not current_user.is_user():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     data = request.get_json(silent=True) or {}
     data['document_id'] = doc_id
-    result = call_gas('signDocument', data)
-    ok = result.get('status') == 'success'
-    if ok:
-        dispatch_omni_notification(
-            user_email="websitebuildeers@gmail.com",
-            user_id="ADMIN", 
-            title=f"Document {doc_id} Signed",
-            message=f"Document {doc_id} was successfully signed."
-        )
-    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+    data['client_id'] = current_user.id
+    result = call_gas('verifyDocumentOtp', data)
+    return jsonify(result)
 
-# Fallback: accept doc_id in body instead of URL param
-@app.route('/api/documents/sign', methods=['POST'])
+@app.route('/api/user/documents/<doc_id>/sign', methods=['POST'])
 @login_required
-def api_sign_document_fallback():
+def api_user_document_sign(doc_id):
+    if not current_user.is_user():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     data = request.get_json(silent=True) or {}
-    doc_id = data.get('document_id', '')
-    if not doc_id:
-        return jsonify({'success': False, 'error': 'Missing document_id'}), 400
+    data['document_id'] = doc_id
+    data['signer_id'] = current_user.id
+    data['signer_name'] = current_user.full_name
+    data['signer_email'] = current_user.email
     result = call_gas('signDocument', data)
-    ok = result.get('status') == 'success'
-    if ok:
-        dispatch_omni_notification(
-            user_email="websitebuildeers@gmail.com",
-            user_id="ADMIN",
-            title=f"Document {doc_id} Signed",
-            message=f"Document {doc_id} was successfully signed."
-        )
-    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+    return jsonify(result)
 
-@app.route('/api/documents/request-signature', methods=['POST'])
+@app.route('/api/user/documents/<doc_id>/reject', methods=['POST'])
 @login_required
-def api_request_signature_fallback():
+def api_user_document_reject(doc_id):
+    if not current_user.is_user():
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     data = request.get_json(silent=True) or {}
-    doc_id = data.get('document_id', '')
-    if not doc_id:
-        return jsonify({'success': False, 'error': 'Missing document_id'}), 400
-    result = call_gas('requestDocumentSignature', {'document_id': doc_id})
-    ok = result.get('status') == 'success'
-    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+    data['document_id'] = doc_id
+    data['client_id'] = current_user.id
+    result = call_gas('rejectDocument', data)
+    return jsonify(result)
+
+# HTML Routes for Pages
+@app.route('/admin/documents')
+@login_required
+def page_admin_documents():
+    return render_template('admin_documents.html')
+
+@app.route('/admin/documents/create')
+@login_required
+def page_admin_documents_create():
+    return render_template('admin_document_create.html')
+
+@app.route('/admin/documents/<doc_id>')
+@login_required
+def page_admin_document_detail(doc_id):
+    return render_template('admin_document_detail.html', doc_id=doc_id)
+
+@app.route('/user/documents/<doc_id>')
+@login_required
+def page_user_document_view(doc_id):
+    return render_template('user_document_view.html', doc_id=doc_id)
 
 @app.route('/api/stats', methods=['GET'])
 @login_required
@@ -1500,21 +1560,6 @@ def api_brand_info():
     else:
         data = request.get_json(silent=True) or {}
         res = call_gas('updateBrandInfo', data)
-        return jsonify(res)
-
-@app.route('/api/documents/admin', methods=['GET', 'POST', 'PUT'])
-@login_required
-def api_documents_admin():
-    if request.method == 'GET':
-        res = gas_get('getDocuments')
-        return jsonify(res)
-    elif request.method == 'POST':
-        data = request.get_json(silent=True) or {}
-        res = call_gas('createDocument', data)
-        return jsonify(res)
-    else:
-        data = request.get_json(silent=True) or {}
-        res = call_gas('updateDocument', data)
         return jsonify(res)
 
 @app.route('/api/stage-history', methods=['GET', 'POST'])

@@ -244,7 +244,7 @@
       <div class="header-right">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" placeholder="Search team, projects...">
+          <input type="text" id="global-search" placeholder="Search team, projects..." onkeyup="handleGlobalSearch()">
         </div>
 
         <div class="role-badge">Operations Manager</div>
@@ -1067,7 +1067,8 @@ if (secId === 'team') loadTeams();
       }));
     }
   </script>
-  <script src="/js/messages.js?v=3">
+  <script src="/js/messages.js?v=3"></script>
+  <script>
     async function loadTeams() {
       try {
         const res = await fetch('/api/teams');
@@ -1221,5 +1222,113 @@ if (secId === 'team') loadTeams();
     }
 
 </script>
+
+  <!-- Project Modal -->
+  <div class="modal-backdrop" id="modal-project" style="display:none;">
+    <div class="modal-drawer">
+      <div class="modal-header">
+        <h2 id="project-modal-title">Create Project</h2>
+        <button onclick="closeModal('modal-project')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="project-form" onsubmit="event.preventDefault(); saveProject();">
+          <input type="hidden" id="project-id">
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Project Name</label>
+            <input type="text" id="project-name" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Customer ID</label>
+            <input type="text" id="project-customer" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Stage</label>
+            <select id="project-stage" class="filter-input">
+              <option value="Requirements">Requirements</option>
+              <option value="Design">Design</option>
+              <option value="Development">Development</option>
+              <option value="Testing">Testing</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Progress (%)</label>
+            <input type="number" id="project-progress" min="0" max="100" class="filter-input">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Save Project</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Modal -->
+  <div class="modal-backdrop" id="modal-task" style="display:none;">
+    <div class="modal-drawer">
+      <div class="modal-header">
+        <h2 id="task-modal-title">Create Task</h2>
+        <button onclick="closeModal('modal-task')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="task-form" onsubmit="event.preventDefault(); saveTask();">
+          <input type="hidden" id="task-id">
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Task Title</label>
+            <input type="text" id="task-title" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Project ID</label>
+            <input type="text" id="task-project" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Assigned To (Staff ID)</label>
+            <input type="text" id="task-assigned" class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Status</label>
+            <select id="task-status" class="filter-input">
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Review">Review</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Save Task</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Modal -->
+  <div class="modal-backdrop" id="modal-team" style="display:none;">
+    <div class="modal-drawer">
+      <div class="modal-header">
+        <h2 id="team-modal-title">Create Team</h2>
+        <button onclick="closeModal('modal-team')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="team-form" onsubmit="event.preventDefault(); saveTeam();">
+          <input type="hidden" id="team-id">
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Team Name</label>
+            <input type="text" id="team-name" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Description</label>
+            <input type="text" id="team-desc" required class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Leader ID</label>
+            <input type="text" id="team-leader" class="filter-input">
+          </div>
+          <div class="filter-group" style="margin-bottom:1rem;">
+            <label>Members (comma separated)</label>
+            <input type="text" id="team-members" class="filter-input">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Save Team</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

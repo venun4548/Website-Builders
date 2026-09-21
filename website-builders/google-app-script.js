@@ -29,7 +29,10 @@ const SHEETS = {
   TICKET_MESSAGES:'TicketMessages', BRAND_INFO:'BrandInfo',
   STAGE_HISTORY:'StageHistory', LEADS:'Leads', LEAD_NOTES:'LeadNotes',
   PORTFOLIO:'Portfolio', PRICING:'Pricing', NOTIFICATIONS:'Notifications',
-  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings', DOCUMENTS:'Documents', TEAMS:'Teams'
+  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings', DOCUMENTS:'Documents', TEAMS:'Teams',
+  DOC_VERIFICATION:'DocumentVerification',
+  DOC_AUDIT:'DocumentAuditLogs',
+  DOC_TEMPLATES:'DocumentTemplates'
 };
 
 // Column indexes (1-based)
@@ -77,8 +80,11 @@ const HEADERS={
   PasswordResets:['Reset ID','User ID','Token','Expires At','Used','Created At'],
   EmailVerifications:['Verification ID','User ID','Token','Expires At','Verified','Created At'],
   Meetings:['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At'],
-  Documents:['Document ID','Project ID','Client ID','Title','File URL','Status','OTP','OTP Expires At','Signed At','Created At'],
-  Teams:['Team ID','Team Name','Description','Leader ID','Members','Created At']
+  Documents:['Document ID','Document Number','Project ID','Client ID','Client Name','Client Email','Client Mobile','Title','Type','Version','Content HTML','Status','Created By','Created By Name','Created At','Updated At','Sent At','Viewed At','Verified At','Signed At','Rejected At','Rejection Reason','Expires At','Signed','Signer ID','Signer Name','Signer Email','Signature Data','Final Document URL'],
+  Teams:['Team ID','Team Name','Description','Leader ID','Members','Created At'],
+  DocumentVerification:['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
+  DocumentAuditLogs:['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
+  DocumentTemplates:['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At']
 };
 
 function initialSetup(){
@@ -124,8 +130,11 @@ function createAllPaymentAndRemainingSheets() {
     'Notifications':['Notification ID','User ID','Title','Message','Link','Is Read','Created At'],
     'PasswordResets':['Reset ID','User ID','Token','Expires At','Used','Created At'],
     'EmailVerifications':['Verification ID','User ID','Token','Expires At','Verified','Created At'],
-    'Documents': ['Document ID', 'Project ID', 'Client ID', 'Title', 'File URL', 'Status', 'OTP', 'OTP Expires At', 'Signed At', 'Created At'],
-    'Teams': ['Team ID','Team Name','Description','Leader ID','Members','Created At']
+    'Documents': ['Document ID','Document Number','Project ID','Client ID','Client Name','Client Email','Client Mobile','Title','Type','Version','Content HTML','Status','Created By','Created By Name','Created At','Updated At','Sent At','Viewed At','Verified At','Signed At','Rejected At','Rejection Reason','Expires At','Signed','Signer ID','Signer Name','Signer Email','Signature Data','Final Document URL'],
+    'Teams': ['Team ID','Team Name','Description','Leader ID','Members','Created At'],
+    'DocumentVerification': ['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
+    'DocumentAuditLogs': ['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
+    'DocumentTemplates': ['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At']
   };
 
   for (const [name, headers] of Object.entries(NEW_SHEETS)) {
@@ -299,6 +308,7 @@ function doGet(e){
     if(action==='getMeetings')          return getMeetings(p);
     if(action==='getTickets')           return getTickets(p);
     if(action==='getDocuments')         return getDocuments(p);
+    if(action==='getDocumentAuditLogs') return getDocumentAuditLogs(p);
     if(action==='getBrandInfo')         return getBrandInfo(p);
     if(action==='getTeams')             return getTeams(p);
 
@@ -1506,22 +1516,278 @@ function getTickets(p) {
   return jr('success', list);
 }
 
-// ─── Phase 5: Documents & Digital Signatures ────────────────
+// ─── Phase 5: Documents, E-Signatures, & Audit Trail ────────────────
+
+// Security Hash Function (Simple SHA-256 for Apps Script)
+function computeHash(input) {
+  var rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, input, Utilities.Charset.UTF_8);
+  var txtHash = '';
+  for (j = 0; j < rawHash.length; j++) {
+    var hashVal = rawHash[j];
+    if (hashVal < 0) hashVal += 256;
+    if (hashVal.toString(16).length == 1) txtHash += "0";
+    txtHash += hashVal.toString(16);
+  }
+  return txtHash;
+}
+
+function logAudit(docId, userId, userName, userRole, action, metadata) {
+  const sheet = getOrCreateSheet('DocumentAuditLogs', HEADERS.DocumentAuditLogs);
+  const id = generateId('AUD', 'DocumentAuditLogs', 1);
+  const now = getNow();
+  sheet.appendRow([
+    id, docId, userId||'', userName||'', userRole||'', action, JSON.stringify(metadata||{}), now.date + ' ' + now.time
+  ]);
+}
+
 function createDocument(d) {
   d = d || {};
-  if (!d.project_id || !d.client_id || !d.title || !d.file_url) return jr('error', 'Missing required fields.');
+  if (!d.title || !d.type || !d.contentHtml) return jr('error', 'Missing required fields.');
+  
   const lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
     const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
     const docId = generateId('DOC', 'Documents', 1);
+    
+    // Generate Document Number WB-DOC-YYYY-SEQ
+    const year = new Date().getFullYear();
+    const lastRow = sheet.getLastRow();
+    const seq = String(lastRow).padStart(4, '0');
+    const docNum = 'WB-DOC-' + year + '-' + seq;
+    
     const now = getNow();
+    const dt = now.date + ' ' + now.time;
+    
     sheet.appendRow([
-      docId, d.project_id, d.client_id, d.title, d.file_url,
-      'Pending', '', '', '', now.date + ' ' + now.time
+      docId, docNum, d.project_id||'', d.client_id||'', d.client_name||'', d.client_email||'', d.client_mobile||'',
+      d.title, d.type, '1.0', d.contentHtml, 'DRAFT', d.created_by||'', d.created_by_name||'',
+      dt, dt, '', '', '', '', '', '', d.expires_at||'', 'FALSE', '', '', '', '', ''
     ]);
-    return jr('success', { message: 'Document created.', document_id: docId });
+    
+    logAudit(docId, d.created_by, d.created_by_name, 'Admin', 'DOCUMENT_CREATED', {title: d.title});
+    return jr('success', { message: 'Document created.', document_id: docId, documentNumber: docNum });
   } catch (e) {
     return jr('error', 'Failed to create document: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function updateDocument(d) {
+  if (!d.document_id) return jr('error', 'Missing document_id');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const row = findRowByValue(sheet, 1, d.document_id);
+    if (row < 2) return jr('error', 'Document not found.');
+    
+    const status = sheet.getRange(row, 12).getValue();
+    if (status !== 'DRAFT') return jr('error', 'Cannot edit a document that is no longer a draft.');
+    
+    if (d.title) sheet.getRange(row, 8).setValue(d.title);
+    if (d.type) sheet.getRange(row, 9).setValue(d.type);
+    if (d.contentHtml) sheet.getRange(row, 11).setValue(d.contentHtml);
+    if (d.client_id) {
+        sheet.getRange(row, 4).setValue(d.client_id);
+        sheet.getRange(row, 5).setValue(d.client_name||'');
+        sheet.getRange(row, 6).setValue(d.client_email||'');
+        sheet.getRange(row, 7).setValue(d.client_mobile||'');
+    }
+    if (d.project_id) sheet.getRange(row, 3).setValue(d.project_id);
+    if (d.expires_at) sheet.getRange(row, 23).setValue(d.expires_at);
+    
+    // Bump version for draft edits
+    let ver = parseFloat(sheet.getRange(row, 10).getValue()) || 1.0;
+    sheet.getRange(row, 10).setValue((ver + 0.1).toFixed(1));
+    sheet.getRange(row, 16).setValue(getNow().date + ' ' + getNow().time); // updated_at
+    
+    logAudit(d.document_id, d.updated_by, d.updated_by_name, 'Admin', 'DOCUMENT_EDITED', {version: (ver+0.1).toFixed(1)});
+    return jr('success', 'Document updated.');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function requestDocumentSignature(d) {
+  if (!d.document_id) return jr('error', 'Missing document_id');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const row = findRowByValue(sheet, 1, d.document_id);
+    if (row < 2) return jr('error', 'Document not found.');
+    
+    let status = sheet.getRange(row, 12).getValue();
+    if (status === 'SIGNED' || status === 'CANCELLED') return jr('error', 'Document cannot be sent.');
+    
+    // Generate secure 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = computeHash(otp);
+    const expiresAt = new Date(new Date().getTime() + 15 * 60000).toISOString(); // 15 mins
+    const now = getNow();
+    const dt = now.date + ' ' + now.time;
+    
+    const verifSheet = getOrCreateSheet('DocumentVerification', HEADERS.DocumentVerification);
+    const verifRow = findRowByValue(verifSheet, 2, d.document_id);
+    
+    if (verifRow > 1) {
+      verifSheet.getRange(verifRow, 5).setValue(otpHash);
+      verifSheet.getRange(verifRow, 6).setValue(expiresAt);
+      verifSheet.getRange(verifRow, 8).setValue(0); // reset failed attempts
+      verifSheet.getRange(verifRow, 9).setValue(''); // clear locked
+      verifSheet.getRange(verifRow, 12).setValue(dt);
+    } else {
+      const vId = generateId('VER', 'DocumentVerification', 1);
+      verifSheet.appendRow([
+        vId, d.document_id, String(sheet.getRange(row, 4).getValue()), '', otpHash, expiresAt, '', 0, '', '', dt, dt
+      ]);
+    }
+    
+    sheet.getRange(row, 12).setValue('PENDING_SIGNATURE');
+    sheet.getRange(row, 17).setValue(dt); // sentAt
+    
+    logAudit(d.document_id, d.sent_by, d.sent_by_name, 'Admin', 'OTP_GENERATED_AND_SENT', {status: 'PENDING_SIGNATURE'});
+    return jr('success', { message: 'OTP Generated successfully.', document_id: d.document_id, otp: otp });
+  } catch (e) {
+    return jr('error', 'Failed to generate OTP: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function verifyDocumentOtp(d) {
+  if (!d.document_id || !d.otp) return jr('error', 'Missing document_id or OTP');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const verifSheet = getOrCreateSheet('DocumentVerification', HEADERS.DocumentVerification);
+    const row = findRowByValue(verifSheet, 2, d.document_id);
+    if (row < 2) return jr('error', 'No active verification found.');
+    
+    const lockedUntil = verifSheet.getRange(row, 9).getValue();
+    if (lockedUntil && new Date() < new Date(lockedUntil)) {
+        return jr('error', 'Too many failed attempts. Try again later.');
+    }
+    
+    const storedHash = String(verifSheet.getRange(row, 5).getValue());
+    const expiresAt = new Date(verifSheet.getRange(row, 6).getValue());
+    const attempts = parseInt(verifSheet.getRange(row, 8).getValue() || 0);
+    const now = new Date();
+    
+    if (now > expiresAt) return jr('error', 'Verification code has expired.');
+    
+    if (computeHash(String(d.otp)) !== storedHash) {
+      let newAttempts = attempts + 1;
+      verifSheet.getRange(row, 8).setValue(newAttempts);
+      if (newAttempts >= 5) {
+        let lockTime = new Date(now.getTime() + 15 * 60000).toISOString();
+        verifSheet.getRange(row, 9).setValue(lockTime);
+        logAudit(d.document_id, d.client_id, 'Client', 'Client', 'VERIFICATION_LOCKED', {});
+        return jr('error', 'Too many verification attempts. Locked for 15 minutes.');
+      }
+      logAudit(d.document_id, d.client_id, 'Client', 'Client', 'OTP_FAILED', {attempts: newAttempts});
+      return jr('error', 'Invalid verification code.');
+    }
+    
+    // Verified
+    const dt = getNow().date + ' ' + getNow().time;
+    verifSheet.getRange(row, 10).setValue(dt);
+    logAudit(d.document_id, d.client_id, 'Client', 'Client', 'OTP_VERIFIED', {});
+    
+    // Update Document Status
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const docRow = findRowByValue(sheet, 1, d.document_id);
+    if (docRow > 1) {
+       const status = sheet.getRange(docRow, 12).getValue();
+       if (status === 'PENDING_SIGNATURE') {
+           sheet.getRange(docRow, 12).setValue('VIEWED');
+           sheet.getRange(docRow, 18).setValue(dt); // viewedAt
+           logAudit(d.document_id, d.client_id, 'Client', 'Client', 'DOCUMENT_VIEWED', {});
+       }
+    }
+    
+    return jr('success', 'Verified successfully.');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function signDocument(d) {
+  if (!d.document_id || !d.signature_data) return jr('error', 'Missing signature data');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const verifSheet = getOrCreateSheet('DocumentVerification', HEADERS.DocumentVerification);
+    const vRow = findRowByValue(verifSheet, 2, d.document_id);
+    if (vRow < 2) return jr('error', 'Not verified.');
+    if (!verifSheet.getRange(vRow, 10).getValue()) return jr('error', 'Document not verified via OTP.');
+    
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const row = findRowByValue(sheet, 1, d.document_id);
+    if (row < 2) return jr('error', 'Document not found.');
+    
+    const status = sheet.getRange(row, 12).getValue();
+    if (status === 'SIGNED' || status === 'CANCELLED' || status === 'REJECTED') return jr('error', 'Document is no longer available for signing.');
+    
+    // Check Expiry
+    const expires = sheet.getRange(row, 23).getValue();
+    if (expires && new Date() > new Date(expires)) {
+        sheet.getRange(row, 12).setValue('EXPIRED');
+        return jr('error', 'Document has expired.');
+    }
+    
+    const timeStr = getNow().date + ' ' + getNow().time;
+    sheet.getRange(row, 12).setValue('SIGNED');
+    sheet.getRange(row, 19).setValue(timeStr); // verifiedAt mapped to signing time for document
+    sheet.getRange(row, 20).setValue(timeStr); // signedAt
+    sheet.getRange(row, 24).setValue('TRUE'); // signed bool
+    sheet.getRange(row, 25).setValue(d.signer_id || sheet.getRange(row, 4).getValue()); // signer id
+    sheet.getRange(row, 26).setValue(d.signer_name || sheet.getRange(row, 5).getValue()); // signer name
+    sheet.getRange(row, 27).setValue(d.signer_email || sheet.getRange(row, 6).getValue()); // signer email
+    sheet.getRange(row, 28).setValue(d.signature_data); // signature base64
+    
+    logAudit(d.document_id, d.signer_id, d.signer_name, 'Client', 'DOCUMENT_SIGNED', {});
+    
+    return jr('success', { message: 'Document signed successfully.', document_id: d.document_id });
+  } catch (e) {
+    return jr('error', 'Failed to sign document: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function rejectDocument(d) {
+  if (!d.document_id || !d.reason) return jr('error', 'Reason is required');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const row = findRowByValue(sheet, 1, d.document_id);
+    if (row < 2) return jr('error', 'Document not found.');
+    
+    const status = sheet.getRange(row, 12).getValue();
+    if (status === 'SIGNED') return jr('error', 'Cannot reject a signed document.');
+    
+    const timeStr = getNow().date + ' ' + getNow().time;
+    sheet.getRange(row, 12).setValue('REJECTED');
+    sheet.getRange(row, 21).setValue(timeStr); // rejectedAt
+    sheet.getRange(row, 22).setValue(d.reason); // rejectionReason
+    
+    logAudit(d.document_id, d.client_id, 'Client', 'Client', 'DOCUMENT_REJECTED', {reason: d.reason});
+    return jr('success', 'Document rejected.');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cancelDocument(d) {
+  if (!d.document_id) return jr('error', 'Document ID required');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const row = findRowByValue(sheet, 1, d.document_id);
+    if (row < 2) return jr('error', 'Document not found.');
+    
+    const timeStr = getNow().date + ' ' + getNow().time;
+    sheet.getRange(row, 12).setValue('CANCELLED');
+    logAudit(d.document_id, d.admin_id, 'Admin', 'Admin', 'DOCUMENT_CANCELLED', {});
+    return jr('success', 'Document cancelled.');
   } finally {
     lock.releaseLock();
   }
@@ -1533,75 +1799,69 @@ function getDocuments(p) {
   const last = sheet.getLastRow();
   if (last < 2) return jr('success', []);
   
-  let list = sheet.getRange(2, 1, last - 1, 10).getValues().map(r => ({
+  let list = sheet.getRange(2, 1, last - 1, 29).getValues().map(r => ({
     document_id: String(r[0]),
-    project_id: String(r[1]),
-    client_id: String(r[2]),
-    title: String(r[3]),
-    file_url: String(r[4]),
-    status: String(r[5]),
-    // exclude OTP and OTP Expires At from generic GET response for security
-    signed_at: String(r[8]),
-    created_at: String(r[9])
+    document_number: String(r[1]),
+    project_id: String(r[2]),
+    client_id: String(r[3]),
+    client_name: String(r[4]),
+    client_email: String(r[5]),
+    client_mobile: String(r[6]),
+    title: String(r[7]),
+    type: String(r[8]),
+    version: String(r[9]),
+    contentHtml: p.include_content ? String(r[10]) : '', // Don't fetch content unless needed
+    status: String(r[11]),
+    created_by: String(r[12]),
+    created_by_name: String(r[13]),
+    created_at: String(r[14]),
+    updated_at: String(r[15]),
+    sent_at: String(r[16]),
+    viewed_at: String(r[17]),
+    verified_at: String(r[18]),
+    signed_at: String(r[19]),
+    rejected_at: String(r[20]),
+    rejection_reason: String(r[21]),
+    expires_at: String(r[22]),
+    signed: String(r[23]) === 'TRUE',
+    signer_id: String(r[24]),
+    signer_name: String(r[25]),
+    signer_email: String(r[26]),
+    signature_data: p.include_content ? String(r[27]) : '',
+    final_document_url: String(r[28])
   })).filter(t => t.document_id);
 
   if (p.project_id) list = list.filter(t => t.project_id === p.project_id);
   if (p.client_id) list = list.filter(t => t.client_id === p.client_id);
+  if (p.document_id) {
+    list = list.filter(t => t.document_id === p.document_id);
+    if (list.length > 0) return jr('success', list[0]); // Return single object if by ID
+    return jr('error', 'Document not found.');
+  }
 
   return jr('success', list);
 }
 
-function requestDocumentSignature(d) {
-  if (!d.document_id) return jr('error', 'Missing document_id');
-  const lock = LockService.getScriptLock(); lock.waitLock(15000);
-  try {
-    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
-    const row = findRowByValue(sheet, 1, d.document_id);
-    if (row < 2) return jr('error', 'Document not found.');
-    
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(new Date().getTime() + 15 * 60000).toISOString(); // 15 mins
-    
-    sheet.getRange(row, 6).setValue('OTP Sent');
-    sheet.getRange(row, 7).setValue(otp);
-    sheet.getRange(row, 8).setValue(expiresAt);
-    
-    return jr('success', { message: 'OTP Generated successfully.', document_id: d.document_id, otp: otp });
-  } catch (e) {
-    return jr('error', 'Failed to generate OTP: ' + e.toString());
-  } finally {
-    lock.releaseLock();
-  }
+function getDocumentAuditLogs(p) {
+  if (!p.document_id) return jr('error', 'Document ID required');
+  const sheet = getOrCreateSheet('DocumentAuditLogs', HEADERS.DocumentAuditLogs);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  let list = sheet.getRange(2, 1, last - 1, 8).getValues().map(r => ({
+    id: String(r[0]),
+    document_id: String(r[1]),
+    user_id: String(r[2]),
+    user_name: String(r[3]),
+    user_role: String(r[4]),
+    action: String(r[5]),
+    metadata: String(r[6]),
+    created_at: String(r[7])
+  })).filter(t => t.document_id === p.document_id);
+  
+  return jr('success', list);
 }
 
-function signDocument(d) {
-  if (!d.document_id || !d.otp) return jr('error', 'Missing document_id or OTP');
-  const lock = LockService.getScriptLock(); lock.waitLock(15000);
-  try {
-    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
-    const row = findRowByValue(sheet, 1, d.document_id);
-    if (row < 2) return jr('error', 'Document not found.');
-    
-    const storedOtp = String(sheet.getRange(row, 7).getValue());
-    const expiresAt = new Date(sheet.getRange(row, 8).getValue());
-    const now = new Date();
-    
-    if (d.otp !== storedOtp) return jr('error', 'Invalid OTP.');
-    if (now > expiresAt) return jr('error', 'OTP has expired.');
-    
-    const timeStr = getNow().date + ' ' + getNow().time;
-    sheet.getRange(row, 6).setValue('Signed');
-    sheet.getRange(row, 7).setValue(''); // Clear OTP
-    sheet.getRange(row, 9).setValue(timeStr); // Signed At
-    
-    return jr('success', { message: 'Document signed successfully.', document_id: d.document_id });
-  } catch (e) {
-    return jr('error', 'Failed to sign document: ' + e.toString());
-  } finally {
-    lock.releaseLock();
-  }
-}
 function syncLegacyUser(u){
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
   const row=findRowByValue(sheet,U.EMAIL,String(u.email||'').toLowerCase());

@@ -1,0 +1,260 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mx-auto py-8 px-4" x-data="documentDetail()">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <a href="/admin/documents" class="text-blue-600 hover:underline mb-2 inline-block"><i class="fas fa-arrow-left"></i> Back to Documents</a>
+            <h1 class="text-3xl font-bold text-gray-900" x-text="doc ? doc.title : 'Loading...'"></h1>
+            <p class="text-gray-500 mt-1" x-text="doc ? doc.document_number : ''"></p>
+        </div>
+        <div class="flex gap-4" x-show="doc">
+            <button x-show="doc.status === 'DRAFT'" @click="sendSignatureRequest()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-md font-medium flex items-center gap-2">
+                <i class="fas fa-paper-plane"></i> Send to Client
+            </button>
+            <button x-show="doc.status === 'PENDING_SIGNATURE' || doc.status === 'VIEWED'" @click="sendSignatureRequest()" class="px-5 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-all shadow-md font-medium flex items-center gap-2">
+                <i class="fas fa-redo"></i> Resend OTP
+            </button>
+            <button x-show="doc.status !== 'SIGNED' && doc.status !== 'CANCELLED' && doc.status !== 'REJECTED'" @click="cancelDocument()" class="px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all font-medium flex items-center gap-2">
+                <i class="fas fa-times-circle"></i> Cancel
+            </button>
+            <button x-show="doc.status === 'SIGNED'" @click="downloadPdf()" class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all shadow-md font-medium flex items-center gap-2">
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </button>
+        </div>
+    </div>
+
+    <div x-show="loading" class="flex justify-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <div x-show="!loading && doc" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gray-50 border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+                    <h2 class="font-bold text-gray-800"><i class="fas fa-file-alt mr-2 text-blue-500"></i> Document Preview</h2>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                        :class="{
+                            'bg-gray-100 text-gray-600': doc.status === 'DRAFT',
+                            'bg-yellow-100 text-yellow-700': doc.status === 'PENDING_SIGNATURE',
+                            'bg-blue-100 text-blue-700': doc.status === 'VIEWED',
+                            'bg-green-100 text-green-700': doc.status === 'SIGNED',
+                            'bg-red-100 text-red-700': doc.status === 'REJECTED' || doc.status === 'CANCELLED'
+                        }" x-text="doc.status ? doc.status.replace('_', ' ') : ''">
+                    </span>
+                </div>
+                <div class="p-8 prose max-w-none doc-preview" x-html="doc.contentHtml">
+                </div>
+                
+                <!-- Signature Area -->
+                <div x-show="doc.status === 'SIGNED'" class="p-8 bg-gray-50 border-t border-gray-200 mt-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Signatures</h3>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Website Builders</p>
+                            <p class="font-medium text-gray-800" x-text="doc.created_by_name"></p>
+                            <p class="text-sm text-gray-500" x-text="'Generated on: ' + new Date(doc.created_at).toLocaleString()"></p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Client</p>
+                            <p class="font-medium text-gray-800" x-text="doc.signer_name || doc.client_name"></p>
+                            <p class="text-sm text-gray-500 mb-2" x-text="'Signed on: ' + new Date(doc.signed_at).toLocaleString()"></p>
+                            <img x-show="doc.signature_data" :src="doc.signature_data" class="h-16 border-b-2 border-gray-400 inline-block px-4">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Details -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Details</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Client</p>
+                        <p class="font-medium text-gray-900" x-text="doc.client_name"></p>
+                        <p class="text-sm text-blue-600" x-text="doc.client_email"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Type</p>
+                        <p class="font-medium text-gray-900" x-text="doc.type"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Version</p>
+                        <p class="font-medium text-gray-900" x-text="doc.version"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Expires At</p>
+                        <p class="font-medium text-gray-900" x-text="doc.expires_at ? new Date(doc.expires_at).toLocaleString() : 'Never'"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Trail -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">Audit Trail</h3>
+                <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                    <template x-for="log in auditLogs" :key="log.id">
+                        <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-100 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+                                <i class="fas text-sm" 
+                                   :class="{
+                                     'fa-plus text-blue-500': log.action === 'DOCUMENT_CREATED',
+                                     'fa-envelope text-yellow-500': log.action === 'OTP_GENERATED_AND_SENT',
+                                     'fa-eye text-blue-500': log.action === 'DOCUMENT_VIEWED',
+                                     'fa-key text-green-500': log.action === 'OTP_VERIFIED',
+                                     'fa-pen-nib text-green-600': log.action === 'DOCUMENT_SIGNED',
+                                     'fa-times text-red-500': log.action === 'DOCUMENT_REJECTED' || log.action === 'DOCUMENT_CANCELLED',
+                                     'fa-history text-gray-500': log.action === 'DOCUMENT_EDITED'
+                                   }"></i>
+                            </div>
+                            <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded border border-slate-200 bg-white shadow-sm">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="font-bold text-slate-900 text-sm" x-text="log.action.replace(/_/g, ' ')"></div>
+                                    <time class="font-caveat font-medium text-xs text-indigo-500" x-text="new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})"></time>
+                                </div>
+                                <div class="text-xs text-slate-500 mb-1" x-text="new Date(log.created_at).toLocaleDateString()"></div>
+                                <div class="text-sm text-slate-700" x-text="log.user_name + ' (' + log.user_role + ')'"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function documentDetail() {
+    return {
+        docId: '{{ doc_id }}',
+        doc: null,
+        auditLogs: [],
+        loading: true,
+        
+        async init() {
+            await this.loadDocument();
+            await this.loadAuditLogs();
+            this.loading = false;
+        },
+        
+        async loadDocument() {
+            try {
+                const res = await fetch(`/api/admin/documents/${this.docId}`);
+                const data = await res.json();
+                if(data.success) {
+                    this.doc = data.data || data; // handle unwrapped obj
+                } else {
+                    Swal.fire('Error', 'Failed to load document.', 'error');
+                }
+            } catch(e) { console.error(e); }
+        },
+
+        async loadAuditLogs() {
+            try {
+                const res = await fetch(`/api/admin/documents/${this.docId}/audit`);
+                const data = await res.json();
+                if(data.success) {
+                    this.auditLogs = data.data || [];
+                }
+            } catch(e) { console.error(e); }
+        },
+        
+        async sendSignatureRequest() {
+            try {
+                const res = await fetch(`/api/admin/documents/${this.docId}/send`, { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    Swal.fire('Sent!', 'Signature request and OTP have been sent to the client.', 'success');
+                    this.loadDocument();
+                    this.loadAuditLogs();
+                } else {
+                    Swal.fire('Error', data.error || 'Failed to send.', 'error');
+                }
+            } catch(e) {
+                Swal.fire('Error', 'Network error', 'error');
+            }
+        },
+
+        async cancelDocument() {
+            const { isConfirmed } = await Swal.fire({
+                title: 'Cancel Document?',
+                text: "This will invalidate the document and the client will no longer be able to sign it.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, cancel it!'
+            });
+            
+            if (isConfirmed) {
+                try {
+                    const res = await fetch(`/api/admin/documents/${this.docId}/cancel`, { method: 'POST' });
+                    const data = await res.json();
+                    if(data.success) {
+                        Swal.fire('Cancelled!', 'Document has been cancelled.', 'success');
+                        this.loadDocument();
+                        this.loadAuditLogs();
+                    } else {
+                        Swal.fire('Error', data.error || 'Failed to cancel.', 'error');
+                    }
+                } catch(e) {
+                    Swal.fire('Error', 'Network error', 'error');
+                }
+            }
+        },
+
+        downloadPdf() {
+            const element = document.createElement('div');
+            element.innerHTML = `
+                <div style="font-family: sans-serif; padding: 40px; color: #333;">
+                    <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                        <h1 style="margin: 0; color: #111;">${this.doc.title}</h1>
+                        <p style="margin: 5px 0 0; color: #666; font-size: 12px;">Document No: ${this.doc.document_number}</p>
+                    </div>
+                    <div>${this.doc.contentHtml}</div>
+                    <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p style="font-size: 10px; color: #666; text-transform: uppercase;">Generated By</p>
+                                    <p style="margin: 5px 0;"><strong>Website Builders</strong></p>
+                                    <p style="margin: 5px 0;">${this.doc.created_by_name}</p>
+                                    <p style="font-size: 12px; color: #666;">Date: ${new Date(this.doc.created_at).toLocaleDateString()}</p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p style="font-size: 10px; color: #666; text-transform: uppercase;">Signed By</p>
+                                    <p style="margin: 5px 0;"><strong>${this.doc.signer_name || this.doc.client_name}</strong></p>
+                                    <p style="margin: 5px 0;">${this.doc.signer_email || this.doc.client_email}</p>
+                                    <img src="${this.doc.signature_data}" style="height: 50px; border-bottom: 1px solid #ccc; margin: 10px 0;">
+                                    <p style="font-size: 12px; color: #666;">Date: ${new Date(this.doc.signed_at).toLocaleString()}</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            html2pdf().set({
+                margin: 1,
+                filename: `${this.doc.document_number}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            }).from(element).save();
+        }
+    }
+}
+</script>
+<style>
+.doc-preview h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+.doc-preview h2 { font-size: 1.5em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
+.doc-preview p { margin-bottom: 1em; }
+.doc-preview ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1em; }
+.doc-preview ol { list-style-type: decimal; padding-left: 2em; margin-bottom: 1em; }
+</style>
+{% endblock %}

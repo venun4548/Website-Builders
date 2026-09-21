@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Signature Gateway - Website Builders</title>
+  <link rel="stylesheet" href="/css/fontawesome.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    :root {
+      --primary: #0F766E;
+      --primary-hover: #0D9488;
+      --bg-page: #F3F4F6;
+      --text-main: #1F2937;
+      --font-stack: 'Inter', sans-serif;
+    }
+    body {
+      font-family: var(--font-stack);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+    }
+    .signature-canvas {
+      border: 2px dashed #CBD5E1;
+      border-radius: 8px;
+      cursor: crosshair;
+      background: #F8FAFC;
+    }
+    
+    .doc-preview {
+      font-family: serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .doc-preview h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; }
+    .doc-preview p { margin-bottom: 1em; }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body x-data="documentViewer()">
+
+  <!-- Topbar -->
+  <div class="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+              <a href="/customer_dashboard" class="text-gray-500 hover:text-teal-700 transition-colors">
+                  <i class="fas fa-arrow-left"></i> Back to Portal
+              </a>
+              <div class="h-6 w-px bg-gray-300 mx-2"></div>
+              <img src="/images/logo.png" class="h-8" alt="Logo">
+              <span class="font-bold text-lg text-teal-800">Secure Document Portal</span>
+          </div>
+          <div>
+              <span class="text-sm text-gray-500" x-text="doc ? 'Doc ID: ' + doc.document_number : ''"></span>
+          </div>
+      </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto py-8 px-4">
+      
+      <!-- Loading -->
+      <div x-show="loading" class="flex justify-center py-20">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+      </div>
+
+      <!-- State: OTP Verification -->
+      <div x-show="!loading && doc && doc.status === 'PENDING_SIGNATURE' && !verified" class="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mt-12 text-center" x-cloak>
+          <div class="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 text-2xl mx-auto mb-4">
+              <i class="fas fa-shield-alt"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Secure Verification Required</h2>
+          <p class="text-gray-500 text-sm mb-6">To access and sign <strong><span x-text="doc.title"></span></strong>, please enter the One-Time Password sent to your registered email.</p>
+          
+          <div class="mb-6">
+              <input type="text" x-model="otpInput" maxlength="6" class="w-full text-center text-3xl tracking-widest font-mono p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none uppercase" placeholder="------">
+          </div>
+          
+          <button @click="verifyOtp()" :disabled="verifying" class="w-full py-3.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-lg shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+              <i class="fas fa-unlock-alt" :class="{'animate-pulse': verifying}"></i> <span x-text="verifying ? 'Verifying...' : 'Verify & Access Document'"></span>
+          </button>
+      </div>
+
+      <!-- State: Document Viewer -->
+      <div x-show="!loading && doc && (verified || doc.status !== 'PENDING_SIGNATURE')" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" x-cloak>
+          
+          <!-- Document Header -->
+          <div class="bg-gray-50 px-8 py-6 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                  <h1 class="text-2xl font-bold text-gray-900" x-text="doc.title"></h1>
+                  <div class="text-sm text-gray-500 mt-1 flex gap-4">
+                      <span><i class="fas fa-user-circle"></i> Prepared for: <strong x-text="doc.client_name"></strong></span>
+                      <span><i class="fas fa-clock"></i> Generated: <span x-text="new Date(doc.created_at).toLocaleDateString()"></span></span>
+                  </div>
+              </div>
+              <div>
+                  <span class="px-4 py-1.5 rounded-full text-sm font-bold shadow-sm"
+                      :class="{
+                          'bg-yellow-100 text-yellow-800 border border-yellow-200': doc.status === 'VIEWED' || doc.status === 'PENDING_SIGNATURE',
+                          'bg-green-100 text-green-800 border border-green-200': doc.status === 'SIGNED',
+                          'bg-red-100 text-red-800 border border-red-200': doc.status === 'REJECTED' || doc.status === 'CANCELLED',
+                          'bg-gray-100 text-gray-800 border border-gray-200': doc.status === 'DRAFT'
+                      }" x-text="doc.status.replace('_', ' ')">
+                  </span>
+              </div>
+          </div>
+          
+          <!-- Document Content -->
+          <div class="p-10 min-h-[600px] doc-preview" x-html="doc.contentHtml"></div>
+          
+          <!-- Action Area: Sign / Reject -->
+          <div x-show="doc.status === 'VIEWED' || doc.status === 'PENDING_SIGNATURE'" class="bg-gray-50 border-t border-gray-200 p-8">
+              <div class="max-w-2xl mx-auto">
+                  <h3 class="text-lg font-bold text-gray-900 mb-2">Digital Signature</h3>
+                  <p class="text-sm text-gray-500 mb-6">By signing below, you agree to the terms and conditions outlined in the document.</p>
+                  
+                  <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
+                      <canvas id="sig-canvas" width="600" height="200" class="signature-canvas w-full"></canvas>
+                      <div class="flex justify-between items-center mt-2">
+                          <span class="text-xs text-gray-400"><i class="fas fa-info-circle"></i> Use your mouse or finger to sign</span>
+                          <button @click="clearSignature()" class="text-sm text-gray-500 hover:text-red-500"><i class="fas fa-eraser"></i> Clear</button>
+                      </div>
+                  </div>
+                  
+                  <div class="flex gap-4">
+                      <button @click="rejectDocument()" class="px-6 py-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold rounded-xl flex-1 transition-colors">
+                          Decline / Request Changes
+                      </button>
+                      <button @click="signDocument()" :disabled="signing" class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl flex-[2] shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                          <i class="fas fa-pen-nib" :class="{'animate-bounce': signing}"></i> <span x-text="signing ? 'Signing...' : 'Adopt Signature & Agree'"></span>
+                      </button>
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Signed State View -->
+          <div x-show="doc.status === 'SIGNED'" class="bg-green-50 border-t border-green-100 p-8">
+              <div class="flex items-center justify-between">
+                  <div>
+                      <h3 class="text-lg font-bold text-green-900 mb-1"><i class="fas fa-check-circle text-green-600"></i> Document Legally Binding</h3>
+                      <p class="text-sm text-green-700">This document was signed on <span x-text="new Date(doc.signed_at).toLocaleString()"></span></p>
+                  </div>
+                  <button @click="downloadPdf()" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center gap-2">
+                      <i class="fas fa-download"></i> Download PDF Copy
+                  </button>
+              </div>
+              <div class="mt-6 p-4 bg-white rounded-xl border border-green-200 inline-block">
+                  <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-2">Electronic Signature</p>
+                  <img :src="doc.signature_data" class="h-20" alt="Signature">
+                  <div class="mt-2 text-sm font-medium text-gray-800" x-text="doc.signer_name"></div>
+                  <div class="text-xs text-gray-500 font-mono" x-text="'IP / Audit Trace Logged'"></div>
+              </div>
+          </div>
+
+          <!-- Rejected State View -->
+          <div x-show="doc.status === 'REJECTED' || doc.status === 'CANCELLED'" class="bg-red-50 border-t border-red-100 p-8 text-center">
+              <div class="text-red-500 text-3xl mb-2"><i class="fas fa-times-circle"></i></div>
+              <h3 class="text-lg font-bold text-red-900 mb-1">Document Void</h3>
+              <p class="text-sm text-red-700">This document is no longer active and cannot be signed.</p>
+          </div>
+
+      </div>
+  </div>
+
+<script>
+function documentViewer() {
+    return {
+        docId: '{{ doc_id }}',
+        doc: null,
+        loading: true,
+        verified: false,
+        verifying: false,
+        signing: false,
+        otpInput: '',
+        canvas: null,
+        ctx: null,
+        isDrawing: false,
+        
+        async init() {
+            await this.loadDocument();
+            this.loading = false;
+        },
+        
+        async loadDocument() {
+            try {
+                const res = await fetch(`/api/user/documents/${this.docId}`);
+                const data = await res.json();
+                if(data.success) {
+                    this.doc = data.data || data;
+                    
+                    // Automatically verify if status is VIEWED or SIGNED
+                    if(this.doc.status !== 'PENDING_SIGNATURE' && this.doc.status !== 'DRAFT') {
+                        this.verified = true;
+                    }
+                    
+                    // Initialize canvas when UI becomes visible
+                    if(this.verified && (this.doc.status === 'VIEWED' || this.doc.status === 'PENDING_SIGNATURE')) {
+                        this.$nextTick(() => { this.initCanvas(); });
+                    }
+                } else {
+                    Swal.fire('Error', 'Failed to load document. You may not have access.', 'error');
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        },
+        
+        async verifyOtp() {
+            if(this.otpInput.length < 6) return;
+            this.verifying = true;
+            try {
+                const res = await fetch(`/api/user/documents/${this.docId}/verify`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ otp: this.otpInput.toUpperCase() })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    this.verified = true;
+                    this.doc.status = 'VIEWED'; // Optimistic update
+                    this.$nextTick(() => { this.initCanvas(); });
+                } else {
+                    Swal.fire('Error', data.error || 'Invalid OTP', 'error');
+                }
+            } catch(e) {
+                Swal.fire('Error', 'Network Error', 'error');
+            } finally {
+                this.verifying = false;
+            }
+        },
+        
+        initCanvas() {
+            this.canvas = document.getElementById('sig-canvas');
+            if(!this.canvas) return;
+            this.ctx = this.canvas.getContext('2d');
+            this.ctx.lineWidth = 2.5;
+            this.ctx.lineCap = 'round';
+            this.ctx.strokeStyle = '#0F172A';
+            
+            this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
+            this.canvas.addEventListener('mousemove', this.draw.bind(this));
+            this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+            this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+            
+            // Touch support
+            this.canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                this.canvas.dispatchEvent(mouseEvent);
+            }, {passive: false});
+            
+            this.canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                this.canvas.dispatchEvent(mouseEvent);
+            }, {passive: false});
+            
+            this.canvas.addEventListener('touchend', (e) => {
+                const mouseEvent = new MouseEvent('mouseup', {});
+                this.canvas.dispatchEvent(mouseEvent);
+            });
+        },
+        
+        getCanvasPos(evt) {
+            const rect = this.canvas.getBoundingClientRect();
+            return {
+                x: (evt.clientX - rect.left) / (rect.right - rect.left) * this.canvas.width,
+                y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * this.canvas.height
+            };
+        },
+        
+        startDrawing(e) {
+            this.isDrawing = true;
+            const pos = this.getCanvasPos(e);
+            this.ctx.beginPath();
+            this.ctx.moveTo(pos.x, pos.y);
+        },
+        
+        draw(e) {
+            if(!this.isDrawing) return;
+            const pos = this.getCanvasPos(e);
+            this.ctx.lineTo(pos.x, pos.y);
+            this.ctx.stroke();
+        },
+        
+        stopDrawing() {
+            this.isDrawing = false;
+        },
+        
+        clearSignature() {
+            if(this.ctx) {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+        },
+        
+        isCanvasBlank() {
+            const blank = document.createElement('canvas');
+            blank.width = this.canvas.width;
+            blank.height = this.canvas.height;
+            return this.canvas.toDataURL() === blank.toDataURL();
+        },
+        
+        async signDocument() {
+            if(this.isCanvasBlank()) {
+                Swal.fire('Required', 'Please provide your signature before agreeing.', 'warning');
+                return;
+            }
+            
+            this.signing = true;
+            const sigData = this.canvas.toDataURL('image/png');
+            
+            try {
+                const res = await fetch(`/api/user/documents/${this.docId}/sign`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        signature_data: sigData,
+                        ip_address: 'Logged via secure endpoint'
+                    })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    Swal.fire('Success!', 'Document has been legally signed.', 'success');
+                    this.loadDocument(); // reload state
+                } else {
+                    Swal.fire('Error', data.error || 'Failed to sign.', 'error');
+                }
+            } catch(e) {
+                Swal.fire('Error', 'Network Error', 'error');
+            } finally {
+                this.signing = false;
+            }
+        },
+        
+        async rejectDocument() {
+            const { value: reason } = await Swal.fire({
+                title: 'Decline Document',
+                input: 'textarea',
+                inputLabel: 'Reason for declining (Optional)',
+                inputPlaceholder: 'Enter your feedback here...',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Decline Document'
+            });
+            
+            if(reason !== undefined) {
+                try {
+                    const res = await fetch(`/api/user/documents/${this.docId}/reject`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ reason })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        Swal.fire('Declined', 'Document has been rejected. The team will review your feedback.', 'info');
+                        this.loadDocument();
+                    }
+                } catch(e) {
+                    Swal.fire('Error', 'Network Error', 'error');
+                }
+            }
+        },
+
+        downloadPdf() {
+            const element = document.createElement('div');
+            element.innerHTML = `
+                <div style="font-family: sans-serif; padding: 40px; color: #333;">
+                    <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                        <h1 style="margin: 0; color: #111;">${this.doc.title}</h1>
+                        <p style="margin: 5px 0 0; color: #666; font-size: 12px;">Document No: ${this.doc.document_number}</p>
+                    </div>
+                    <div>${this.doc.contentHtml}</div>
+                    <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p style="font-size: 10px; color: #666; text-transform: uppercase;">Generated By</p>
+                                    <p style="margin: 5px 0;"><strong>Website Builders</strong></p>
+                                    <p style="font-size: 12px; color: #666;">Date: ${new Date(this.doc.created_at).toLocaleDateString()}</p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p style="font-size: 10px; color: #666; text-transform: uppercase;">Signed By</p>
+                                    <p style="margin: 5px 0;"><strong>${this.doc.signer_name}</strong></p>
+                                    <p style="margin: 5px 0;">${this.doc.signer_email}</p>
+                                    <img src="${this.doc.signature_data}" style="height: 50px; border-bottom: 1px solid #ccc; margin: 10px 0;">
+                                    <p style="font-size: 12px; color: #666;">Date: ${new Date(this.doc.signed_at).toLocaleString()}</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            html2pdf().set({
+                margin: 1,
+                filename: `${this.doc.document_number}_Signed.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            }).from(element).save();
+        }
+    }
+}
+</script>
+</body>
+</html>
