@@ -51,11 +51,9 @@ GAS_SECRET = Config.GAS_SECRET
 # ─── External Notifications Hub (Phase 4) ─────────────────────
 import smtplib
 from email.mime.text import MIMEText
-import pusher
 
-# Initialize Pusher (Credentials mapped from next-app/.env.local conceptually)
-# We use try-except to avoid breaking the app if keys are missing.
 try:
+    import pusher
     pusher_client = pusher.Pusher(
         app_id="2195938",
         key="9afe29107aa0e15c0e0f",
@@ -63,6 +61,9 @@ try:
         cluster="ap2",
         ssl=True
     )
+except ImportError:
+    logger.warning("pusher module not installed – real-time push disabled")
+    pusher_client = None
 except Exception as e:
     logger.warning(f"Pusher init failed: {e}")
     pusher_client = None
