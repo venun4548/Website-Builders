@@ -1556,9 +1556,9 @@ def api_sa_bulk_action():
             call_gas('deleteUser', {'user_id': uid})
     return jsonify({'success': True, 'status': 'success', 'message': f'Bulk action {action} applied.'})
 
-@app.route('/api/notifications', methods=['GET', 'POST'])
+@app.route('/api/notifications_old', methods=['GET', 'POST'])
 @login_required
-def api_notifications():
+def api_notifications_old():
     if request.method == 'POST':
         return jsonify({'success': True, 'status': 'success', 'message': 'Notification recorded.'})
     act_res = gas_get('getActivityLogs', {'limit': '10'})
