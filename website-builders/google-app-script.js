@@ -246,6 +246,11 @@ function doPost(e){
       if(action==='usePasswordReset') return usePasswordReset(data);
       if(action==='createEmailVerification') return createEmailVerification(data);
       if(action==='useEmailVerification') return useEmailVerification(data);
+      if(action==='createMeeting') return createMeeting(data);
+      if(action==='createTicket') return createTicket(data);
+      if(action==='createDocument') return createDocument(data);
+      if(action==='requestDocumentSignature') return requestDocumentSignature(data);
+      if(action==='signDocument') return signDocument(data);
 
     }catch(err){return jr('error','Action failed: '+err.toString());}
     return jr('error','Unknown action: '+action);
@@ -285,6 +290,9 @@ function doGet(e){
     if(action==='getNotifications')     return getNotifications(p);
     if(action==='getPasswordResets')    return getPasswordResets(p);
     if(action==='getEmailVerifications')return getEmailVerifications(p);
+    if(action==='getMeetings')          return getMeetings(p);
+    if(action==='getTickets')           return getTickets(p);
+    if(action==='getDocuments')         return getDocuments(p);
 
   }catch(err){return jr('error','Read failed: '+err.toString());}
   return jr('error','Unknown action: '+action);
