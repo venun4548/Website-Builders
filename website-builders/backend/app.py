@@ -884,6 +884,48 @@ def profile():
     else:
         return render_template('customer_profile.html', user=current_user)
 
+# ─── Dynamic Section Routes ──────────────────────────────────
+@app.route('/admin/<section>')
+@login_required
+def admin_section_route(section):
+    if current_user.role not in ('Admin', 'Super Admin'):
+        return redirect(url_for('login'))
+    if section == 'documents':
+        return render_template('admin_documents.html')
+    if section == 'profile':
+        return profile()
+    if section == 'payments':
+        return admin_payments_redirect()
+    if section == 'notifications':
+        return admin_notifications_redirect()
+    if current_user.role == 'Super Admin' and section in ('command-center', 'administrators', 'roles', 'access-logs', 'system-health', 'leads', 'brand-info'):
+        return render_template('super_admin_dashboard.html', user=current_user, active_section=section)
+    return render_template('admin_dashboard.html', user=current_user, active_section=section)
+
+@app.route('/super-admin/<section>')
+@login_required
+def super_admin_section_route(section):
+    if current_user.role != 'Super Admin':
+        return redirect(url_for('login'))
+    if section == 'profile':
+        return profile()
+    if section == 'payments':
+        return admin_payments_redirect()
+    if section == 'notifications':
+        return admin_notifications_redirect()
+    return render_template('super_admin_dashboard.html', user=current_user, active_section=section)
+
+@app.route('/staff/<section>')
+@login_required
+def staff_section_route(section):
+    if current_user.role not in ('Staff', 'Admin', 'Super Admin'):
+        return redirect(url_for('login'))
+    if section == 'profile':
+        return profile()
+    if section == 'notifications':
+        return staff_notifications_redirect()
+    return render_template('staff_dashboard.html', user=current_user, active_section=section)
+
 # ─── API: Current User ────────────────────────────────────────
 @app.route('/api/me')
 @login_required
