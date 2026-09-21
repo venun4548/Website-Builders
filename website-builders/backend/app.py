@@ -1219,6 +1219,15 @@ def api_create_project():
         return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
     data = request.get_json(silent=True) or {}
     data['created_by'] = current_user.id
+    if data.get('customer_id') and not (data.get('client_name') and data.get('client_email')):
+        try:
+            u_res = gas_get('getUser', {'user_id': data.get('customer_id')})
+            if u_res.get('status') == 'success' and u_res.get('data'):
+                u_data = u_res['data']
+                data.setdefault('client_name', u_data.get('full_name') or u_data.get('name') or '')
+                data.setdefault('client_email', u_data.get('email') or '')
+        except:
+            pass
     result = call_gas('createProject', data)
     ok = result.get('status') == 'success'
     return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
@@ -1320,6 +1329,15 @@ def api_admin_documents():
         data = request.get_json(silent=True) or {}
         data['created_by'] = current_user.id
         data['created_by_name'] = current_user.full_name
+        if data.get('client_id') and not (data.get('client_name') and data.get('client_email')):
+            try:
+                u_res = gas_get('getUser', {'user_id': data.get('client_id')})
+                if u_res.get('status') == 'success' and u_res.get('data'):
+                    u_data = u_res['data']
+                    data.setdefault('client_name', u_data.get('full_name') or u_data.get('name') or '')
+                    data.setdefault('client_email', u_data.get('email') or '')
+            except:
+                pass
         result = call_gas('createDocument', data)
         return jsonify(result)
 
@@ -1494,8 +1512,19 @@ def api_create_ticket():
     data = request.get_json(silent=True) or {}
     if current_user.is_user():
         data['customer_id'] = current_user.id
+        data['client_name'] = current_user.full_name
+        data['client_email'] = current_user.email
         data['customer_name'] = current_user.full_name
         data['customer_email'] = current_user.email
+    elif data.get('customer_id') and not (data.get('client_name') and data.get('client_email')):
+        try:
+            u_res = gas_get('getUser', {'user_id': data.get('customer_id')})
+            if u_res.get('status') == 'success' and u_res.get('data'):
+                u_data = u_res['data']
+                data.setdefault('client_name', u_data.get('full_name') or u_data.get('name') or '')
+                data.setdefault('client_email', u_data.get('email') or '')
+        except:
+            pass
     result = call_gas('createTicket', data)
     ok = result.get('status') == 'success'
     
@@ -1527,6 +1556,19 @@ def api_create_meeting():
     data = request.get_json(silent=True) or {}
     if current_user.is_user():
         data['customer_id'] = current_user.id
+        data['client_name'] = getattr(current_user, 'full_name', '')
+        data['client_email'] = getattr(current_user, 'email', '')
+        data['customer_name'] = getattr(current_user, 'full_name', '')
+        data['customer_email'] = getattr(current_user, 'email', '')
+    elif data.get('customer_id') and not (data.get('client_name') and data.get('client_email')):
+        try:
+            u_res = gas_get('getUser', {'user_id': data.get('customer_id')})
+            if u_res.get('status') == 'success' and u_res.get('data'):
+                u_data = u_res['data']
+                data.setdefault('client_name', u_data.get('full_name') or u_data.get('name') or '')
+                data.setdefault('client_email', u_data.get('email') or '')
+        except:
+            pass
     
     result = call_gas('createMeeting', data)
     ok = result.get('status') == 'success'
@@ -2018,6 +2060,15 @@ def api_tasks_handler():
     if request.method == 'POST':
         data = request.get_json(silent=True) or {}
         data['created_by'] = str(current_user.id)
+        if data.get('project_id') and not (data.get('client_name') and data.get('client_email')):
+            try:
+                p_res = gas_get('getProjectById', {'project_id': data.get('project_id')})
+                if p_res.get('status') == 'success' and p_res.get('data'):
+                    p_data = p_res['data']
+                    data.setdefault('client_name', p_data.get('client_name') or '')
+                    data.setdefault('client_email', p_data.get('client_email') or '')
+            except:
+                pass
         result = call_gas('createTask', data)
         ok = result.get('status') == 'success'
         return jsonify({'success': ok, 'status': result.get('status', 'error'), 'data': result.get('data'), 'message': result.get('message', 'Task created.')}), (200 if ok else 400)

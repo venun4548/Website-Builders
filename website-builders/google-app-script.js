@@ -42,12 +42,12 @@ const SHEETS = {
 // Column indexes (1-based)
 const U={ID:1,NAME:2,EMAIL:3,MOBILE:4,PASS:5,ROLE:6,STATUS:7,CREATED_DATE:8,CREATED_TIME:9,LAST_LOGIN_DATE:10,LAST_LOGIN_TIME:11,LAST_ACT_DATE:12,LAST_ACT_TIME:13,UPD_DATE:14,UPD_TIME:15,ASSIGNED_STAFF:16,TOTAL:16};
 const M={ID:1,CONV_ID:2,SENDER_ID:3,SENDER_NAME:4,SENDER_ROLE:5,RECV_ID:6,RECV_NAME:7,RECV_ROLE:8,RECIP_TYPE:9,MSG_TYPE:10,PROJ_ID:11,CUST_ID:12,SUBJECT:13,BODY:14,ATTACH:15,STATUS:16,READ_AT:17,CREATED_DATE:18,CREATED_TIME:19,UPDATED:20,TOTAL:20};
-const E={SUBMISSION_ID:1,TIMESTAMP:2,CUSTOMER_NAME:3,EMAIL:4,MOBILE_NUMBER:5,ADDRESS:6,MESSAGE:7,EMAIL_STATUS:8,EMAIL_SENT_AT:9,OWNER_NOTIF_STAT:10,OWNER_NOTIF_TIME:11,TICKET_STATUS:12,ASSIGNED_TO:13,FOLLOWUP_DATE:14,FOLLOWUP_STATUS:15,SOURCE_PAGE:16,REMARKS:17,CUST_ID:18,PROJ_ID:19,TOTAL:19};
-const P={ID:1,CUST_ID:2,CUST_NAME:3,PROJ_NAME:4,DESC:5,STAGE:6,PROGRESS:7,DELIVERY:8,STATUS:9,CREATED_BY:10,CREATED_DATE:11,CREATED_TIME:12,UPD_DATE:13,UPD_TIME:14,LATEST_UPDATE:15,TOTAL:15};
+const E={SUBMISSION_ID:1,CUSTOMER_NAME:2,EMAIL:3,TIMESTAMP:4,MOBILE_NUMBER:5,ADDRESS:6,MESSAGE:7,EMAIL_STATUS:8,EMAIL_SENT_AT:9,OWNER_NOTIF_STAT:10,OWNER_NOTIF_TIME:11,TICKET_STATUS:12,ASSIGNED_TO:13,FOLLOWUP_DATE:14,FOLLOWUP_STATUS:15,SOURCE_PAGE:16,REMARKS:17,CUST_ID:18,PROJ_ID:19,TOTAL:19};
+const P={ID:1,CUST_NAME:2,CUST_EMAIL:3,CUST_ID:4,PROJ_NAME:5,DESC:6,STAGE:7,PROGRESS:8,DELIVERY:9,STATUS:10,CREATED_BY:11,CREATED_DATE:12,CREATED_TIME:13,UPD_DATE:14,UPD_TIME:15,LATEST_UPDATE:16,TOTAL:16};
 const A={ID:1,PROJ_ID:2,STAFF_ID:3,STAFF_NAME:4,ASSIGNED_BY:5,ASSIGNED_DATE:6,ASSIGNED_TIME:7,UNASSIGNED_DATE:8,STATUS:9,TOTAL:9};
 const PU={ID:1,PROJ_ID:2,STAFF_ID:3,STAFF_NAME:4,STAGE:5,PROGRESS:6,TEXT:7,REMARK:8,CREATED_DATE:9,CREATED_TIME:10,TOTAL:10};
 const AL={ID:1,USER_ID:2,USER_NAME:3,ROLE:4,ACTION:5,RELATED_ID:6,DESC:7,DATE:8,TIME:9,STATUS:10,TOTAL:10};
-const T={ID:1,PROJ_ID:2,PROJ_NAME:3,TITLE:4,DESC:5,STAFF_ID:6,STAFF_NAME:7,PRIORITY:8,STATUS:9,DUE_DATE:10,CREATED_BY:11,CREATED_DATE:12,CREATED_TIME:13,UPD_DATE:14,UPD_TIME:15,TOTAL:15};
+const T={ID:1,CLIENT_NAME:2,CLIENT_EMAIL:3,PROJ_ID:4,PROJ_NAME:5,TITLE:6,DESC:7,STAFF_ID:8,STAFF_NAME:9,PRIORITY:10,STATUS:11,DUE_DATE:12,CREATED_BY:13,CREATED_DATE:14,CREATED_TIME:15,UPD_DATE:16,UPD_TIME:17,TOTAL:17};
 
 const SH={ID:1, PROJ_ID:2, OLD_STAGE:3, NEW_STAGE:4, CHANGED_BY:5, TIMESTAMP:6, REMARKS:7, TOTAL:7};
 const LD={ID:1, NAME:2, EMAIL:3, PHONE:4, COMPANY:5, STATUS:6, SOURCE:7, ASSIGNED_TO:8, CREATED_AT:9, UPDATED_AT:10, TOTAL:10};
@@ -57,24 +57,24 @@ const PR={ID:1, NAME:2, DESC:3, PRICE:4, FEATURES:5, STATUS:6, CREATED_AT:7, UPD
 const NT={ID:1, USER_ID:2, TITLE:3, MESSAGE:4, LINK:5, IS_READ:6, CREATED_AT:7, TOTAL:7};
 const PW={ID:1, USER_ID:2, TOKEN:3, EXPIRES_AT:4, USED:5, CREATED_AT:6, TOTAL:6};
 const EV={ID:1, USER_ID:2, TOKEN:3, EXPIRES_AT:4, VERIFIED:5, CREATED_AT:6, TOTAL:6};
-const MT={ID:1, PROJ_ID:2, CUST_ID:3, STAFF_ID:4, TITLE:5, DATE:6, TIME:7, MEET_LINK:8, STATUS:9, CREATED_AT:10, TOTAL:10};
+const MT={ID:1, CLIENT_NAME:2, CLIENT_EMAIL:3, PROJ_ID:4, CUST_ID:5, STAFF_ID:6, TITLE:7, DATE:8, TIME:9, MEET_LINK:10, STATUS:11, CREATED_AT:12, TOTAL:12};
 
 const HEADERS={
   Users:['User ID','Full Name','Email','Mobile Number','Password Hash','Role','Status','Created Date','Created Time','Last Login Date','Last Login Time','Last Activity Date','Last Activity Time','Updated Date','Updated Time','Assigned Staff ID'],
   Messages:['Message ID','Conversation ID','Sender ID','Sender Name','Sender Role','Receiver ID','Receiver Name','Receiver Role','Project ID','Customer ID','Subject','Message','Status','Read At','Created Date','Created Time','Last Updated','Deleted By Sender','Deleted By Receiver','Deleted Date','Deleted Time'],
-  Enquiries:['Submission ID','Timestamp','Customer Name','Email','Mobile Number','Address','Message','Email Status','Email Sent At','Owner Notification Status','Owner Notification Time','Ticket Status','Assigned To','Followup Date','Followup Status','Source Page','Remarks','Customer ID','Project ID'],
-  Projects:['Project ID','Customer ID','Customer Name','Project Name','Description','Current Stage','Progress','Expected Delivery Date','Status','Created By','Created Date','Created Time','Updated Date','Updated Time','Latest Update'],
+  Enquiries:['Submission ID','Customer Name','Email','Timestamp','Mobile Number','Address','Message','Email Status','Email Sent At','Owner Notification Status','Owner Notification Time','Ticket Status','Assigned To','Followup Date','Followup Status','Source Page','Remarks','Customer ID','Project ID'],
+  Projects:['Project ID','Client Name','Client Email','Customer ID','Project Name','Description','Current Stage','Progress','Expected Delivery Date','Status','Created By','Created Date','Created Time','Updated Date','Updated Time','Latest Update'],
   ProjectAssignments:['Assignment ID','Project ID','Staff ID','Staff Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Status'],
   ProjectUpdates:['Update ID','Project ID','Staff ID','Staff Name','Stage','Progress','Update Text','Remark','Created Date','Created Time'],
   ActivityLogs:['Activity ID','User ID','User Name','Role','Action','Related ID','Description','Date','Time','Status'],
-  Tasks:['Task ID','Project ID','Project Name','Task Title','Description','Assigned Staff ID','Assigned Staff Name','Priority','Status','Due Date','Created By','Created Date','Created Time','Updated Date','Updated Time'],
-  Invoices:['Invoice ID','Project ID','Project Name','Customer ID','Customer Name','Customer Email','Amount','GST Amount','Total Amount','Status','Due Date','Paid At','Razorpay Order ID','Razorpay Payment ID','Created Date','Updated Date'],
+  Tasks:['Task ID','Client Name','Client Email','Project ID','Project Name','Task Title','Description','Assigned Staff ID','Assigned Staff Name','Priority','Status','Due Date','Created By','Created Date','Created Time','Updated Date','Updated Time'],
+  Invoices:['Invoice ID','Client Name','Client Email','Project ID','Project Name','Customer ID','Amount','GST Amount','Total Amount','Status','Due Date','Paid At','Razorpay Order ID','Razorpay Payment ID','Created Date','Updated Date'],
   InvoiceItems:['Item ID','Invoice ID','Description','Quantity','Rate','Amount'],
-  Payments:['Payment ID','Razorpay Order ID','Razorpay Payment ID','Invoice ID','Customer ID','Amount','Currency','Status','Signature','Paid At'],
-  Files:['File ID','Project ID','Uploaded By','File Name','File URL','File Size','File Type','Category','Uploaded At'],
-  Tickets:['Ticket ID','Customer ID','Customer Name','Customer Email','Subject','Priority','Status','Assigned To','Created At','Updated At'],
+  Payments:['Payment ID','Client Name','Client Email','Razorpay Order ID','Razorpay Payment ID','Invoice ID','Customer ID','Amount','Currency','Status','Signature','Paid At'],
+  Files:['File ID','Client Name','Client Email','Project ID','Uploaded By','File Name','File URL','File Size','File Type','Category','Uploaded At'],
+  Tickets:['Ticket ID','Client Name','Client Email','Customer ID','Subject','Priority','Status','Assigned To','Created At','Updated At'],
   TicketMessages:['Message ID','Ticket ID','Sender Email','Sender Role','Message','Timestamp'],
-  BrandInfo:['Brand ID','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At'],
+  BrandInfo:['Brand ID','Client Name','Client Email','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At'],
   StageHistory:['Stage History ID','Project ID','Old Stage','New Stage','Changed By','Timestamp','Remarks'],
   Leads:['Lead ID','Name','Email','Phone','Company','Status','Source','Assigned To','Created At','Updated At'],
   LeadNotes:['Note ID','Lead ID','User ID','Note Text','Created At'],
@@ -83,8 +83,8 @@ const HEADERS={
   Notifications:['Notification ID','User ID','Title','Message','Link','Is Read','Created At'],
   PasswordResets:['Reset ID','User ID','Token','Expires At','Used','Created At'],
   EmailVerifications:['Verification ID','User ID','Token','Expires At','Verified','Created At'],
-  Meetings:['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At'],
-  Documents:['Document ID','Document Number','Project ID','Client ID','Client Name','Client Email','Client Mobile','Title','Type','Version','Content HTML','Status','Created By','Created By Name','Created At','Updated At','Sent At','Viewed At','Verified At','Signed At','Rejected At','Rejection Reason','Expires At','Signed','Signer ID','Signer Name','Signer Email','Signature Data','Final Document URL'],
+  Meetings:['Meeting ID','Client Name','Client Email','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At'],
+  Documents:['Document ID','Client Name','Client Email','Document Number','Project ID','Client ID','Client Mobile','Title','Type','Version','Content HTML','Status','Created By','Created By Name','Created At','Updated At','Sent At','Viewed At','Verified At','Signed At','Rejected At','Rejection Reason','Expires At','Signed','Signer ID','Signer Name','Signer Email','Signature Data','Final Document URL'],
   Teams:['Team ID','Team Name','Description','Leader ID','Members','Created At'],
   DocumentVerification:['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
   DocumentAuditLogs:['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
@@ -124,13 +124,13 @@ function createAllPaymentAndRemainingSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   
   const NEW_SHEETS = {
-    'Invoices': ['Invoice ID','Project ID','Project Name','Customer ID','Customer Name','Customer Email','Amount','GST Amount','Total Amount','Status','Due Date','Paid At','Razorpay Order ID','Razorpay Payment ID','Created Date','Updated Date'],
+    'Invoices': ['Invoice ID','Client Name','Client Email','Project ID','Project Name','Customer ID','Amount','GST Amount','Total Amount','Status','Due Date','Paid At','Razorpay Order ID','Razorpay Payment ID','Created Date','Updated Date'],
     'InvoiceItems': ['Item ID','Invoice ID','Description','Quantity','Rate','Amount'],
-    'Payments': ['Payment ID','Razorpay Order ID','Razorpay Payment ID','Invoice ID','Customer ID','Amount','Currency','Status','Signature','Paid At'],
-    'Files': ['File ID','Project ID','Uploaded By','File Name','File URL','File Size','File Type','Category','Uploaded At'],
-    'Tickets': ['Ticket ID','Customer ID','Customer Name','Customer Email','Subject','Priority','Status','Assigned To','Created At','Updated At'],
+    'Payments': ['Payment ID','Client Name','Client Email','Razorpay Order ID','Razorpay Payment ID','Invoice ID','Customer ID','Amount','Currency','Status','Signature','Paid At'],
+    'Files': ['File ID','Client Name','Client Email','Project ID','Uploaded By','File Name','File URL','File Size','File Type','Category','Uploaded At'],
+    'Tickets': ['Ticket ID','Client Name','Client Email','Customer ID','Subject','Priority','Status','Assigned To','Created At','Updated At'],
     'TicketMessages': ['Message ID','Ticket ID','Sender Email','Sender Role','Message','Timestamp'],
-    'BrandInfo': ['Brand ID','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At'],
+    'BrandInfo': ['Brand ID','Client Name','Client Email','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At'],
     'StageHistory':['Stage History ID','Project ID','Old Stage','New Stage','Changed By','Timestamp','Remarks'],
     'Leads':['Lead ID','Name','Email','Phone','Company','Status','Source','Assigned To','Created At','Updated At'],
     'LeadNotes':['Note ID','Lead ID','User ID','Note Text','Created At'],
@@ -139,13 +139,13 @@ function createAllPaymentAndRemainingSheets() {
     'Notifications':['Notification ID','User ID','Title','Message','Link','Is Read','Created At'],
     'PasswordResets':['Reset ID','User ID','Token','Expires At','Used','Created At'],
     'EmailVerifications':['Verification ID','User ID','Token','Expires At','Verified','Created At'],
-    'Documents': ['Document ID','Document Number','Project ID','Client ID','Client Name','Client Email','Client Mobile','Title','Type','Version','Content HTML','Status','Created By','Created By Name','Created At','Updated At','Sent At','Viewed At','Verified At','Signed At','Rejected At','Rejection Reason','Expires At','Signed','Signer ID','Signer Name','Signer Email','Signature Data','Final Document URL'],
+    'Documents': ['Document ID','Client Name','Client Email','Document Number','Project ID','Client ID','Client Mobile','Title','Type','Version','Content HTML','Status','Created By','Created By Name','Created At','Updated At','Sent At','Viewed At','Verified At','Signed At','Rejected At','Rejection Reason','Expires At','Signed','Signer ID','Signer Name','Signer Email','Signature Data','Final Document URL'],
     'Teams': ['Team ID','Team Name','Description','Leader ID','Members','Created At'],
     'DocumentVerification': ['ID','Document ID','Client ID','Password Hash','OTP Hash','OTP Expiry','Password Expiry','Failed Attempts','Locked Until','Verified At','Created At','Updated At'],
     'DocumentAuditLogs': ['ID','Document ID','User ID','User Name','User Role','Action','Metadata','Created At'],
     'DocumentTemplates': ['Template ID','Template Name','Document Type','Content HTML','Version','Created By','Created At','Updated At'],
     'PasswordOTPs': ['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt'],
-    'Meetings': ['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At']
+    'Meetings': ['Meeting ID','Client Name','Client Email','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At']
   };
 
   for (const [name, headers] of Object.entries(NEW_SHEETS)) {
@@ -286,6 +286,8 @@ function doPost(e){
       if(action==='updateDocument') return updateDocument(data);
       if(action==='createBrandInfo') return createBrandInfo(data);
       if(action==='updateBrandInfo') return updateBrandInfo(data);
+      if(action==='createFile') return createFile(data);
+      if(action==='migrateAllSheets') return jr('success', migrateAllSheetsToStandardFormat());
       if(action==='requestDocumentSignature') return requestDocumentSignature(data);
       if(action==='signDocument') return signDocument(data);
 
@@ -350,6 +352,8 @@ function doGet(e){
     if(action==='getDocuments')         return getDocuments(p);
     if(action==='getDocumentAuditLogs') return getDocumentAuditLogs(p);
     if(action==='getBrandInfo')         return getBrandInfo(p);
+    if(action==='getFiles')             return getFiles(p);
+    if(action==='migrateAllSheets')     return jr('success', migrateAllSheetsToStandardFormat());
     if(action==='getTeams')             return getTeams(p);
     if(action==='getTeamById')          return getTeamById(p);
     if(action==='getTeamMembers')       return getTeamMembers(p);
@@ -873,7 +877,17 @@ function createProject(d){
   try{
     const sheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
     const now=getNow();const projId=generateProjectId();
-    sheet.appendRow([projId,d.customer_id,d.customer_name||'',d.project_name.trim(),(d.description||'').trim(),d.stage||'Planning',parseInt(d.progress||0),d.expected_delivery||'',d.status||'Active',d.created_by||'',now.date,now.time,'','','']);
+    let custName = d.customer_name || d.client_name || '';
+    let custEmail = d.customer_email || d.client_email || '';
+    if((!custName || !custEmail) && d.customer_id){
+      const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+      const uRow=findRowByValue(uSheet,U.ID,d.customer_id);
+      if(uRow>0){
+        if(!custName) custName = String(uSheet.getRange(uRow,U.NAME).getValue()||'');
+        if(!custEmail) custEmail = String(uSheet.getRange(uRow,U.EMAIL).getValue()||'');
+      }
+    }
+    sheet.appendRow([projId,custName,custEmail,d.customer_id,d.project_name.trim(),(d.description||'').trim(),d.stage||'Planning',parseInt(d.progress||0),d.expected_delivery||'',d.status||'Active',d.created_by||'',now.date,now.time,'','','']);
     if(d.staff_id) assignStaff({project_id:projId,staff_id:d.staff_id,staff_name:d.staff_name||'',assigned_by:d.created_by||''});
     logActivity({userId:d.created_by||'',userName:'',role:'',action:'PROJECT_CREATED',relatedId:projId,description:'Project created: '+projId,status:'SUCCESS'});
     return jr('success',{id:projId,project_id:projId,message:'Project created.'});
@@ -887,6 +901,8 @@ function updateProject(d){
   const row=findRowByValue(sheet,P.ID,d.project_id);
   if(row<0) return jr('error','Project not found.');
   const now=getNow();
+  if(d.client_name || d.customer_name) sheet.getRange(row,P.CUST_NAME).setValue(d.client_name || d.customer_name);
+  if(d.client_email || d.customer_email) sheet.getRange(row,P.CUST_EMAIL).setValue(d.client_email || d.customer_email);
   if(d.project_name)  sheet.getRange(row,P.PROJ_NAME).setValue(d.project_name);
   if(d.description)   sheet.getRange(row,P.DESC).setValue(d.description);
   if(d.stage)         sheet.getRange(row,P.STAGE).setValue(d.stage);
@@ -929,8 +945,11 @@ function getProjects(p){
     return {
       project_id:pid,
       id:pid,
-      customer_id:String(r[P.CUST_ID-1]),
       customer_name:String(r[P.CUST_NAME-1]),
+      client_name:String(r[P.CUST_NAME-1]),
+      customer_email:String(r[P.CUST_EMAIL-1]),
+      client_email:String(r[P.CUST_EMAIL-1]),
+      customer_id:String(r[P.CUST_ID-1]),
       project_name:String(r[P.PROJ_NAME-1]),
       name:String(r[P.PROJ_NAME-1]),
       description:String(r[P.DESC-1]),
@@ -1039,12 +1058,18 @@ function createTask(d){
       const uRow=findRowByValue(uSheet,U.ID,staffId);
       if(uRow>0) staffName = String(uSheet.getRange(uRow,U.NAME).getValue()||'');
     }
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
     let projName = d.project_name || '';
     const projId = d.project_id || '';
-    if(!projName && projId){
+    if(projId && (!clientName || !clientEmail || !projName)){
       const pSheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
       const pRow=findRowByValue(pSheet,P.ID,projId);
-      if(pRow>0) projName = String(pSheet.getRange(pRow,P.PROJ_NAME).getValue()||'');
+      if(pRow>0){
+        if(!projName) projName = String(pSheet.getRange(pRow,P.PROJ_NAME).getValue()||'');
+        if(!clientName) clientName = String(pSheet.getRange(pRow,P.CUST_NAME).getValue()||'');
+        if(!clientEmail) clientEmail = String(pSheet.getRange(pRow,P.CUST_EMAIL).getValue()||'');
+      }
     }
     const status = d.status || 'Pending';
     const priority = d.priority || 'Normal';
@@ -1053,7 +1078,7 @@ function createTask(d){
     const createdBy = d.created_by || '';
 
     sheet.appendRow([
-      taskId, projId, projName, d.title.trim(), desc.trim(),
+      taskId, clientName, clientEmail, projId, projName, d.title.trim(), desc.trim(),
       staffId, staffName, priority, status, dueDate,
       createdBy, now.date, now.time, now.date, now.time
     ]);
@@ -1076,6 +1101,8 @@ function createTask(d){
       priority: priority,
       assigned_staff_id: staffId,
       assigned_staff_name: staffName,
+      client_name: clientName,
+      client_email: clientEmail,
       message: 'Task created successfully.'
     });
   }finally{lock.releaseLock();}
@@ -1090,6 +1117,8 @@ function updateTask(d){
   if(row<0) return jr('error','Task not found: '+taskId);
 
   const now=getNow();
+  if(d.client_name || d.customer_name) sheet.getRange(row,T.CLIENT_NAME).setValue(d.client_name || d.customer_name);
+  if(d.client_email || d.customer_email) sheet.getRange(row,T.CLIENT_EMAIL).setValue(d.client_email || d.customer_email);
   if(d.title) sheet.getRange(row,T.TITLE).setValue(d.title.trim());
   if(d.project_id) sheet.getRange(row,T.PROJ_ID).setValue(d.project_id);
   if(d.project_name) sheet.getRange(row,T.PROJ_NAME).setValue(d.project_name);
@@ -1150,6 +1179,10 @@ function getTasks(p){
     return {
       task_id:String(r[T.ID-1]),
       id:String(r[T.ID-1]),
+      client_name:String(r[T.CLIENT_NAME-1]||''),
+      customer_name:String(r[T.CLIENT_NAME-1]||''),
+      client_email:String(r[T.CLIENT_EMAIL-1]||''),
+      customer_email:String(r[T.CLIENT_EMAIL-1]||''),
       project_id:String(r[T.PROJ_ID-1]),
       project_name:String(r[T.PROJ_NAME-1]||''),
       title:String(r[T.TITLE-1]),
@@ -1475,16 +1508,23 @@ function createMeeting(d) {
     const now = getNow();
     const meetLink = "https://meet.google.com/new"; // Generic fallback link if Advanced Service is disabled
     
-    // In a fully configured Workspace environment, we can do:
-    // const event = CalendarApp.getDefaultCalendar().createEvent("Project Meeting", startDate, endDate);
-    // For now we just record it in the DB and provide a generic meet room.
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
+    if ((!clientName || !clientEmail) && d.customer_id) {
+      const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+      const uRow = findRowByValue(uSheet, U.ID, d.customer_id);
+      if (uRow > 0) {
+        if (!clientName) clientName = String(uSheet.getRange(uRow, U.NAME).getValue() || '');
+        if (!clientEmail) clientEmail = String(uSheet.getRange(uRow, U.EMAIL).getValue() || '');
+      }
+    }
     
     sheet.appendRow([
-      meetId, d.project_id, d.customer_id || '', d.staff_id || '',
+      meetId, clientName, clientEmail, d.project_id, d.customer_id || '', d.staff_id || '',
       d.title || 'Project Consultation', d.date, d.time,
       meetLink, 'SCHEDULED', now.date + ' ' + now.time
     ]);
-    return jr('success', { message: 'Meeting scheduled successfully.', meeting_id: meetId, meet_link: meetLink });
+    return jr('success', { message: 'Meeting scheduled successfully.', meeting_id: meetId, meet_link: meetLink, client_name: clientName, client_email: clientEmail });
   } catch (e) {
     return jr('error', 'Failed to schedule meeting: ' + e.toString());
   } finally {
@@ -1500,6 +1540,11 @@ function getMeetings(p) {
   
   let list = sheet.getRange(2, 1, last - 1, MT.TOTAL).getValues().map(r => ({
     meeting_id: String(r[MT.ID - 1]),
+    id: String(r[MT.ID - 1]),
+    client_name: String(r[MT.CLIENT_NAME - 1] || ''),
+    customer_name: String(r[MT.CLIENT_NAME - 1] || ''),
+    client_email: String(r[MT.CLIENT_EMAIL - 1] || ''),
+    customer_email: String(r[MT.CLIENT_EMAIL - 1] || ''),
     project_id: String(r[MT.PROJ_ID - 1]),
     customer_id: String(r[MT.CUST_ID - 1]),
     staff_id: String(r[MT.STAFF_ID - 1]),
@@ -1529,8 +1574,18 @@ function createTicket(d) {
     const sheet = getOrCreateSheet(SHEETS.TICKETS, HEADERS.Tickets);
     const ticketId = generateId('TK', SHEETS.TICKETS, 1);
     const now = getNow();
+    let custName = d.customer_name || d.client_name || '';
+    let custEmail = d.customer_email || d.client_email || '';
+    if ((!custName || !custEmail) && d.customer_id) {
+      const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+      const uRow = findRowByValue(uSheet, U.ID, d.customer_id);
+      if (uRow > 0) {
+        if (!custName) custName = String(uSheet.getRange(uRow, U.NAME).getValue() || '');
+        if (!custEmail) custEmail = String(uSheet.getRange(uRow, U.EMAIL).getValue() || '');
+      }
+    }
     sheet.appendRow([
-      ticketId, d.customer_id, d.customer_name || '', d.customer_email || '',
+      ticketId, custName, custEmail, d.customer_id,
       d.subject, d.priority || 'Medium', 'Open', d.assigned_to || '',
       now.date + ' ' + now.time, now.date + ' ' + now.time
     ]);
@@ -1550,9 +1605,12 @@ function getTickets(p) {
   
   let list = sheet.getRange(2, 1, last - 1, 10).getValues().map(r => ({
     ticket_id: String(r[0]),
-    customer_id: String(r[1]),
-    customer_name: String(r[2]),
-    customer_email: String(r[3]),
+    id: String(r[0]),
+    client_name: String(r[1]),
+    customer_name: String(r[1]),
+    client_email: String(r[2]),
+    customer_email: String(r[2]),
+    customer_id: String(r[3]),
     subject: String(r[4]),
     priority: String(r[5]),
     status: String(r[6]),
@@ -1609,7 +1667,7 @@ function createDocument(d) {
     const dt = now.date + ' ' + now.time;
     
     sheet.appendRow([
-      docId, docNum, d.project_id||'', d.client_id||'', d.client_name||'', d.client_email||'', d.client_mobile||'',
+      docId, d.client_name||'', d.client_email||'', docNum, d.project_id||'', d.client_id||'', d.client_mobile||'',
       d.title, d.type, '1.0', d.contentHtml, 'DRAFT', d.created_by||'', d.created_by_name||'',
       dt, dt, '', '', '', '', '', '', d.expires_at||'', 'FALSE', '', '', '', '', ''
     ]);
@@ -1851,11 +1909,14 @@ function getDocuments(p) {
   
   let list = sheet.getRange(2, 1, last - 1, 29).getValues().map(r => ({
     document_id: String(r[0]),
-    document_number: String(r[1]),
-    project_id: String(r[2]),
-    client_id: String(r[3]),
-    client_name: String(r[4]),
-    client_email: String(r[5]),
+    id: String(r[0]),
+    client_name: String(r[1]),
+    customer_name: String(r[1]),
+    client_email: String(r[2]),
+    customer_email: String(r[2]),
+    document_number: String(r[3]),
+    project_id: String(r[4]),
+    client_id: String(r[5]),
     client_mobile: String(r[6]),
     title: String(r[7]),
     type: String(r[8]),
@@ -2399,9 +2460,29 @@ function logPayment(d) {
     const now = getNow();
     const paidAt = d.paid_at || (now.date + ' ' + now.time);
     
-    // 1. Append to Payments Sheet
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
+    if ((!clientName || !clientEmail) && d.customer_id) {
+      try {
+        const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.USERS);
+        if (uSheet) {
+          const uRows = uSheet.getDataRange().getValues();
+          for (let i = 1; i < uRows.length; i++) {
+            if (String(uRows[i][0]).trim() === String(d.customer_id).trim()) {
+              if (!clientName) clientName = String(uRows[i][1] || '');
+              if (!clientEmail) clientEmail = String(uRows[i][2] || '');
+              break;
+            }
+          }
+        }
+      } catch(e) {}
+    }
+    
+    // 1. Append to Payments Sheet (1: ID, 2: Client Name, 3: Client Email, ...)
     paySheet.appendRow([
       id,
+      clientName,
+      clientEmail,
       d.order_id || '',
       d.payment_id || id,
       d.invoice_id || '',
@@ -2435,11 +2516,11 @@ function logPayment(d) {
       if (!found && targetInvId) {
         invSheet.appendRow([
           targetInvId,
+          clientName || d.customer_name || 'Client',
+          clientEmail || d.customer_email || '',
           d.project_id || '',
           d.project_name || d.description || 'Milestone Settlement',
           d.customer_id || '',
-          d.customer_name || 'Client',
-          d.customer_email || '',
           d.amount || 0,
           Math.round((d.amount || 0) * 0.18),
           d.amount || 0,
@@ -2460,7 +2541,7 @@ function logPayment(d) {
     try {
       logActivity({
         userId: d.customer_id || '',
-        userName: d.customer_name || 'Client',
+        userName: clientName || d.customer_name || 'Client',
         role: 'Client',
         action: 'PAYMENT_RECEIVED',
         relatedId: id,
@@ -2483,17 +2564,22 @@ function getPayments(p) {
     const sheet = getOrCreateSheet(SHEETS.PAYMENTS, HEADERS.Payments);
     const last = sheet.getLastRow();
     if (last < 2) return jr('success', []);
-    const rows = sheet.getRange(2, 1, last - 1, 10).getValues();
+    const rows = sheet.getRange(2, 1, last - 1, 12).getValues();
     let list = rows.map(r => ({
       payment_id: String(r[0]),
-      order_id: String(r[1]),
-      gateway_payment_id: String(r[2]),
-      invoice_id: String(r[3]),
-      customer_id: String(r[4]),
-      amount: Number(r[5]) || 0,
-      currency: String(r[6]),
-      status: String(r[7]),
-      paid_at: String(r[9])
+      client_name: String(r[1]),
+      customer_name: String(r[1]),
+      client_email: String(r[2]),
+      customer_email: String(r[2]),
+      order_id: String(r[3]),
+      gateway_payment_id: String(r[4]),
+      invoice_id: String(r[5]),
+      customer_id: String(r[6]),
+      amount: Number(r[7]) || 0,
+      currency: String(r[8]),
+      status: String(r[9]),
+      signature: String(r[10] || ''),
+      paid_at: String(r[11] || '')
     })).filter(x => x.payment_id);
 
     if (p.customer_id) list = list.filter(x => x.customer_id === p.customer_id);
@@ -2511,13 +2597,31 @@ function createInvoice(d) {
     const sheet = getOrCreateSheet(SHEETS.INVOICES, HEADERS.Invoices);
     const now = getNow();
     const id = d.invoice_id || ('INV-' + Utilities.getUuid().slice(0, 8).toUpperCase());
+    let clientName = d.client_name || d.customer_name || '';
+    let clientEmail = d.client_email || d.customer_email || '';
+    if ((!clientName || !clientEmail) && d.customer_id) {
+      try {
+        const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.USERS);
+        if (uSheet) {
+          const uRows = uSheet.getDataRange().getValues();
+          for (let i = 1; i < uRows.length; i++) {
+            if (String(uRows[i][0]).trim() === String(d.customer_id).trim()) {
+              if (!clientName) clientName = String(uRows[i][1] || '');
+              if (!clientEmail) clientEmail = String(uRows[i][2] || '');
+              break;
+            }
+          }
+        }
+      } catch(e) {}
+    }
+    // Standard schema: 1: ID, 2: Client Name, 3: Client Email, 4: Project ID, 5: Project Name, 6: Customer ID, ...
     sheet.appendRow([
       id,
+      clientName,
+      clientEmail,
       d.project_id || '',
       d.project_name || '',
       d.customer_id || '',
-      d.customer_name || '',
-      d.customer_email || '',
       d.amount || 0,
       d.gst_amount || 0,
       d.total_amount || d.amount || 0,
@@ -2546,17 +2650,21 @@ function getInvoices(p) {
     const rows = sheet.getRange(2, 1, last - 1, 16).getValues();
     let list = rows.map(r => ({
       invoice_id: String(r[0]),
-      project_id: String(r[1]),
-      project_name: String(r[2]),
-      customer_id: String(r[3]),
-      customer_name: String(r[4]),
-      customer_email: String(r[5]),
+      client_name: String(r[1]),
+      customer_name: String(r[1]),
+      client_email: String(r[2]),
+      customer_email: String(r[2]),
+      project_id: String(r[3]),
+      project_name: String(r[4]),
+      customer_id: String(r[5]),
       amount: Number(r[6]) || 0,
       gst_amount: Number(r[7]) || 0,
       total_amount: Number(r[8]) || 0,
       status: String(r[9]),
       due_date: String(r[10]),
       paid_at: String(r[11]),
+      order_id: String(r[12] || ''),
+      payment_id: String(r[13] || ''),
       created_date: String(r[14])
     })).filter(x => x.invoice_id);
 
@@ -2825,11 +2933,44 @@ function getEmailVerifications(p) {
 
 // ─── Brand Info ────────────────────────────────
 function createBrandInfo(d) {
+  d = d || {};
   const sheet = getOrCreateSheet('BrandInfo', HEADERS.BrandInfo);
   const id = generateId('BI', 'BrandInfo', 1);
   const now = getNow();
   const dt = now.date + ' ' + now.time;
-  sheet.appendRow([id, d.user_id||'', d.brand_name||'', d.tagline||'', d.primary_color||'', d.secondary_color||'', d.font_family||'', d.target_audience||'', d.competitors||'', d.brand_values||'', d.assets_url||'', dt]);
+  let clientName = d.client_name || d.customer_name || '';
+  let clientEmail = d.client_email || d.customer_email || '';
+  if ((!clientName || !clientEmail) && d.user_id) {
+    try {
+      const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.USERS);
+      if (uSheet) {
+        const uRows = uSheet.getDataRange().getValues();
+        for (let i = 1; i < uRows.length; i++) {
+          if (String(uRows[i][0]).trim() === String(d.user_id).trim()) {
+            if (!clientName) clientName = String(uRows[i][1] || '');
+            if (!clientEmail) clientEmail = String(uRows[i][2] || '');
+            break;
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  sheet.appendRow([
+    id,
+    clientName,
+    clientEmail,
+    d.user_id || '',
+    d.brand_name || '',
+    d.tagline || '',
+    d.primary_color || '',
+    d.secondary_color || '',
+    d.font_family || '',
+    d.target_audience || '',
+    d.competitors || '',
+    d.brand_values || '',
+    d.assets_url || '',
+    dt
+  ]);
   return jr('success', {id: id});
 }
 
@@ -2843,18 +2984,20 @@ function updateBrandInfo(d) {
   }
   if(row === -1) return jr('error', 'Brand not found');
   
-  if(d.brand_name!==undefined) sheet.getRange(row, 3).setValue(d.brand_name);
-  if(d.tagline!==undefined) sheet.getRange(row, 4).setValue(d.tagline);
-  if(d.primary_color!==undefined) sheet.getRange(row, 5).setValue(d.primary_color);
-  if(d.secondary_color!==undefined) sheet.getRange(row, 6).setValue(d.secondary_color);
-  if(d.font_family!==undefined) sheet.getRange(row, 7).setValue(d.font_family);
-  if(d.target_audience!==undefined) sheet.getRange(row, 8).setValue(d.target_audience);
-  if(d.competitors!==undefined) sheet.getRange(row, 9).setValue(d.competitors);
-  if(d.brand_values!==undefined) sheet.getRange(row, 10).setValue(d.brand_values);
-  if(d.assets_url!==undefined) sheet.getRange(row, 11).setValue(d.assets_url);
+  if(d.client_name!==undefined) sheet.getRange(row, 2).setValue(d.client_name);
+  if(d.client_email!==undefined) sheet.getRange(row, 3).setValue(d.client_email);
+  if(d.brand_name!==undefined) sheet.getRange(row, 5).setValue(d.brand_name);
+  if(d.tagline!==undefined) sheet.getRange(row, 6).setValue(d.tagline);
+  if(d.primary_color!==undefined) sheet.getRange(row, 7).setValue(d.primary_color);
+  if(d.secondary_color!==undefined) sheet.getRange(row, 8).setValue(d.secondary_color);
+  if(d.font_family!==undefined) sheet.getRange(row, 9).setValue(d.font_family);
+  if(d.target_audience!==undefined) sheet.getRange(row, 10).setValue(d.target_audience);
+  if(d.competitors!==undefined) sheet.getRange(row, 11).setValue(d.competitors);
+  if(d.brand_values!==undefined) sheet.getRange(row, 12).setValue(d.brand_values);
+  if(d.assets_url!==undefined) sheet.getRange(row, 13).setValue(d.assets_url);
   
   const now = getNow();
-  sheet.getRange(row, 12).setValue(now.date + ' ' + now.time);
+  sheet.getRange(row, 14).setValue(now.date + ' ' + now.time);
   return jr('success', 'Updated');
 }
 
@@ -2862,11 +3005,23 @@ function getBrandInfo(p) {
   const sheet = getOrCreateSheet('BrandInfo', HEADERS.BrandInfo);
   const last = sheet.getLastRow();
   if (last < 2) return jr('success', []);
-  const list = sheet.getRange(2, 1, last - 1, 12).getValues().map(r => ({
-    id: String(r[0]), user_id: String(r[1]), brand_name: String(r[2]),
-    tagline: String(r[3]), primary_color: String(r[4]), secondary_color: String(r[5]),
-    font_family: String(r[6]), target_audience: String(r[7]), competitors: String(r[8]),
-    brand_values: String(r[9]), assets_url: String(r[10]), updated_at: String(r[11])
+  const list = sheet.getRange(2, 1, last - 1, 14).getValues().map(r => ({
+    id: String(r[0]),
+    client_name: String(r[1]),
+    customer_name: String(r[1]),
+    client_email: String(r[2]),
+    customer_email: String(r[2]),
+    user_id: String(r[3]),
+    brand_name: String(r[4]),
+    tagline: String(r[5]),
+    primary_color: String(r[6]),
+    secondary_color: String(r[7]),
+    font_family: String(r[8]),
+    target_audience: String(r[9]),
+    competitors: String(r[10]),
+    brand_values: String(r[11]),
+    assets_url: String(r[12]),
+    updated_at: String(r[13])
   })).filter(t => t.id);
   return jr('success', list);
 }
@@ -2882,11 +3037,79 @@ function updateDocument(d) {
   }
   if(row === -1) return jr('error', 'Document not found');
   
-  if(d.title!==undefined) sheet.getRange(row, 4).setValue(d.title);
-  if(d.file_url!==undefined) sheet.getRange(row, 5).setValue(d.file_url);
-  if(d.status!==undefined) sheet.getRange(row, 6).setValue(d.status);
+  if(d.title!==undefined) sheet.getRange(row, 8).setValue(d.title);
+  if(d.file_url!==undefined) sheet.getRange(row, 29).setValue(d.file_url);
+  if(d.status!==undefined) sheet.getRange(row, 12).setValue(d.status);
   
   return jr('success', 'Updated');
+}
+
+// ─── Files ────────────────────────────────
+function createFile(d) {
+  d = d || {};
+  const sheet = getOrCreateSheet(SHEETS.FILES || 'Files', HEADERS.Files);
+  const id = generateId('FIL', SHEETS.FILES || 'Files', 1);
+  const now = getNow();
+  const dt = now.date + ' ' + now.time;
+  let clientName = d.client_name || d.customer_name || '';
+  let clientEmail = d.client_email || d.customer_email || '';
+  if ((!clientName || !clientEmail) && d.customer_id) {
+    try {
+      const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.USERS);
+      if (uSheet) {
+        const uRows = uSheet.getDataRange().getValues();
+        for (let i = 1; i < uRows.length; i++) {
+          if (String(uRows[i][0]).trim() === String(d.customer_id).trim()) {
+            if (!clientName) clientName = String(uRows[i][1] || '');
+            if (!clientEmail) clientEmail = String(uRows[i][2] || '');
+            break;
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  sheet.appendRow([
+    id,
+    clientName,
+    clientEmail,
+    d.project_id || '',
+    d.uploaded_by || '',
+    d.file_name || '',
+    d.file_url || '',
+    d.file_size || '',
+    d.file_type || '',
+    d.category || 'GENERAL',
+    dt
+  ]);
+  return jr('success', { file_id: id });
+}
+
+function getFiles(p) {
+  p = p || {};
+  try {
+    const sheet = getOrCreateSheet(SHEETS.FILES || 'Files', HEADERS.Files);
+    const last = sheet.getLastRow();
+    if (last < 2) return jr('success', []);
+    let list = sheet.getRange(2, 1, last - 1, 11).getValues().map(r => ({
+      file_id: String(r[0]),
+      client_name: String(r[1]),
+      customer_name: String(r[1]),
+      client_email: String(r[2]),
+      customer_email: String(r[2]),
+      project_id: String(r[3]),
+      uploaded_by: String(r[4]),
+      file_name: String(r[5]),
+      file_url: String(r[6]),
+      file_size: String(r[7]),
+      file_type: String(r[8]),
+      category: String(r[9]),
+      uploaded_at: String(r[10])
+    })).filter(f => f.file_id);
+    if (p.project_id) list = list.filter(f => f.project_id === p.project_id);
+    return jr('success', list);
+  } catch(err) {
+    return jr('error', 'Failed to retrieve files: ' + err.toString());
+  }
 }
 
 
@@ -3777,14 +4000,15 @@ function getWorkDistribution(p) {
   // Get all tasks
   const tSheet = getOrCreateSheet(SHEETS.TASKS || 'Tasks', HEADERS.Tasks);
   const tLast = tSheet.getLastRow();
-  const tasks = tLast >= 2 ? tSheet.getRange(2, 1, tLast - 1, 10).getValues() : [];
+  const tasks = tLast >= 2 ? tSheet.getRange(2, 1, tLast - 1, 12).getValues() : [];
   
   const nowStr = getNow().date;
   
   const distribution = users.map(u => {
-    const sTasks = tasks.filter(r => String(r[5]) === u.staff_id && String(r[8]).toUpperCase() !== 'COMPLETED' && String(r[8]).toUpperCase() !== 'CANCELLED');
-    const highPri = sTasks.filter(r => ['HIGH', 'URGENT'].includes(String(r[7]).toUpperCase())).length;
-    const overdue = sTasks.filter(r => r[9] && String(r[9]) < nowStr).length;
+    // Col index 7: Assigned Staff ID, Col index 10: Status, Col index 9: Priority, Col index 11: Due Date
+    const sTasks = tasks.filter(r => String(r[7]) === u.staff_id && String(r[10]).toUpperCase() !== 'COMPLETED' && String(r[10]).toUpperCase() !== 'CANCELLED');
+    const highPri = sTasks.filter(r => ['HIGH', 'URGENT'].includes(String(r[9]).toUpperCase())).length;
+    const overdue = sTasks.filter(r => r[11] && String(r[11]) < nowStr).length;
     
     let tier = 'AVAILABLE';
     let loadPct = 25;
@@ -3857,4 +4081,298 @@ function getWorkManagementStats(p) {
     total_teams: teams.length,
     active_staff: staff.length
   });
+}
+
+/**
+ * ============================================================
+ * MIGRATION UTILITY: migrateAllSheetsToStandardFormat
+ * Standardizes all client sheets so that:
+ * Column 1: Record ID
+ * Column 2: Client Name
+ * Column 3: Client Email
+ * ============================================================
+ */
+function migrateAllSheetsToStandardFormat() {
+  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  Logger.log('Starting migration to standard schema (Client Name in col 2, Client Email in col 3)...');
+
+  // Build lookup maps for Users (User ID -> {name, email}) and Projects (Project ID -> {clientName, clientEmail, customerId})
+  const userMap = {};
+  const uSheet = ss.getSheetByName(SHEETS.USERS);
+  if (uSheet && uSheet.getLastRow() >= 2) {
+    const uRows = uSheet.getRange(2, 1, uSheet.getLastRow() - 1, 3).getValues();
+    uRows.forEach(r => {
+      const uid = String(r[0]).trim();
+      if (uid) userMap[uid] = { name: String(r[1] || ''), email: String(r[2] || '') };
+    });
+  }
+
+  const projMap = {};
+  const pSheet = ss.getSheetByName(SHEETS.PROJECTS);
+  if (pSheet && pSheet.getLastRow() >= 2) {
+    const pRows = pSheet.getRange(2, 1, pSheet.getLastRow() - 1, Math.max(6, pSheet.getLastColumn())).getValues();
+    const pHeaders = pSheet.getRange(1, 1, 1, pSheet.getLastColumn()).getValues()[0];
+    const isNewSchema = String(pHeaders[1] || '').toLowerCase().includes('client');
+    pRows.forEach(r => {
+      const pid = String(r[0]).trim();
+      if (pid) {
+        if (isNewSchema) {
+          projMap[pid] = { clientName: String(r[1] || ''), clientEmail: String(r[2] || ''), customerId: String(r[3] || '') };
+        } else {
+          const custId = String(r[1] || '');
+          const u = userMap[custId] || {};
+          projMap[pid] = { clientName: u.name || '', clientEmail: u.email || '', customerId: custId };
+        }
+      }
+    });
+  }
+
+  // Helper to safely format header row
+  function applyHeaderStyle(sheet, cols) {
+    sheet.getRange(1, 1, 1, cols.length).setValues([cols])
+      .setBackground('#0f172a')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+
+  // 1. Projects Sheet
+  try {
+    let ps = ss.getSheetByName(SHEETS.PROJECTS);
+    if (!ps) {
+      ps = ss.insertSheet(SHEETS.PROJECTS);
+      applyHeaderStyle(ps, HEADERS.Projects);
+    } else {
+      const currentH = ps.getRange(1, 1, 1, Math.max(1, ps.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating Projects sheet columns...');
+        ps.insertColumnsAfter(1, 2);
+        const last = ps.getLastRow();
+        if (last >= 2) {
+          const rows = ps.getRange(2, 1, last - 1, ps.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const custId = String(rows[i][3] || '').trim();
+            const u = userMap[custId] || {};
+            if (u.name) ps.getRange(i + 2, 2).setValue(u.name);
+            if (u.email) ps.getRange(i + 2, 3).setValue(u.email);
+          }
+        }
+      }
+      applyHeaderStyle(ps, HEADERS.Projects);
+    }
+  } catch(e) { Logger.log('Projects migration error: ' + e.toString()); }
+
+  // 2. Tasks Sheet
+  try {
+    let ts = ss.getSheetByName(SHEETS.TASKS);
+    if (!ts) {
+      ts = ss.insertSheet(SHEETS.TASKS);
+      applyHeaderStyle(ts, HEADERS.Tasks);
+    } else {
+      const currentH = ts.getRange(1, 1, 1, Math.max(1, ts.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating Tasks sheet columns...');
+        ts.insertColumnsAfter(1, 2);
+        const last = ts.getLastRow();
+        if (last >= 2) {
+          const rows = ts.getRange(2, 1, last - 1, ts.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const pid = String(rows[i][3] || '').trim();
+            const p = projMap[pid] || {};
+            if (p.clientName) ts.getRange(i + 2, 2).setValue(p.clientName);
+            if (p.clientEmail) ts.getRange(i + 2, 3).setValue(p.clientEmail);
+          }
+        }
+      }
+      applyHeaderStyle(ts, HEADERS.Tasks);
+    }
+  } catch(e) { Logger.log('Tasks migration error: ' + e.toString()); }
+
+  // 3. Meetings Sheet
+  try {
+    let ms = ss.getSheetByName(SHEETS.MEETINGS);
+    if (!ms) {
+      ms = ss.insertSheet(SHEETS.MEETINGS);
+      applyHeaderStyle(ms, HEADERS.Meetings);
+    } else {
+      const currentH = ms.getRange(1, 1, 1, Math.max(1, ms.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating Meetings sheet columns...');
+        ms.insertColumnsAfter(1, 2);
+        const last = ms.getLastRow();
+        if (last >= 2) {
+          const rows = ms.getRange(2, 1, last - 1, ms.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const pid = String(rows[i][3] || '').trim();
+            const cid = String(rows[i][4] || '').trim();
+            const p = projMap[pid] || {};
+            const u = userMap[cid] || {};
+            const cName = p.clientName || u.name || '';
+            const cEmail = p.clientEmail || u.email || '';
+            if (cName) ms.getRange(i + 2, 2).setValue(cName);
+            if (cEmail) ms.getRange(i + 2, 3).setValue(cEmail);
+          }
+        }
+      }
+      applyHeaderStyle(ms, HEADERS.Meetings);
+    }
+  } catch(e) { Logger.log('Meetings migration error: ' + e.toString()); }
+
+  // 4. Tickets Sheet
+  try {
+    let tks = ss.getSheetByName(SHEETS.TICKETS);
+    if (!tks) {
+      tks = ss.insertSheet(SHEETS.TICKETS);
+      applyHeaderStyle(tks, HEADERS.Tickets);
+    } else {
+      const currentH = tks.getRange(1, 1, 1, Math.max(1, tks.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating Tickets sheet columns...');
+        tks.insertColumnsAfter(1, 2);
+        const last = tks.getLastRow();
+        if (last >= 2) {
+          const rows = tks.getRange(2, 1, last - 1, tks.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const cid = String(rows[i][3] || '').trim();
+            const u = userMap[cid] || {};
+            if (u.name) tks.getRange(i + 2, 2).setValue(u.name);
+            if (u.email) tks.getRange(i + 2, 3).setValue(u.email);
+          }
+        }
+      }
+      applyHeaderStyle(tks, HEADERS.Tickets);
+    }
+  } catch(e) { Logger.log('Tickets migration error: ' + e.toString()); }
+
+  // 5. Invoices Sheet
+  try {
+    let invs = ss.getSheetByName(SHEETS.INVOICES);
+    if (!invs) {
+      invs = ss.insertSheet(SHEETS.INVOICES);
+      applyHeaderStyle(invs, HEADERS.Invoices);
+    } else {
+      const currentH = invs.getRange(1, 1, 1, Math.max(1, invs.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating Invoices sheet columns...');
+        invs.insertColumnsAfter(1, 2);
+        const last = invs.getLastRow();
+        if (last >= 2) {
+          const rows = invs.getRange(2, 1, last - 1, invs.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const cid = String(rows[i][5] || '').trim();
+            const u = userMap[cid] || {};
+            const cName = String(rows[i][6] || u.name || '');
+            const cEmail = String(rows[i][7] || u.email || '');
+            if (cName) invs.getRange(i + 2, 2).setValue(cName);
+            if (cEmail) invs.getRange(i + 2, 3).setValue(cEmail);
+          }
+        }
+      }
+      applyHeaderStyle(invs, HEADERS.Invoices);
+    }
+  } catch(e) { Logger.log('Invoices migration error: ' + e.toString()); }
+
+  // 6. Payments Sheet
+  try {
+    let pays = ss.getSheetByName(SHEETS.PAYMENTS);
+    if (!pays) {
+      pays = ss.insertSheet(SHEETS.PAYMENTS);
+      applyHeaderStyle(pays, HEADERS.Payments);
+    } else {
+      const currentH = pays.getRange(1, 1, 1, Math.max(1, pays.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating Payments sheet columns...');
+        pays.insertColumnsAfter(1, 2);
+        const last = pays.getLastRow();
+        if (last >= 2) {
+          const rows = pays.getRange(2, 1, last - 1, pays.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const cid = String(rows[i][6] || '').trim();
+            const u = userMap[cid] || {};
+            if (u.name) pays.getRange(i + 2, 2).setValue(u.name);
+            if (u.email) pays.getRange(i + 2, 3).setValue(u.email);
+          }
+        }
+      }
+      applyHeaderStyle(pays, HEADERS.Payments);
+    }
+  } catch(e) { Logger.log('Payments migration error: ' + e.toString()); }
+
+  // 7. Documents Sheet
+  try {
+    let docs = ss.getSheetByName(SHEETS.DOCUMENTS);
+    if (!docs) {
+      docs = ss.insertSheet(SHEETS.DOCUMENTS);
+      applyHeaderStyle(docs, HEADERS.Documents);
+    } else {
+      const currentH = docs.getRange(1, 1, 1, Math.max(1, docs.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating Documents sheet columns...');
+        docs.insertColumnsAfter(1, 2);
+        const last = docs.getLastRow();
+        if (last >= 2) {
+          const rows = docs.getRange(2, 1, last - 1, docs.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const cid = String(rows[i][5] || '').trim();
+            const u = userMap[cid] || {};
+            if (u.name) docs.getRange(i + 2, 2).setValue(u.name);
+            if (u.email) docs.getRange(i + 2, 3).setValue(u.email);
+          }
+        }
+      }
+      applyHeaderStyle(docs, HEADERS.Documents);
+    }
+  } catch(e) { Logger.log('Documents migration error: ' + e.toString()); }
+
+  // 8. Files Sheet
+  try {
+    let files = ss.getSheetByName(SHEETS.FILES);
+    if (!files) {
+      files = ss.insertSheet(SHEETS.FILES);
+      applyHeaderStyle(files, HEADERS.Files);
+    } else {
+      const currentH = files.getRange(1, 1, 1, Math.max(1, files.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        files.insertColumnsAfter(1, 2);
+      }
+      applyHeaderStyle(files, HEADERS.Files);
+    }
+  } catch(e) { Logger.log('Files migration error: ' + e.toString()); }
+
+  // 9. BrandInfo Sheet
+  try {
+    let brands = ss.getSheetByName(SHEETS.BRAND_INFO || 'BrandInfo');
+    if (!brands) {
+      brands = ss.insertSheet(SHEETS.BRAND_INFO || 'BrandInfo');
+      applyHeaderStyle(brands, HEADERS.BrandInfo);
+    } else {
+      const currentH = brands.getRange(1, 1, 1, Math.max(1, brands.getLastColumn())).getValues()[0];
+      if (String(currentH[1] || '').trim() !== 'Client Name') {
+        Logger.log('Migrating BrandInfo sheet columns...');
+        brands.insertColumnsAfter(1, 2);
+        const last = brands.getLastRow();
+        if (last >= 2) {
+          const rows = brands.getRange(2, 1, last - 1, brands.getLastColumn()).getValues();
+          for (let i = 0; i < rows.length; i++) {
+            const uid = String(rows[i][3] || '').trim();
+            const u = userMap[uid] || {};
+            if (u.name) brands.getRange(i + 2, 2).setValue(u.name);
+            if (u.email) brands.getRange(i + 2, 3).setValue(u.email);
+          }
+        }
+      }
+      applyHeaderStyle(brands, HEADERS.BrandInfo);
+    }
+  } catch(e) { Logger.log('BrandInfo migration error: ' + e.toString()); }
+
+  // 10. Enquiries Sheet
+  try {
+    repairEnquiriesHeaders();
+  } catch(e) { Logger.log('Enquiries migration error: ' + e.toString()); }
+
+  // Run repairAllHeaders to ensure all sheets are aligned
+  repairAllHeaders();
+
+  Logger.log('Migration to standard schema complete.');
+  return 'SUCCESS: All sheets successfully verified and migrated to standard format (Client Name col 2, Client Email col 3).';
 }
