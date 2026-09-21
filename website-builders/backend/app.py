@@ -1008,6 +1008,36 @@ def api_sign_document(doc_id):
         )
     return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
 
+# Fallback: accept doc_id in body instead of URL param
+@app.route('/api/documents/sign', methods=['POST'])
+@login_required
+def api_sign_document_fallback():
+    data = request.get_json(silent=True) or {}
+    doc_id = data.get('document_id', '')
+    if not doc_id:
+        return jsonify({'success': False, 'error': 'Missing document_id'}), 400
+    result = call_gas('signDocument', data)
+    ok = result.get('status') == 'success'
+    if ok:
+        dispatch_omni_notification(
+            user_email="websitebuildeers@gmail.com",
+            user_id="ADMIN",
+            title=f"Document {doc_id} Signed",
+            message=f"Document {doc_id} was successfully signed."
+        )
+    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+
+@app.route('/api/documents/request-signature', methods=['POST'])
+@login_required
+def api_request_signature_fallback():
+    data = request.get_json(silent=True) or {}
+    doc_id = data.get('document_id', '')
+    if not doc_id:
+        return jsonify({'success': False, 'error': 'Missing document_id'}), 400
+    result = call_gas('requestDocumentSignature', {'document_id': doc_id})
+    ok = result.get('status') == 'success'
+    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+
 @app.route('/api/tickets', methods=['GET'])
 @login_required
 def api_get_tickets():
