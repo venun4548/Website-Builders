@@ -214,108 +214,6 @@ function seedSuperAdmin(){
   }finally{lock.releaseLock();}
 }
 
-function clearAllDataAndResetHeaders() {
-  const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  Logger.log('Starting complete data wipe and header reset across all sheets...');
-  
-  const allSheetNames = Object.keys(HEADERS);
-  let clearedCount = 0;
-  
-  allSheetNames.forEach(name => {
-    let sheet = ss.getSheetByName(name);
-    if (!sheet) {
-      sheet = ss.insertSheet(name);
-    }
-    
-    // Clear all existing data rows (from row 2 downwards)
-    const lastRow = sheet.getLastRow();
-    if (lastRow >= 2) {
-      sheet.deleteRows(2, lastRow - 1);
-    }
-    
-    // Reset Row 1 headers to standardized schema
-    const headerCols = HEADERS[name];
-    sheet.getRange(1, 1, 1, headerCols.length).setValues([headerCols])
-      .setBackground('#0f172a')
-      .setFontColor('#ffffff')
-      .setFontWeight('bold');
-    sheet.setFrozenRows(1);
-    clearedCount++;
-  });
-
-  // Re-seed essential accounts so authentication immediately works
-  seedInitialUsers();
-
-  Logger.log('Successfully cleared all data and reset headers across ' + clearedCount + ' sheets.');
-  return {
-    success: true,
-    message: 'All sheets cleared and standardized headers reset successfully.',
-    cleared_sheets: clearedCount,
-    super_admin: CONFIG.SUPER_ADMIN_EMAIL
-  };
-}
-
-function seedInitialUsers() {
-  const sheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
-  const now = getNow();
-  
-  const initialUsers = [
-    {
-      id: 'USR-2026-000001',
-      name: 'Super Administrator',
-      email: CONFIG.SUPER_ADMIN_EMAIL,
-      mobile: '+91 7386204885',
-      pass: CONFIG.SUPER_ADMIN_PASS,
-      role: 'Super Admin'
-    },
-    {
-      id: 'USR-2026-000002',
-      name: 'Operations Admin',
-      email: 'admin@websitebuilders.com',
-      mobile: '+91 7386204885',
-      pass: 'Admin@1234',
-      role: 'Admin'
-    },
-    {
-      id: 'USR-2026-000003',
-      name: 'Senior Developer Staff',
-      email: 'staff@websitebuilders.com',
-      mobile: '+91 9876543210',
-      pass: 'Staff@1234',
-      role: 'Staff'
-    },
-    {
-      id: 'USR-2026-000004',
-      name: 'Acme Client User',
-      email: 'user@websitebuilders.com',
-      mobile: '+91 9123456789',
-      pass: 'User@1234',
-      role: 'User'
-    }
-  ];
-
-  initialUsers.forEach(u => {
-    if (findRowByValue(sheet, U.EMAIL, u.email.toLowerCase()) < 0) {
-      sheet.appendRow([
-        u.id,
-        u.name,
-        u.email.toLowerCase(),
-        u.mobile,
-        hashPassword(u.pass),
-        u.role,
-        'ACTIVE',
-        now.date,
-        now.time,
-        '', '', '', '',
-        now.date,
-        now.time,
-        ''
-      ]);
-      Logger.log('Seeded account: ' + u.email + ' (' + u.role + ')');
-    }
-  });
-}
-
 // ─────────────── HTTP HANDLERS ────────────────────────────────
 function doPost(e){
   if(!e) return jr('error','Invalid request.');
@@ -362,7 +260,6 @@ function doPost(e){
       if(action==='logActivity')      return logActivity(data);
       if(action==='logPayment')       return logPayment(data);
       if(action==='createInvoice')    return createInvoice(data);
-      if(action==='clearAllData' || action==='resetDatabase') return jr('success', clearAllDataAndResetHeaders());
       if(action==='sync_user')        return syncLegacyUser(data);
       if(action==='sync_project')     return syncProject(data);
       if(action==='sync_task')        return syncTask(data);
@@ -462,7 +359,6 @@ function doGet(e){
     if(action==='getBrandInfo')         return getBrandInfo(p);
     if(action==='getFiles')             return getFiles(p);
     if(action==='migrateAllSheets')     return jr('success', migrateAllSheetsToStandardFormat());
-    if(action==='clearAllData' || action==='resetDatabase') return jr('success', clearAllDataAndResetHeaders());
     if(action==='getTeams')             return getTeams(p);
     if(action==='getTeamById')          return getTeamById(p);
     if(action==='getTeamMembers')       return getTeamMembers(p);

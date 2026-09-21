@@ -1061,22 +1061,6 @@ def api_reset_password(user_id):
     
     return jsonify({'success': False, 'error': result.get('message')}), 400
 
-@app.route('/api/admin/clear-sheets', methods=['POST'])
-@login_required
-def api_clear_sheets():
-    """Clear all data rows across all sheets and reset headers with seed users (Super Admin only)."""
-    if current_user.role != 'Super Admin':
-        return jsonify({'success': False, 'error': 'Only Super Admin can reset or clear sheets.'}), 403
-    
-    result = call_gas('clearAllData', timeout=30)
-    _gas_cache.clear()
-    ok = result.get('status') == 'success'
-    return jsonify({
-        'success': ok,
-        'message': result.get('message', 'Sheets cleared successfully' if ok else 'Failed to clear sheets'),
-        'data': result.get('data')
-    }), (200 if ok else 400)
-
 # ─── API: Stats ───────────────────────────────────────────────
 @app.route('/api/stats')
 @app.route('/api/stats/admin')

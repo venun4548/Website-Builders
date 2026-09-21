@@ -1,9 +1,8 @@
 """
-Sync and Database Reset Utility for Google Sheets CRM
-Allows Super Admins and developers to:
-1. Clear all sheets and restore standardized headers (--clear)
-2. Seed initial baseline demo data (--seed)
-3. Sync test records adhering to standardized headers (Col 1: ID, Col 2: Name, Col 3: Email)
+Sync Utility for Google Sheets CRM
+Allows developers to:
+1. Seed initial baseline demo data (--seed)
+2. Sync test records adhering to standardized headers (Col 1: ID, Col 2: Name, Col 3: Email)
 """
 
 import sys
@@ -15,23 +14,10 @@ import logging
 # Ensure backend root is on Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app import call_gas, sync_to_google_sheets
+from app import sync_to_google_sheets
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("sheet_sync")
-
-
-def clear_all_sheets():
-    """Trigger GAS clearAllData to wipe all data rows, re-format headers, and seed baseline accounts."""
-    logger.info("Requesting full Google Sheets wipe and header reset...")
-    res = call_gas('clearAllData', timeout=40)
-    if res.get('status') == 'success':
-        logger.info("Successfully cleared sheets and reset headers: %s", res.get('message'))
-        logger.info("Details: %s", res.get('data'))
-        return True
-    else:
-        logger.error("Failed to clear sheets: %s", res.get('message'))
-        return False
 
 
 def seed_standard_data():
@@ -168,18 +154,12 @@ def seed_standard_data():
 
 def main():
     parser = argparse.ArgumentParser(description="Google Sheets CRM Sync & Management Tool")
-    parser.add_argument('--clear', action='store_true', help="Clear all sheets, reset headers, and reseed baseline users")
     parser.add_argument('--seed', action='store_true', help="Seed standard demo projects, tasks, meetings, and invoices")
     args = parser.parse_args()
 
-    if not args.clear and not args.seed:
+    if not args.seed:
         parser.print_help()
         sys.exit(0)
-
-    if args.clear:
-        ok = clear_all_sheets()
-        if not ok:
-            sys.exit(1)
 
     if args.seed:
         ok = seed_standard_data()
