@@ -29,7 +29,7 @@ const SHEETS = {
   TICKET_MESSAGES:'TicketMessages', BRAND_INFO:'BrandInfo',
   STAGE_HISTORY:'StageHistory', LEADS:'Leads', LEAD_NOTES:'LeadNotes',
   PORTFOLIO:'Portfolio', PRICING:'Pricing', NOTIFICATIONS:'Notifications',
-  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings'
+  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings', DOCUMENTS:'Documents'
 };
 
 // Column indexes (1-based)
@@ -76,7 +76,8 @@ const HEADERS={
   Notifications:['Notification ID','User ID','Title','Message','Link','Is Read','Created At'],
   PasswordResets:['Reset ID','User ID','Token','Expires At','Used','Created At'],
   EmailVerifications:['Verification ID','User ID','Token','Expires At','Verified','Created At'],
-  Meetings:['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At']
+  Meetings:['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At'],
+  Documents:['Document ID','Project ID','Client ID','Title','File URL','Status','OTP','OTP Expires At','Signed At','Created At']
 };
 
 function initialSetup(){
