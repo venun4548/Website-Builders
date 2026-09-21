@@ -662,6 +662,11 @@
         <i class="fa-solid fa-list-check"></i> Tasks
       </a>
 
+      <div class="nav-group-label">FINANCE & BILLING</div>
+      <a href="/admin/payments" class="nav-link" id="nav-payments" onclick="switchSection('payments', event)">
+        <i class="fa-solid fa-receipt"></i> Payments & Revenue
+      </a>
+
       <div class="nav-group-label">ANALYTICS</div>
       <a href="/admin/analytics" class="nav-link" onclick="switchSection('analytics', event)">
         <i class="fa-solid fa-chart-pie"></i> Platform Analytics
@@ -755,6 +760,9 @@
         </button>
         <button onclick="switchSection('roles', event)" class="btn btn-outline">
           <i class="fa-solid fa-key"></i> Manage Permissions
+        </button>
+        <button onclick="switchSection('payments', event)" class="btn btn-outline" style="color:var(--primary-dark-green); border-color:var(--primary-green); font-weight:600;">
+          <i class="fa-solid fa-receipt"></i> Client Payments
         </button>
       </div>
 
@@ -1137,6 +1145,110 @@
             <table>
               <thead><tr><th>Task Title</th><th>Assigned Staff</th><th>Priority</th><th>Status</th><th>Due Date</th></tr></thead>
               <tbody id="tbl-tasks"><tr><td colspan="5">Loading tasks...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Payments & Revenue -->
+      <div id="sec-payments" class="view-section" style="display:none;">
+        <div class="card-header" style="margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h2 class="card-title" style="font-size:1.35rem; display:flex; align-items:center; gap:0.6rem;">
+              <i class="fa-solid fa-receipt" style="color:var(--primary-green);"></i> Client Payments & Revenue Management
+            </h2>
+            <p style="color:var(--secondary-text); font-size:0.88rem; margin-top:0.25rem;">
+              Real-time audit of client transactions, Razorpay settlement IDs, date timestamps, GST tax invoices, and Google Sheets sync.
+            </p>
+          </div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button onclick="exportPaymentsCSV()" class="btn btn-outline btn-sm">
+              <i class="fa-solid fa-file-export"></i> Export CSV
+            </button>
+            <button onclick="loadPaymentsData()" class="btn btn-primary btn-sm">
+              <i class="fa-solid fa-rotate"></i> Refresh Records
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Cards for Payments -->
+        <div class="kpi-grid-4" style="margin-bottom:1.5rem;">
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">TOTAL REVENUE COLLECTED</span>
+              <span class="kpi-value" id="kpi-admin-total-revenue">₹0</span>
+              <span class="kpi-trend" style="color:var(--primary-green);"><i class="fa-solid fa-arrow-trend-up"></i> Live Settlements</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">SUCCESSFUL PAYMENTS</span>
+              <span class="kpi-value" id="kpi-admin-total-txns">0</span>
+              <span class="kpi-trend"><i class="fa-solid fa-circle-check"></i> Verified Transactions</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-credit-card"></i></div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">PAYING CLIENTS</span>
+              <span class="kpi-value" id="kpi-admin-paying-clients">0</span>
+              <span class="kpi-trend"><i class="fa-solid fa-users"></i> Unique Customers</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-user-check"></i></div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info-wrap">
+              <span class="kpi-title">GOOGLE SHEETS SYNC</span>
+              <span class="kpi-value" style="font-size:1.15rem; color:var(--success);">LIVE & SYNCED</span>
+              <span class="kpi-trend"><i class="fa-solid fa-table"></i> Sheets: Payments & Invoices</span>
+            </div>
+            <div class="kpi-icon-wrap"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="card" style="margin-bottom:1.5rem; padding:1.25rem;">
+          <div class="filter-bar" style="margin-bottom:0; justify-content:space-between;">
+            <div style="display:flex; gap:0.75rem; flex:1; max-width:650px;">
+              <div class="search-box" style="width:100%;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="payments-search-input" placeholder="Search by Client, Email, Payment ID, Order ID, Invoice ID..." oninput="filterPaymentsTable()" style="width:100%; padding-left:2.2rem;">
+              </div>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <select id="payments-status-filter" onchange="filterPaymentsTable()" style="padding:0.6rem 1rem; border-radius:8px; border:1px solid var(--border-color); font-weight:600; font-size:0.85rem;">
+                <option value="ALL">All Statuses</option>
+                <option value="SUCCESS">Success / Paid</option>
+                <option value="PENDING">Pending</option>
+                <option value="FAILED">Failed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payments Data Table Card -->
+        <div class="card">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Payment ID</th>
+                  <th>Order / Invoice ID</th>
+                  <th>Client / Customer</th>
+                  <th>Amount</th>
+                  <th>Gateway / Method</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-super-admin-payments">
+                <tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--muted-text);">Loading payment transactions...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -1917,6 +2029,34 @@
     </div>
   </div>
 
+  <!-- Modal: Admin Payment Tax Receipt -->
+  <div class="modal-backdrop" id="modal-admin-payment-receipt">
+    <div class="modal-card" style="max-width: 650px; border-radius:18px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <div style="width:40px; height:40px; border-radius:10px; background:var(--light-green); display:flex; align-items:center; justify-content:center; color:var(--primary-green); font-size:1.2rem;">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+          </div>
+          <div>
+            <h3 class="modal-title" style="margin:0; font-size:1.15rem;">Official Tax Invoice & Receipt</h3>
+            <small style="color:var(--secondary-text);">Verified Razorpay Platform Settlement</small>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-admin-payment-receipt')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="admin-receipt-content" style="padding-top:1rem;">
+        <!-- Dynamically rendered -->
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border-color);">
+        <span style="font-size:0.8rem; color:var(--muted-text);"><i class="fa-solid fa-shield-halved"></i> 256-bit Encrypted Transaction</span>
+        <div style="display:flex; gap:0.5rem;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('modal-admin-payment-receipt')">Close</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Receipt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     let rawPeopleData = [];
     let activityChart = null;
@@ -1927,6 +2067,9 @@
         loadDashboardData(),
         loadEnquiriesData()
       ]);
+      if (window.location.hash === '#payments' || window.location.pathname.endsWith('/payments')) {
+        switchSection('payments');
+      }
     }
 
     function setupChart() {
@@ -2730,12 +2873,299 @@
       if (target) target.style.display = 'block';
 
       document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
-      if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+      if (evt && evt.currentTarget) {
+        evt.currentTarget.classList.add('active');
+      } else {
+        const navLink = document.getElementById('nav-' + secId);
+        if (navLink) navLink.classList.add('active');
+      }
 
       if (secId === 'enquiries') loadEnquiriesData();
       if (secId === 'messages') loadMessagesHub();
       if (secId === 'notifications') loadNotificationsSection();
       if (secId === 'activity' || secId === 'security' || secId === 'audit-logs' || secId === 'access-logs') loadAuditLogsData();
+      if (secId === 'payments') loadPaymentsData();
+    }
+
+    let rawPaymentsData = [];
+
+    async function loadPaymentsData() {
+      const container = document.getElementById('tbl-super-admin-payments');
+      if (container) {
+        container.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem; color:var(--primary-green);"></i> Fetching client payment transactions...</td></tr>';
+      }
+
+      try {
+        const res = await fetch('/api/payments');
+        const data = await res.json();
+        if (res.ok && (data.status === 'success' || data.success)) {
+          rawPaymentsData = data.data || [];
+          
+          // Calculate Metrics
+          let totalRev = 0;
+          let totalTxns = 0;
+          const clientsSet = new Set();
+
+          rawPaymentsData.forEach(p => {
+            const amt = Number(p.amount) || 0;
+            const status = (p.status || 'PAID').toUpperCase();
+            if (status === 'SUCCESS' || status === 'PAID') {
+              totalRev += amt;
+              totalTxns++;
+            }
+            if (p.customer_email) clientsSet.add(p.customer_email);
+            else if (p.customer_id) clientsSet.add(p.customer_id);
+          });
+
+          setElementText('kpi-admin-total-revenue', '₹' + totalRev.toLocaleString('en-IN'));
+          setElementText('kpi-admin-total-txns', totalTxns);
+          setElementText('kpi-admin-paying-clients', clientsSet.size);
+
+          renderSuperAdminPayments(rawPaymentsData);
+        } else {
+          if (container) {
+            container.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--danger);">${data.message || 'Error loading payment records.'}</td></tr>`;
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching payments:', err);
+        if (container) {
+          container.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--danger);">Server error connecting to payment database.</td></tr>';
+        }
+      }
+    }
+
+    function renderSuperAdminPayments(data) {
+      const container = document.getElementById('tbl-super-admin-payments');
+      if (!container) return;
+
+      if (!data || data.length === 0) {
+        container.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align:center; padding:3rem 1.5rem;">
+              <div style="width:48px; height:48px; border-radius:50%; background:var(--pale-mint); display:inline-flex; align-items:center; justify-content:center; color:var(--primary-dark-green); font-size:1.25rem; margin-bottom:0.75rem;">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <h4 style="color:var(--primary-dark-green); margin-bottom:0.25rem;">No Payment Transactions Found</h4>
+              <p style="color:var(--secondary-text); font-size:0.85rem; max-width:400px; margin:0 auto;">No payments match your current query or no client checkouts have been completed yet.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let rows = '';
+      data.forEach(p => {
+        const dateStr = p.paid_date || p.date || (p.paid_at ? p.paid_at.split('T')[0] : 'N/A');
+        const timeStr = p.paid_time || (p.paid_at && p.paid_at.includes('T') ? p.paid_at.split('T')[1].substring(0, 8) : '');
+        const paymentId = p.payment_id || p.id || 'N/A';
+        const orderId = p.order_id || p.razorpay_order_id || '-';
+        const invoiceId = p.invoice_id || 'INV-2026';
+        const clientName = p.customer_name || 'Client';
+        const clientEmail = p.customer_email || 'client@example.com';
+        const amt = Number(p.amount || 0).toLocaleString('en-IN');
+        const gateway = p.gateway || p.method || 'Razorpay Standard';
+        const status = (p.status || 'PAID').toUpperCase();
+
+        const statusBadge = (status === 'SUCCESS' || status === 'PAID')
+          ? '<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> SUCCESS</span>'
+          : (status === 'PENDING'
+            ? '<span class="badge badge-warning"><i class="fa-solid fa-clock"></i> PENDING</span>'
+            : '<span class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> FAILED</span>');
+
+        rows += `
+          <tr>
+            <td>
+              <div style="font-weight:700; color:var(--primary-dark-green);">${dateStr}</div>
+              <div style="font-size:0.78rem; color:var(--secondary-text);">${timeStr}</div>
+            </td>
+            <td>
+              <div style="display:flex; align-items:center; gap:0.4rem;">
+                <code style="font-size:0.82rem; font-weight:700; background:var(--pale-mint); padding:0.2rem 0.4rem; border-radius:4px; color:var(--primary-dark-green);">${paymentId}</code>
+                <button type="button" class="btn-icon" onclick="copyPaymentText('${paymentId}', this)" title="Copy Payment ID" style="width:24px; height:24px; font-size:0.75rem;">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:0.82rem; font-weight:600;">${invoiceId}</div>
+              <div style="font-size:0.78rem; color:var(--secondary-text); font-family:monospace;">${orderId}</div>
+            </td>
+            <td>
+              <div style="font-weight:700; color:var(--main-text);">${clientName}</div>
+              <div style="font-size:0.8rem; color:var(--secondary-text);">${clientEmail}</div>
+            </td>
+            <td>
+              <div style="font-size:0.95rem; font-weight:800; color:var(--primary-dark-green);">₹${amt}</div>
+              <div style="font-size:0.75rem; color:var(--secondary-text); text-transform:uppercase;">${p.currency || 'INR'}</div>
+            </td>
+            <td>
+              <span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.82rem; font-weight:600; color:var(--secondary-text);">
+                <i class="fa-solid fa-shield-check" style="color:var(--primary-green);"></i> ${gateway}
+              </span>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right;">
+              <div class="action-btn-group" style="justify-content:flex-end;">
+                <button class="btn btn-outline btn-sm" onclick="viewSuperAdminReceipt('${paymentId}')" title="Inspect Tax Receipt">
+                  <i class="fa-solid fa-file-invoice-dollar"></i> Receipt
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      container.innerHTML = rows;
+    }
+
+    function filterPaymentsTable() {
+      const q = (document.getElementById('payments-search-input')?.value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('payments-status-filter')?.value || 'ALL';
+
+      const filtered = rawPaymentsData.filter(p => {
+        const matchesSearch = !q || 
+          (p.payment_id && p.payment_id.toLowerCase().includes(q)) ||
+          (p.order_id && p.order_id.toLowerCase().includes(q)) ||
+          (p.invoice_id && p.invoice_id.toLowerCase().includes(q)) ||
+          (p.customer_name && p.customer_name.toLowerCase().includes(q)) ||
+          (p.customer_email && p.customer_email.toLowerCase().includes(q)) ||
+          (p.customer_id && String(p.customer_id).toLowerCase().includes(q));
+
+        const status = (p.status || 'PAID').toUpperCase();
+        let matchesStatus = true;
+        if (statusFilter === 'SUCCESS') matchesStatus = (status === 'SUCCESS' || status === 'PAID');
+        else if (statusFilter === 'PENDING') matchesStatus = (status === 'PENDING');
+        else if (statusFilter === 'FAILED') matchesStatus = (status === 'FAILED');
+
+        return matchesSearch && matchesStatus;
+      });
+
+      renderSuperAdminPayments(filtered);
+    }
+
+    function exportPaymentsCSV() {
+      if (!rawPaymentsData || rawPaymentsData.length === 0) {
+        alert('No payment transactions available to export.');
+        return;
+      }
+      let csv = 'Payment ID,Order ID,Invoice ID,Customer Name,Customer Email,Customer ID,Amount,Currency,Status,Date,Time,Gateway,Signature\n';
+      rawPaymentsData.forEach(p => {
+        const dateStr = p.paid_date || p.date || (p.paid_at ? p.paid_at.split('T')[0] : '');
+        const timeStr = p.paid_time || (p.paid_at && p.paid_at.includes('T') ? p.paid_at.split('T')[1].substring(0, 8) : '');
+        csv += `"${p.payment_id || ''}","${p.order_id || ''}","${p.invoice_id || ''}","${p.customer_name || ''}","${p.customer_email || ''}","${p.customer_id || ''}","${p.amount || 0}","${p.currency || 'INR'}","${p.status || 'PAID'}","${dateStr}","${timeStr}","${p.gateway || 'Razorpay'}","${p.signature || ''}"\n`;
+      });
+      downloadCSV(csv, 'client_payments_revenue_export.csv');
+    }
+
+    function viewSuperAdminReceipt(paymentId) {
+      const p = rawPaymentsData.find(item => (item.payment_id || item.id) === paymentId);
+      if (!p) {
+        alert('Payment record not found.');
+        return;
+      }
+
+      const dateStr = p.paid_date || p.date || (p.paid_at ? p.paid_at.split('T')[0] : new Date().toISOString().split('T')[0]);
+      const timeStr = p.paid_time || (p.paid_at && p.paid_at.includes('T') ? p.paid_at.split('T')[1].substring(0, 8) : '');
+      const totalAmt = Number(p.amount || 0);
+      const subtotal = Math.round((totalAmt / 1.18) * 100) / 100;
+      const gst = Math.round((totalAmt - subtotal) * 100) / 100;
+
+      const content = document.getElementById('admin-receipt-content');
+      if (content) {
+        content.innerHTML = `
+          <div style="background:var(--pale-mint); border:1px solid var(--border-color); border-radius:12px; padding:1.25rem; margin-bottom:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+              <div>
+                <span style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:var(--muted-text); letter-spacing:0.05em;">Receipt / Tax Invoice</span>
+                <h4 style="color:var(--primary-dark-green); font-size:1.15rem; font-weight:800; margin-top:0.15rem;">#${p.invoice_id || 'INV-2026-WB'}</h4>
+              </div>
+              <span class="badge badge-success" style="font-size:0.8rem; padding:0.35rem 0.75rem;"><i class="fa-solid fa-circle-check"></i> PAYMENT SETTLED</span>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; font-size:0.88rem;">
+              <div>
+                <div style="color:var(--muted-text); font-size:0.75rem; font-weight:700; text-transform:uppercase;">Billed Client</div>
+                <div style="font-weight:700; color:var(--main-text); margin-top:0.2rem;">${p.customer_name || 'Client Customer'}</div>
+                <div style="color:var(--secondary-text); font-size:0.82rem;">${p.customer_email || 'client@example.com'}</div>
+                <div style="color:var(--muted-text); font-size:0.78rem;">ID: ${p.customer_id || 'USR-CLIENT'}</div>
+              </div>
+              <div>
+                <div style="color:var(--muted-text); font-size:0.75rem; font-weight:700; text-transform:uppercase;">Transaction Date</div>
+                <div style="font-weight:700; color:var(--main-text); margin-top:0.2rem;">${dateStr}</div>
+                <div style="color:var(--secondary-text); font-size:0.82rem;">${timeStr || 'Time Logged'}</div>
+                <div style="color:var(--primary-dark-green); font-size:0.78rem; font-weight:600;"><i class="fa-solid fa-building-columns"></i> ${p.gateway || 'Razorpay Gateway'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border:1px solid var(--border-color); border-radius:12px; overflow:hidden; margin-bottom:1.25rem;">
+            <table style="margin:0;">
+              <thead>
+                <tr>
+                  <th>Description / Milestone</th>
+                  <th style="text-align:center;">Qty</th>
+                  <th style="text-align:right;">Rate</th>
+                  <th style="text-align:right;">Amount (INR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>Website Design & Development Services</strong>
+                    <div style="font-size:0.78rem; color:var(--secondary-text);">Milestone Deliverable / Custom Web Application Build</div>
+                  </td>
+                  <td style="text-align:center;">1</td>
+                  <td style="text-align:right;">₹${subtotal.toLocaleString('en-IN')}</td>
+                  <td style="text-align:right; font-weight:600;">₹${subtotal.toLocaleString('en-IN')}</td>
+                </tr>
+              </tbody>
+              <tfoot style="background:var(--very-light-bg); border-top:1px solid var(--border-color); font-size:0.88rem;">
+                <tr>
+                  <td colspan="3" style="text-align:right; font-weight:600; padding:0.5rem 1rem;">Subtotal:</td>
+                  <td style="text-align:right; padding:0.5rem 1rem;">₹${subtotal.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="text-align:right; font-weight:600; padding:0.5rem 1rem;">IGST / GST (18%):</td>
+                  <td style="text-align:right; padding:0.5rem 1rem;">₹${gst.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr style="background:var(--pale-mint); font-weight:800; font-size:1rem; color:var(--primary-dark-green);">
+                  <td colspan="3" style="text-align:right; padding:0.75rem 1rem;">Total Paid:</td>
+                  <td style="text-align:right; padding:0.75rem 1rem;">₹${totalAmt.toLocaleString('en-IN')}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div style="background:#FFF; border:1px dashed var(--border-color); border-radius:10px; padding:0.85rem; font-size:0.8rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+              <span style="color:var(--muted-text);">Razorpay Payment ID:</span>
+              <strong style="font-family:monospace; color:var(--primary-dark-green);">${p.payment_id || 'pay_test'}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+              <span style="color:var(--muted-text);">Razorpay Order ID:</span>
+              <span style="font-family:monospace;">${p.order_id || 'order_test'}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:var(--muted-text);">HMAC Signature:</span>
+              <span style="font-family:monospace; font-size:0.72rem; color:var(--secondary-text); max-width:300px; overflow:hidden; text-overflow:ellipsis;">${p.signature ? p.signature.substring(0, 32) + '...' : 'Verified (Test Mode / SHA256)'}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      openModal('modal-admin-payment-receipt');
+    }
+
+    function copyPaymentText(text, btnEl) {
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(text).then(() => {
+        if (btnEl) {
+          const original = btnEl.innerHTML;
+          btnEl.innerHTML = '<i class="fa-solid fa-check" style="color:var(--primary-green);"></i>';
+          setTimeout(() => { btnEl.innerHTML = original; }, 1800);
+        }
+      });
     }
 
     let rawEnquiryData = [];

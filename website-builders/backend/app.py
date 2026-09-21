@@ -561,6 +561,14 @@ def admin_notifications_redirect():
         return redirect(url_for('super_admin_dashboard') + '#notifications')
     return redirect(url_for('admin_dashboard') + '#notifications')
 
+@app.route('/admin/payments')
+@app.route('/super-admin/payments')
+@login_required
+def admin_payments_redirect():
+    if current_user.role == 'Super Admin':
+        return redirect(url_for('super_admin_dashboard') + '#payments')
+    return redirect(url_for('admin_dashboard') + '#payments')
+
 @app.route('/staff/notifications')
 @login_required
 def staff_notifications_redirect():
