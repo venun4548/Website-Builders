@@ -3059,7 +3059,7 @@
     }
 
     function viewSuperAdminReceipt(paymentId) {
-      const p = rawPaymentsData.find(item => (item.payment_id || item.id) === paymentId);
+      const p = rawPaymentsData.find(item => String(item.payment_id || item.id) === String(paymentId));
       if (!p) {
         alert('Payment record not found.');
         return;

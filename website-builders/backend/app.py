@@ -1035,6 +1035,20 @@ def api_get_payments():
         })
         if res.get('status') == 'success' and res.get('data'):
             gas_payments = res.get('data')
+            
+            # Map customer_id to user details
+            try:
+                users_res = gas_get('getUsers', {})
+                if users_res.get('status') == 'success':
+                    users_map = {str(u['id']): u for u in users_res.get('data', [])}
+                    for gp in gas_payments:
+                        if 'customer_id' in gp and gp['customer_id'] in users_map:
+                            u = users_map[gp['customer_id']]
+                            gp['customer_name'] = u.get('name', '')
+                            gp['customer_email'] = u.get('email', '')
+            except Exception as e:
+                logger.warning("Error fetching users for payment mapping: %s", e)
+                
     except Exception as e:
         logger.warning("GAS getPayments error: %s", e)
 
