@@ -179,6 +179,12 @@
       <a href="/staff/messages" class="nav-link" onclick="switchSection('messages', event)">
         <i class="fa-solid fa-envelope"></i> Messages
       </a>
+      <a href="/staff/meetings" class="nav-link" onclick="switchSection('meetings', event)">
+        <i class="fa-solid fa-video"></i> Meetings
+      </a>
+      <a href="/staff/tickets" class="nav-link" onclick="switchSection('tickets', event)">
+        <i class="fa-solid fa-headset"></i> Support Tickets
+      </a>
       <a href="/staff/notifications" class="nav-link" onclick="switchSection('notifications', event)">
         <i class="fa-solid fa-bell"></i> Notifications
       </a>
@@ -502,6 +508,54 @@
         </div>
         
       </div>
+      <!-- Section: Meetings -->
+      <div id="sec-meetings" class="view-section" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+          <h1 class="page-title" style="margin:0;">Meetings</h1>
+        </div>
+        <div class="card" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Meeting ID</th>
+                <th>Title</th>
+                <th>Project ID</th>
+                <th>Date / Time</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-meetings-body">
+              <tr><td colspan="6" style="text-align:center;">Loading meetings...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Support Tickets -->
+      <div id="sec-tickets" class="view-section" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+          <h1 class="page-title" style="margin:0;">Support Tickets</h1>
+        </div>
+        <div class="card" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Subject</th>
+                <th>Customer</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-tickets-body">
+              <tr><td colspan="6" style="text-align:center;">Loading tickets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Section: Notifications -->
       <div id="sec-notifications" class="view-section" style="display:none;">
         <div class="card">
@@ -682,6 +736,60 @@
 
       if (secId === 'messages') loadStaffMessagesHub();
       if (secId === 'notifications') loadStaffNotifications();
+      if (secId === 'meetings') loadStaffMeetings();
+      if (secId === 'tickets') loadStaffTickets();
+    }
+    
+    async function loadStaffMeetings() {
+      const tb = document.getElementById('tbl-meetings-body');
+      if(!tb) return;
+      try {
+        const res = await fetch('/api/meetings');
+        const data = await res.json();
+        if(res.ok && data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tb.innerHTML = '<tr><td colspan="6" style="text-align:center;">No meetings scheduled.</td></tr>';
+            return;
+          }
+          tb.innerHTML = list.map(m => `
+            <tr>
+              <td><strong>${m.meeting_id}</strong></td>
+              <td>${m.title}</td>
+              <td>${m.project_id}</td>
+              <td>${m.date} at ${m.time}</td>
+              <td><span class="badge ${m.status === 'SCHEDULED' ? 'badge-success' : 'badge-warning'}">${m.status}</span></td>
+              <td>${m.meet_link ? `<a href="${m.meet_link}" target="_blank" class="btn btn-outline btn-sm">Join</a>` : '-'}</td>
+            </tr>
+          `).join('');
+        }
+      } catch(err) { console.error(err); }
+    }
+
+    async function loadStaffTickets() {
+      const tb = document.getElementById('tbl-tickets-body');
+      if(!tb) return;
+      try {
+        const res = await fetch('/api/tickets');
+        const data = await res.json();
+        if(res.ok && data.success) {
+          const list = data.data || [];
+          if(list.length === 0) {
+            tb.innerHTML = '<tr><td colspan="6" style="text-align:center;">No tickets available.</td></tr>';
+            return;
+          }
+          tb.innerHTML = list.map(t => `
+            <tr>
+              <td><strong>${t.ticket_id}</strong></td>
+              <td>${t.subject}</td>
+              <td>${t.customer_name || t.customer_id}</td>
+              <td><span class="badge ${t.priority === 'High' ? 'badge-danger' : 'badge-info'}">${t.priority}</span></td>
+              <td><span class="badge ${t.status === 'Open' ? 'badge-warning' : 'badge-success'}">${t.status}</span></td>
+              <td><button class="btn btn-primary btn-sm">Manage</button></td>
+            </tr>
+          `).join('');
+        }
+      } catch(err) { console.error(err); }
     }
 
     let activeStaffChatConvId = null;

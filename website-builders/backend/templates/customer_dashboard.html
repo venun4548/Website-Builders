@@ -286,9 +286,10 @@
       <a href="#" class="nav-link active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> Home</a>
       <a href="#" class="nav-link" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> Projects</a>
       <a href="#" class="nav-link" onclick="switchTab('invoices')" id="tab-invoices"><i class="fa-solid fa-credit-card"></i> Invoices & Payments</a>
-
-      <div class="nav-section">Support</div>
+      <div class="nav-section">COMMUNICATION</div>
       <a href="#" class="nav-link" onclick="switchTab('messages')" id="tab-messages"><i class="fa-solid fa-envelope"></i> Messages</a>
+      <a href="#" class="nav-link" onclick="switchTab('meetings')" id="tab-meetings"><i class="fa-solid fa-video"></i> Meetings</a>
+      <a href="#" class="nav-link" onclick="switchTab('support')" id="tab-support"><i class="fa-solid fa-headset"></i> Support Tickets</a>
       <a href="#" class="nav-link" onclick="switchTab('files')" id="tab-files"><i class="fa-solid fa-file-arrow-up"></i> Files</a>
 
       <div style="margin-top: 2rem;">
@@ -544,14 +545,47 @@
       </div>
 
       <!-- Dedicated Section: Files & Documents -->
+      <div id="section-meetings" style="display: none;">
+        <div class="card" style="margin-bottom: 2rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-size: 1.5rem; color: var(--text-main); margin: 0;">Project Meetings</h2>
+            <button class="btn btn-primary" onclick="scheduleMeeting()"><i class="fa-solid fa-calendar-plus"></i> Request Meeting</button>
+          </div>
+          <p style="color: var(--text-secondary); margin-top: 0.5rem;">Book a consultation or review meeting with your assigned team.</p>
+        </div>
+
+        <div id="meetings-list" style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+          <!-- Meetings populated via JS -->
+          <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-secondary); background: #FFF; border-radius: 12px; border: 1px dashed var(--border);">
+            <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; margin-bottom: 1rem; color: #CBD5E1;"></i>
+            <h3>No Meetings Scheduled</h3>
+            <p>Click "Request Meeting" to propose a time.</p>
+          </div>
+        </div>
+      </div>
+
       <div id="section-files" style="display: none;">
         <h1 class="page-title">Project Files & Documents</h1>
         <div class="card">
-          <div class="card-header">
-            <h2 class="card-title"><i class="fa-solid fa-file-arrow-up"></i> Project Media & Assets</h2>
+          <p>Files associated with your project are now directly embedded inside the "Projects" tab for easier contextual access. Please visit the <a href="#" onclick="switchTab('projects')" style="color:var(--primary); font-weight:bold;">Projects</a> tab to view or link files.</p>
+        </div>
+      </div>
+
+      <div id="section-support" style="display: none;">
+        <div class="card" style="margin-bottom: 2rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-size: 1.5rem; color: var(--text-main); margin: 0;">Support Tickets</h2>
+            <button class="btn btn-primary" onclick="createTicket()"><i class="fa-solid fa-plus"></i> New Ticket</button>
           </div>
-          <div id="client-files-list">
-            <p style="color: var(--text-secondary);">Loading uploaded project documents...</p>
+          <p style="color: var(--text-secondary); margin-top: 0.5rem;">Need help or have a maintenance request? Open a ticket here.</p>
+        </div>
+
+        <div id="tickets-list" style="display: grid; gap: 1rem; grid-template-columns: 1fr;">
+          <!-- Tickets populated via JS -->
+          <div style="text-align: center; padding: 3rem; color: var(--text-secondary); background: #FFF; border-radius: 12px; border: 1px dashed var(--border);">
+            <i class="fa-solid fa-headset" style="font-size: 2.5rem; margin-bottom: 1rem; color: #CBD5E1;"></i>
+            <h3>No Support Tickets</h3>
+            <p>You haven't opened any support tickets yet.</p>
           </div>
         </div>
       </div>
@@ -852,8 +886,12 @@
                 <div style="grid-column:1/-1;"><strong style="color:var(--text-main);">Latest Update:</strong> ${p.latest_update}</div>
               </div>
               
-              <div style="display: flex; gap: 0.75rem;">
-                <button class="btn btn-primary" onclick="switchTab('messages')" style="flex: 1; padding:0.6rem; border-radius:8px;"><i class="fa-solid fa-message"></i> Communicate with Team</button>
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="switchTab('messages')" style="flex: 1; padding:0.6rem; border-radius:8px; min-width: 140px;"><i class="fa-solid fa-message"></i> Messages</button>
+                ${p.status !== 'COMPLETED' ? `
+                <button class="btn btn-warning" onclick="requestRevision('${p.project_id}')" style="flex: 1; padding:0.6rem; border-radius:8px; background: #F59E0B; color: white; border: none; min-width: 140px;"><i class="fa-solid fa-pen"></i> Request Revision</button>
+                <button class="btn btn-success" onclick="approveMilestone('${p.project_id}')" style="flex: 1; padding:0.6rem; border-radius:8px; background: #10B981; color: white; border: none; min-width: 140px;"><i class="fa-solid fa-check"></i> Approve Milestone</button>
+                ` : ''}
               </div>
             </div>
           `;
@@ -915,16 +953,26 @@
             </tr>
           `;
 
-          fileItems += `
+          const filesHtml = p.files && p.files.length > 0 ? p.files.map(f => `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.75rem; background:#FFF;">
               <div style="display:flex; align-items:center; gap:0.75rem;">
-                <i class="fa-solid fa-file-pdf" style="font-size:1.5rem; color:#EF4444;"></i>
+                <i class="fa-solid fa-link" style="font-size:1.5rem; color:#3B82F6;"></i>
                 <div>
-                  <div style="font-weight:700; font-size:0.9rem; color:var(--text-main);">${p.name} - Project Blueprint & Scope.pdf</div>
-                  <div style="font-size:0.78rem; color:var(--text-secondary);">${p.project_id} • 2.4 MB • Updated ${p.expected_delivery || 'Recently'}</div>
+                  <div style="font-weight:700; font-size:0.9rem; color:var(--text-main);">${f.name || 'Project Asset Link'}</div>
+                  <div style="font-size:0.78rem; color:var(--text-secondary);">${p.project_id} • ${f.date || p.expected_delivery || 'Recently'}</div>
                 </div>
               </div>
-              <button class="btn btn-secondary" onclick="alert('Opening document preview for ${p.name}...');" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-eye"></i> View File</button>
+              <a href="${f.url}" target="_blank" class="btn btn-secondary" style="padding:0.35rem 0.75rem; font-size:0.8rem; text-decoration: none;"><i class="fa-solid fa-external-link-alt"></i> Open Link</a>
+            </div>
+          `).join('') : '<div style="text-align:center; padding:1.5rem; color:var(--text-secondary); font-size:0.9rem;">No assets linked yet.</div>';
+
+          fileItems += `
+            <div style="margin-bottom: 2rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="margin:0; font-size: 1.1rem;">${p.name} Assets</h4>
+                <button class="btn btn-primary" onclick="addAssetLink('${p.project_id}')" style="padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px;"><i class="fa-solid fa-plus"></i> Add Link</button>
+              </div>
+              ${filesHtml}
             </div>
           `;
         });
@@ -1129,8 +1177,203 @@
       }
     }
 
+    async function requestRevision(projectId) {
+      const reason = prompt("Please provide details about the requested revision:");
+      if (!reason) return;
+      try {
+        const res = await fetch(`/api/projects/${projectId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stage: 'Revision Requested',
+            client_status_update: 'Revision Request',
+            revision_notes: reason
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Revision requested successfully. The team will be notified.');
+          fetchClientProjects();
+        } else {
+          alert(data.error || 'Failed to request revision');
+        }
+      } catch (e) {
+        alert('An error occurred.');
+      }
+    }
+
+    async function approveMilestone(projectId) {
+      if (!confirm("Are you sure you want to approve this milestone?")) return;
+      try {
+        const res = await fetch(`/api/projects/${projectId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stage: 'Milestone Approved',
+            client_status_update: 'Approved'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Milestone approved successfully. Thank you!');
+          fetchClientProjects();
+        } else {
+          alert(data.error || 'Failed to approve milestone');
+        }
+      } catch (e) {
+        alert('An error occurred.');
+      }
+    }
+
+    async function addAssetLink(projectId) {
+      const url = prompt("Please provide the URL for the asset (e.g. Google Drive, Figma):");
+      if (!url) return;
+      const name = prompt("Please provide a short name for this asset (e.g. Logo, Wireframes):") || "Asset Link";
+      try {
+        const res = await fetch(`/api/projects/${projectId}/updates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            update_text: `Client added asset link: ${name}`,
+            asset_url: url,
+            asset_name: name
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Asset link added successfully.');
+          fetchClientProjects();
+        } else {
+          alert(data.error || 'Failed to add asset link.');
+        }
+      } catch (e) {
+        alert('An error occurred.');
+      }
+    }
+
+    async function fetchMeetings() {
+      try {
+        const res = await fetch('/api/meetings');
+        const data = await res.json();
+        if (data.success) {
+          const list = document.getElementById('meetings-list');
+          if (data.data.length === 0) {
+            list.innerHTML = `
+              <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-secondary); background: #FFF; border-radius: 12px; border: 1px dashed var(--border);">
+                <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; margin-bottom: 1rem; color: #CBD5E1;"></i>
+                <h3>No Meetings Scheduled</h3>
+                <p>Click "Request Meeting" to propose a time.</p>
+              </div>
+            `;
+            return;
+          }
+          list.innerHTML = data.data.map(m => `
+            <div style="background: #FFF; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+              <h3 style="margin-top: 0;">${m.title}</h3>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                <i class="fa-regular fa-calendar"></i> ${m.date} at ${m.time}
+              </p>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="badge" style="background: ${m.status === 'SCHEDULED' ? '#D1FAE5' : '#FEF3C7'}; color: ${m.status === 'SCHEDULED' ? '#065F46' : '#92400E'};">${m.status}</span>
+                ${m.meet_link ? `<a href="${m.meet_link}" target="_blank" class="btn btn-primary" style="padding:0.4rem 0.8rem; text-decoration:none;"><i class="fa-solid fa-video"></i> Join Meet</a>` : ''}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Failed to fetch meetings', e);
+      }
+    }
+
+    async function scheduleMeeting() {
+      // Very basic prompt-based UI for demo purposes (would be a modal in production)
+      const projectId = prompt("Enter the Project ID (e.g. WB-1001) for this meeting:");
+      if (!projectId) return;
+      const date = prompt("Enter preferred date (YYYY-MM-DD):");
+      if (!date) return;
+      const time = prompt("Enter preferred time (HH:MM):");
+      if (!time) return;
+
+      try {
+        const res = await fetch('/api/meetings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: projectId, date: date, time: time, title: 'Project Consultation' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Meeting requested successfully! Check the Meetings tab.');
+          fetchMeetings();
+        } else {
+          alert('Failed to request meeting: ' + data.error);
+        }
+      } catch (e) {
+        alert('Error requesting meeting.');
+      }
+    }
+
+    async function fetchTickets() {
+      try {
+        const res = await fetch('/api/tickets');
+        const data = await res.json();
+        if (data.success) {
+          const list = document.getElementById('tickets-list');
+          if (data.data.length === 0) {
+            list.innerHTML = `
+              <div style="text-align: center; padding: 3rem; color: var(--text-secondary); background: #FFF; border-radius: 12px; border: 1px dashed var(--border);">
+                <i class="fa-solid fa-headset" style="font-size: 2.5rem; margin-bottom: 1rem; color: #CBD5E1;"></i>
+                <h3>No Support Tickets</h3>
+                <p>You haven't opened any support tickets yet.</p>
+              </div>
+            `;
+            return;
+          }
+          list.innerHTML = data.data.map(t => `
+            <div style="background: #FFF; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="margin-top: 0; margin-bottom: 0.25rem;">${t.subject}</h3>
+                <div style="color: var(--text-secondary); font-size: 0.85rem;">Ticket ID: ${t.ticket_id} • Created: ${t.created_at}</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="badge" style="background: ${t.status === 'Open' ? '#DBEAFE' : t.status === 'Resolved' ? '#D1FAE5' : '#F1F5F9'}; color: ${t.status === 'Open' ? '#1E40AF' : t.status === 'Resolved' ? '#065F46' : '#475569'}; margin-bottom: 0.5rem; display: inline-block;">${t.status}</span>
+                <div style="font-size: 0.8rem; font-weight: bold; color: var(--text-secondary);">Priority: ${t.priority}</div>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Failed to fetch tickets', e);
+      }
+    }
+
+    async function createTicket() {
+      const subject = prompt("Please enter a brief subject/description for your issue:");
+      if (!subject) return;
+      
+      const priority = confirm("Is this a High Priority issue?") ? "High" : "Medium";
+
+      try {
+        const res = await fetch('/api/tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject: subject, priority: priority })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Ticket created successfully! Our support team will review it shortly.');
+          fetchTickets();
+        } else {
+          alert('Failed to create ticket: ' + data.error);
+        }
+      } catch (e) {
+        alert('Error creating ticket.');
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       fetchClientProjects();
+      fetchMeetings();
+      fetchTickets();
     });
   </script>
     <script>
@@ -1145,5 +1388,106 @@
     }
   </script>
   <script src="/js/messages.js?v=3"></script>
+  <!-- OTP Signature Modal -->
+  <div id="otp-signature-modal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h2 class="modal-title" style="color:var(--text-main);"><i class="fa-solid fa-file-signature" style="color:var(--primary); margin-right:8px;"></i> Sign Document</h2>
+        <button class="btn-close" onclick="closeOtpModal()">&times;</button>
+      </div>
+      <div style="padding: 1.5rem;">
+        <p style="color:var(--text-secondary); margin-bottom:1.5rem; line-height:1.5; text-align:center;">
+          An OTP has been sent to your registered email to verify your identity. Please enter the 6-digit OTP below to securely sign the document.
+        </p>
+        <input type="hidden" id="otp-doc-id">
+        <div class="form-group">
+          <label class="form-label" style="text-align:center;">Enter OTP Code</label>
+          <input type="text" id="otp-code-input" class="form-control" placeholder="123456" style="text-align:center; font-size:1.5rem; letter-spacing:4px; font-weight:800;" maxlength="6">
+        </div>
+        <button class="btn btn-primary" onclick="submitDocumentSignature()" style="width:100%; justify-content:center; padding:0.8rem; font-size:1.05rem;">Verify & Sign Document</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function closeOtpModal() {
+      document.getElementById('otp-signature-modal').style.display = 'none';
+      document.getElementById('otp-code-input').value = '';
+    }
+
+    async function loadClientDocuments() {
+      const container = document.getElementById('client-files-list');
+      if (!container) return;
+      try {
+        const res = await fetch('/api/documents');
+        const data = await res.json();
+        if (data.success && data.data && data.data.length > 0) {
+          container.innerHTML = data.data.map(doc => `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:1.25rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.75rem; background:#FFF; box-shadow:var(--shadow-subtle);">
+              <div style="display:flex; align-items:center; gap:1rem;">
+                <i class="fa-solid fa-file-pdf" style="font-size:2rem; color:#EF4444;"></i>
+                <div>
+                  <div style="font-weight:700; font-size:1.05rem; color:var(--text-main); margin-bottom:0.25rem;">${doc.title}</div>
+                  <div style="font-size:0.8rem; color:var(--text-secondary);">Project: ${doc.project_id} • Status: <strong style="color:${doc.status === 'Signed' ? 'var(--success)' : 'var(--warning)'};">${doc.status}</strong></div>
+                  ${doc.status === 'Signed' ? `<div style="font-size:0.75rem; color:var(--success); margin-top:0.2rem;"><i class="fa-solid fa-check-circle"></i> Signed on ${doc.signed_at}</div>` : ''}
+                </div>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <a href="${doc.file_url}" target="_blank" class="btn btn-secondary" style="padding:0.4rem 0.8rem;"><i class="fa-solid fa-eye"></i> View</a>
+                ${doc.status !== 'Signed' ? `<button class="btn btn-primary" onclick="requestDocumentSignature('${doc.document_id}')" style="padding:0.4rem 0.8rem; background:#0F766E;"><i class="fa-solid fa-pen-nib"></i> Sign</button>` : ''}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch(e) {
+        console.error('Failed to load documents:', e);
+      }
+    }
+
+    async function requestDocumentSignature(docId) {
+      if(!confirm('Request an OTP to your email to sign this document?')) return;
+      try {
+        const res = await fetch(`/api/documents/${docId}/request-signature`, { method: 'POST' });
+        const data = await res.json();
+        if(data.success) {
+          document.getElementById('otp-doc-id').value = docId;
+          document.getElementById('otp-signature-modal').style.display = 'flex';
+        } else {
+          alert('Failed to request signature: ' + (data.error || 'Unknown error'));
+        }
+      } catch(e) {
+        alert('Server error requesting signature.');
+      }
+    }
+
+    async function submitDocumentSignature() {
+      const docId = document.getElementById('otp-doc-id').value;
+      const otp = document.getElementById('otp-code-input').value;
+      if(!otp || otp.length < 6) return alert('Please enter a valid 6-digit OTP.');
+
+      try {
+        const res = await fetch(`/api/documents/${docId}/sign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ otp })
+        });
+        const data = await res.json();
+        if(data.success) {
+          alert('Document digitally signed successfully!');
+          closeOtpModal();
+          loadClientDocuments();
+        } else {
+          alert('Failed to sign document: ' + (data.error || 'Invalid OTP.'));
+        }
+      } catch(e) {
+        alert('Server error during signing.');
+      }
+    }
+
+    // Bind to DOM loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      loadClientDocuments();
+    });
+  </script>
 </body>
 </html>

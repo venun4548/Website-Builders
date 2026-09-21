@@ -29,7 +29,7 @@ const SHEETS = {
   TICKET_MESSAGES:'TicketMessages', BRAND_INFO:'BrandInfo',
   STAGE_HISTORY:'StageHistory', LEADS:'Leads', LEAD_NOTES:'LeadNotes',
   PORTFOLIO:'Portfolio', PRICING:'Pricing', NOTIFICATIONS:'Notifications',
-  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications'
+  PASSWORD_RESETS:'PasswordResets', EMAIL_VERIFICATIONS:'EmailVerifications', MEETINGS:'Meetings'
 };
 
 // Column indexes (1-based)
@@ -50,6 +50,7 @@ const PR={ID:1, NAME:2, DESC:3, PRICE:4, FEATURES:5, STATUS:6, CREATED_AT:7, UPD
 const NT={ID:1, USER_ID:2, TITLE:3, MESSAGE:4, LINK:5, IS_READ:6, CREATED_AT:7, TOTAL:7};
 const PW={ID:1, USER_ID:2, TOKEN:3, EXPIRES_AT:4, USED:5, CREATED_AT:6, TOTAL:6};
 const EV={ID:1, USER_ID:2, TOKEN:3, EXPIRES_AT:4, VERIFIED:5, CREATED_AT:6, TOTAL:6};
+const MT={ID:1, PROJ_ID:2, CUST_ID:3, STAFF_ID:4, TITLE:5, DATE:6, TIME:7, MEET_LINK:8, STATUS:9, CREATED_AT:10, TOTAL:10};
 
 const HEADERS={
   Users:['User ID','Full Name','Email','Mobile Number','Password Hash','Role','Status','Created Date','Created Time','Last Login Date','Last Login Time','Last Activity Date','Last Activity Time','Updated Date','Updated Time','Assigned Staff ID'],
@@ -74,7 +75,8 @@ const HEADERS={
   Pricing:['Plan ID','Plan Name','Description','Price','Features','Status','Created At','Updated At'],
   Notifications:['Notification ID','User ID','Title','Message','Link','Is Read','Created At'],
   PasswordResets:['Reset ID','User ID','Token','Expires At','Used','Created At'],
-  EmailVerifications:['Verification ID','User ID','Token','Expires At','Verified','Created At']
+  EmailVerifications:['Verification ID','User ID','Token','Expires At','Verified','Created At'],
+  Meetings:['Meeting ID','Project ID','Customer ID','Staff ID','Title','Date','Time','Meet Link','Status','Created At']
 };
 
 function initialSetup(){
@@ -119,7 +121,8 @@ function createAllPaymentAndRemainingSheets() {
     'Pricing':['Plan ID','Plan Name','Description','Price','Features','Status','Created At','Updated At'],
     'Notifications':['Notification ID','User ID','Title','Message','Link','Is Read','Created At'],
     'PasswordResets':['Reset ID','User ID','Token','Expires At','Used','Created At'],
-    'EmailVerifications':['Verification ID','User ID','Token','Expires At','Verified','Created At']
+    'EmailVerifications':['Verification ID','User ID','Token','Expires At','Verified','Created At'],
+    'Documents': ['Document ID', 'Project ID', 'Client ID', 'Title', 'File URL', 'Status', 'OTP', 'OTP Expires At', 'Signed At', 'Created At']
   };
 
   for (const [name, headers] of Object.entries(NEW_SHEETS)) {
@@ -1382,6 +1385,207 @@ function testEmail(recipientEmail){
   return result;
 }
 
+// --------------------------------------------------------
+// MEETINGS MODULE (Calendar / Meet Integration via GAS)
+// --------------------------------------------------------
+
+function createMeeting(d) {
+  d = d || {};
+  if (!d.project_id || !d.date || !d.time) return jr('error', 'Missing required fields (project_id, date, time).');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet(SHEETS.MEETINGS, HEADERS.Meetings);
+    const meetId = generateId('MT', SHEETS.MEETINGS, MT.ID);
+    const now = getNow();
+    const meetLink = "https://meet.google.com/new"; // Generic fallback link if Advanced Service is disabled
+    
+    // In a fully configured Workspace environment, we can do:
+    // const event = CalendarApp.getDefaultCalendar().createEvent("Project Meeting", startDate, endDate);
+    // For now we just record it in the DB and provide a generic meet room.
+    
+    sheet.appendRow([
+      meetId, d.project_id, d.customer_id || '', d.staff_id || '',
+      d.title || 'Project Consultation', d.date, d.time,
+      meetLink, 'SCHEDULED', now.date + ' ' + now.time
+    ]);
+    return jr('success', { message: 'Meeting scheduled successfully.', meeting_id: meetId, meet_link: meetLink });
+  } catch (e) {
+    return jr('error', 'Failed to schedule meeting: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getMeetings(p) {
+  p = p || {};
+  const sheet = getOrCreateSheet(SHEETS.MEETINGS, HEADERS.Meetings);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  let list = sheet.getRange(2, 1, last - 1, MT.TOTAL).getValues().map(r => ({
+    meeting_id: String(r[MT.ID - 1]),
+    project_id: String(r[MT.PROJ_ID - 1]),
+    customer_id: String(r[MT.CUST_ID - 1]),
+    staff_id: String(r[MT.STAFF_ID - 1]),
+    title: String(r[MT.TITLE - 1]),
+    date: String(r[MT.DATE - 1]),
+    time: String(r[MT.TIME - 1]),
+    meet_link: String(r[MT.MEET_LINK - 1]),
+    status: String(r[MT.STATUS - 1]),
+    created_at: String(r[MT.CREATED_AT - 1])
+  })).filter(m => m.meeting_id);
+
+  if (p.project_id) list = list.filter(m => m.project_id === p.project_id);
+  if (p.customer_id) list = list.filter(m => m.customer_id === p.customer_id);
+
+  return jr('success', list);
+}
+
+// --------------------------------------------------------
+// TICKETS MODULE (Support & Maintenance)
+// --------------------------------------------------------
+
+function createTicket(d) {
+  d = d || {};
+  if (!d.subject || !d.customer_id) return jr('error', 'Missing required fields.');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet(SHEETS.TICKETS, HEADERS.Tickets);
+    const ticketId = generateId('TK', SHEETS.TICKETS, 1);
+    const now = getNow();
+    sheet.appendRow([
+      ticketId, d.customer_id, d.customer_name || '', d.customer_email || '',
+      d.subject, d.priority || 'Medium', 'Open', d.assigned_to || '',
+      now.date + ' ' + now.time, now.date + ' ' + now.time
+    ]);
+    return jr('success', { message: 'Ticket created successfully.', ticket_id: ticketId });
+  } catch (e) {
+    return jr('error', 'Failed to create ticket: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getTickets(p) {
+  p = p || {};
+  const sheet = getOrCreateSheet(SHEETS.TICKETS, HEADERS.Tickets);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  let list = sheet.getRange(2, 1, last - 1, 10).getValues().map(r => ({
+    ticket_id: String(r[0]),
+    customer_id: String(r[1]),
+    customer_name: String(r[2]),
+    customer_email: String(r[3]),
+    subject: String(r[4]),
+    priority: String(r[5]),
+    status: String(r[6]),
+    assigned_to: String(r[7]),
+    created_at: String(r[8]),
+    updated_at: String(r[9])
+  })).filter(t => t.ticket_id);
+
+  if (p.customer_id) list = list.filter(t => t.customer_id === p.customer_id);
+
+  return jr('success', list);
+}
+
+// ─── Phase 5: Documents & Digital Signatures ────────────────
+function createDocument(d) {
+  d = d || {};
+  if (!d.project_id || !d.client_id || !d.title || !d.file_url) return jr('error', 'Missing required fields.');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const docId = generateId('DOC', 'Documents', 1);
+    const now = getNow();
+    sheet.appendRow([
+      docId, d.project_id, d.client_id, d.title, d.file_url,
+      'Pending', '', '', '', now.date + ' ' + now.time
+    ]);
+    return jr('success', { message: 'Document created.', document_id: docId });
+  } catch (e) {
+    return jr('error', 'Failed to create document: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getDocuments(p) {
+  p = p || {};
+  const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+  const last = sheet.getLastRow();
+  if (last < 2) return jr('success', []);
+  
+  let list = sheet.getRange(2, 1, last - 1, 10).getValues().map(r => ({
+    document_id: String(r[0]),
+    project_id: String(r[1]),
+    client_id: String(r[2]),
+    title: String(r[3]),
+    file_url: String(r[4]),
+    status: String(r[5]),
+    // exclude OTP and OTP Expires At from generic GET response for security
+    signed_at: String(r[8]),
+    created_at: String(r[9])
+  })).filter(t => t.document_id);
+
+  if (p.project_id) list = list.filter(t => t.project_id === p.project_id);
+  if (p.client_id) list = list.filter(t => t.client_id === p.client_id);
+
+  return jr('success', list);
+}
+
+function requestDocumentSignature(d) {
+  if (!d.document_id) return jr('error', 'Missing document_id');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const row = findRowByValue(sheet, 1, d.document_id);
+    if (row < 2) return jr('error', 'Document not found.');
+    
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(new Date().getTime() + 15 * 60000).toISOString(); // 15 mins
+    
+    sheet.getRange(row, 6).setValue('OTP Sent');
+    sheet.getRange(row, 7).setValue(otp);
+    sheet.getRange(row, 8).setValue(expiresAt);
+    
+    return jr('success', { message: 'OTP Generated successfully.', document_id: d.document_id, otp: otp });
+  } catch (e) {
+    return jr('error', 'Failed to generate OTP: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function signDocument(d) {
+  if (!d.document_id || !d.otp) return jr('error', 'Missing document_id or OTP');
+  const lock = LockService.getScriptLock(); lock.waitLock(15000);
+  try {
+    const sheet = getOrCreateSheet('Documents', HEADERS.Documents);
+    const row = findRowByValue(sheet, 1, d.document_id);
+    if (row < 2) return jr('error', 'Document not found.');
+    
+    const storedOtp = String(sheet.getRange(row, 7).getValue());
+    const expiresAt = new Date(sheet.getRange(row, 8).getValue());
+    const now = new Date();
+    
+    if (d.otp !== storedOtp) return jr('error', 'Invalid OTP.');
+    if (now > expiresAt) return jr('error', 'OTP has expired.');
+    
+    const timeStr = getNow().date + ' ' + getNow().time;
+    sheet.getRange(row, 6).setValue('Signed');
+    sheet.getRange(row, 7).setValue(''); // Clear OTP
+    sheet.getRange(row, 9).setValue(timeStr); // Signed At
+    
+    return jr('success', { message: 'Document signed successfully.', document_id: d.document_id });
+  } catch (e) {
+    return jr('error', 'Failed to sign document: ' + e.toString());
+  } finally {
+    lock.releaseLock();
+  }
+}
 function syncLegacyUser(u){
   const sheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
   const row=findRowByValue(sheet,U.EMAIL,String(u.email||'').toLowerCase());
