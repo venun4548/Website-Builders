@@ -1621,7 +1621,7 @@
 
 
     <!-- ─── BRAND INFO SECTION ─── -->
-    <div id="section-brandinfo" class="dashboard-section" style="display:none;">
+    <div id="sec-brandinfo" class="view-section" style="display:none;">
       <div class="card-header">
         <div class="card-title"><i class="fa-solid fa-paint-roller"></i> Brand Information</div>
       </div>
@@ -1647,7 +1647,7 @@
     </div>
 
     <!-- ─── LEADS SECTION ─── -->
-    <div id="section-leads" class="dashboard-section" style="display:none;">
+    <div id="sec-leads" class="view-section" style="display:none;">
       <div class="card-header">
         <div class="card-title"><i class="fa-solid fa-bullseye"></i> Leads CRM</div>
       </div>
@@ -1673,7 +1673,7 @@
     </div>
 
     <!-- ─── PORTFOLIO SECTION ─── -->
-    <div id="section-portfolio" class="dashboard-section" style="display:none;">
+    <div id="sec-portfolio" class="view-section" style="display:none;">
       <div class="card-header">
         <div class="card-title"><i class="fa-solid fa-images"></i> Portfolio</div>
       </div>
@@ -1698,7 +1698,7 @@
     </div>
 
     <!-- ─── PRICING SECTION ─── -->
-    <div id="section-pricing" class="dashboard-section" style="display:none;">
+    <div id="sec-pricing" class="view-section" style="display:none;">
       <div class="card-header">
         <div class="card-title"><i class="fa-solid fa-tags"></i> Pricing Plans</div>
       </div>
@@ -1722,7 +1722,7 @@
     </div>
 
     <!-- ─── DOCUMENTS SECTION ─── -->
-    <div id="section-documents" class="dashboard-section" style="display:none;">
+    <div id="sec-documents" class="view-section" style="display:none;">
       <div class="card-header">
         <div class="card-title"><i class="fa-solid fa-file-signature"></i> Legal Documents</div>
       </div>
@@ -3067,6 +3067,11 @@
       if (secId === 'notifications') loadNotificationsSection();
       if (secId === 'activity' || secId === 'security' || secId === 'audit-logs' || secId === 'access-logs') loadAuditLogsData();
       if (secId === 'payments') loadPaymentsData();
+      if (secId === 'leads') loadLeadsData();
+      if (secId === 'portfolio') loadPortfolioData();
+      if (secId === 'pricing') loadPricingData();
+      if (secId === 'brandinfo') loadBrandInfoData();
+      if (secId === 'documents') loadDocumentsData();
     }
 
     let rawPaymentsData = [];
@@ -3366,6 +3371,145 @@
           setTimeout(() => { btnEl.innerHTML = original; }, 1800);
         }
       });
+    }
+
+    // ─── Marketing & Sales Load Functions ─────────────────────────────
+    async function loadLeadsData() {
+      const tbody = document.getElementById('leads-list-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;color:var(--primary-green);"></i>Loading leads...</td></tr>';
+      try {
+        const res = await fetch('/api/leads');
+        const data = await res.json();
+        const rows = data.data || [];
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted-text);">No leads found. Add your first lead to start tracking prospects.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(l => `
+          <tr>
+            <td><div style="font-weight:700;color:var(--main-text);">${l.name || l.full_name || 'Unknown'}</div><div style="font-size:0.78rem;color:var(--secondary-text);">${l.mobile || ''}</div></td>
+            <td>${l.email || '-'}</td>
+            <td>${l.company || l.business_name || '-'}</td>
+            <td><span class="badge ${l.status === 'Converted' ? 'badge-success' : l.status === 'Lost' ? 'badge-danger' : 'badge-warning'}">${l.status || 'New'}</span></td>
+            <td>${l.source || 'Direct'}</td>
+            <td><button class="btn btn-outline btn-sm" onclick="alert('Lead: ' + JSON.stringify(${JSON.stringify(l)}, null, 2))"><i class="fa-solid fa-eye"></i> View</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading leads.</td></tr>';
+      }
+    }
+
+    async function loadPortfolioData() {
+      const tbody = document.getElementById('portfolio-list-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;color:var(--primary-green);"></i>Loading portfolio...</td></tr>';
+      try {
+        const res = await fetch('/api/portfolio');
+        const data = await res.json();
+        const rows = data.data || [];
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted-text);">No portfolio items found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(p => `
+          <tr>
+            <td><div style="font-weight:700;">${p.title || p.name || 'Untitled'}</div></td>
+            <td>${p.category || '-'}</td>
+            <td>${p.sort_order || '-'}</td>
+            <td>${p.link ? `<a href="${p.link}" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-arrow-up-right-from-square"></i> View</a>` : '-'}</td>
+            <td><button class="btn btn-outline btn-sm" onclick="alert('Portfolio: ' + JSON.stringify(${JSON.stringify(p)}, null, 2))"><i class="fa-solid fa-eye"></i> Details</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading portfolio.</td></tr>';
+      }
+    }
+
+    async function loadPricingData() {
+      const tbody = document.getElementById('pricing-list-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;color:var(--primary-green);"></i>Loading pricing plans...</td></tr>';
+      try {
+        const res = await fetch('/api/pricing');
+        const data = await res.json();
+        const rows = data.data || [];
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted-text);">No pricing plans configured.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(p => `
+          <tr>
+            <td><div style="font-weight:700;">${p.name || p.plan_name || 'Unnamed Plan'}</div><div style="font-size:0.78rem;color:var(--secondary-text);">${p.description || ''}</div></td>
+            <td><span style="font-weight:800;color:var(--primary-dark-green);">₹${Number(p.price || 0).toLocaleString('en-IN')}</span></td>
+            <td><span class="badge ${p.status === 'Active' ? 'badge-success' : 'badge-warning'}">${p.status || 'Draft'}</span></td>
+            <td><button class="btn btn-outline btn-sm" onclick="alert('Plan: ' + JSON.stringify(${JSON.stringify(p)}, null, 2))"><i class="fa-solid fa-eye"></i> View</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading pricing.</td></tr>';
+      }
+    }
+
+    async function loadBrandInfoData() {
+      const tbody = document.getElementById('brand-list-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;color:var(--primary-green);"></i>Loading brand info...</td></tr>';
+      try {
+        const res = await fetch('/api/brand-info');
+        const data = await res.json();
+        const rows = Array.isArray(data.data) ? data.data : (data.data ? [data.data] : []);
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted-text);">No brand information on file.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(b => `
+          <tr>
+            <td style="font-family:monospace;font-size:0.82rem;">${b.brand_id || b.id || '-'}</td>
+            <td style="font-family:monospace;font-size:0.82rem;">${b.client_id || '-'}</td>
+            <td><div style="font-weight:700;">${b.brand_name || b.name || '-'}</div></td>
+            <td><span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${b.primary_color || '#ccc'};border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-right:4px;"></span>${b.primary_color || '-'}</td>
+            <td>${b.fonts || b.font_family || '-'}</td>
+            <td><button class="btn btn-outline btn-sm" onclick="alert('Brand: ' + JSON.stringify(${JSON.stringify(b)}, null, 2))"><i class="fa-solid fa-eye"></i> View</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading brand info.</td></tr>';
+      }
+    }
+
+    async function loadDocumentsData() {
+      const tbody = document.getElementById('documents-list-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem;color:var(--primary-green);"></i>Loading documents...</td></tr>';
+      try {
+        const res = await fetch('/api/admin/documents');
+        const data = await res.json();
+        const rows = Array.isArray(data.data) ? data.data : [];
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted-text);">No documents created yet. Use "Create Document" to generate a client agreement.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = rows.map(d => {
+          const signedAt = d.signed_at ? d.signed_at.split('T')[0] : '-';
+          const statusBadge = d.status === 'Signed' ? 'badge-success' : d.status === 'Rejected' ? 'badge-danger' : d.status === 'Sent' ? 'badge-warning' : 'badge-info';
+          return `
+            <tr>
+              <td style="font-family:monospace;font-size:0.82rem;font-weight:700;color:var(--primary-dark-green);">${d.document_id || d.id || '-'}</td>
+              <td><div style="font-weight:700;">${d.title || 'Untitled'}</div><div style="font-size:0.78rem;color:var(--secondary-text);">${d.client_email || ''}</div></td>
+              <td style="font-family:monospace;font-size:0.82rem;">${d.client_id || '-'}</td>
+              <td><span class="badge ${statusBadge}">${d.status || 'Draft'}</span></td>
+              <td>${signedAt}</td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="window.open('/admin/documents/${d.document_id || d.id}', '_blank')" title="View Document"><i class="fa-solid fa-file-lines"></i> View</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading documents.</td></tr>';
+      }
     }
 
     let rawEnquiryData = [];

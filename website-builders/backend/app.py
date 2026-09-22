@@ -1127,7 +1127,9 @@ def api_get_enquiries():
     result = gas_get('getEnquiries', params)
     if result.get('status') == 'success':
         return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': False, 'error': result.get('message')}), 400
+    # Return empty array fallback — never return 400 on a GET list endpoint
+    logger.warning('getEnquiries GAS error: %s', result.get('message'))
+    return jsonify({'success': True, 'data': [], 'warning': result.get('message', 'Could not fetch from GAS')}), 200
 
 @app.route('/api/enquiries', methods=['POST'])
 def api_create_enquiry():
