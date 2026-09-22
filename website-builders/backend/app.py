@@ -641,12 +641,15 @@ def user_login():
         if result.get('status') == 'success':
             ud = result['data']
             role = ud.get('role', '')
-            if role not in ('User', 'Client', 'CLIENT'):
-                flash('This portal is for clients only.', 'error')
-                return render_template('user_login.html')
             user = SheetsUser(ud)
             session['_user_cache'] = ud
             login_user(user, remember=True)
+            if role == 'Staff':
+                return redirect(url_for('staff_dashboard'))
+            elif role == 'Super Admin':
+                return redirect(url_for('super_admin_dashboard'))
+            elif role == 'Admin':
+                return redirect(url_for('admin_dashboard'))
             return redirect(url_for('customer_dashboard'))
         flash(result.get('message', 'Invalid credentials.'), 'error')
     return render_template('user_login.html')
@@ -748,8 +751,13 @@ def pin_verified():
 def admin_login():
     if not pin_verified():
         return redirect(url_for('admin_access'))
-    if current_user.is_authenticated and current_user.role in ('Admin', 'Super Admin'):
-        return redirect(url_for('admin_dashboard'))
+    if current_user.is_authenticated:
+        if current_user.role == 'Super Admin':
+            return redirect(url_for('super_admin_dashboard'))
+        elif current_user.is_staff():
+            return redirect(url_for('staff_dashboard'))
+        elif current_user.role == 'Admin':
+            return redirect(url_for('admin_dashboard'))
     if request.method == 'POST':
         ip    = request.remote_addr or '0.0.0.0'
         email = (request.form.get('email') or '').strip().lower()
@@ -761,14 +769,16 @@ def admin_login():
         if result.get('status') == 'success':
             ud   = result['data']
             role = ud.get('role', '')
-            if role not in ('Admin', 'Super Admin'):
-                flash('This portal is for Admins only.', 'error')
+            if role not in ('Admin', 'Super Admin', 'Staff'):
+                flash('This portal is for Staff and Admins only. Clients please use Client Login.', 'error')
                 return render_template('admin_login.html')
             user = SheetsUser(ud)
             session['_user_cache'] = ud
             login_user(user, remember=True)
             if role == 'Super Admin':
                 return redirect(url_for('super_admin_dashboard'))
+            elif role == 'Staff':
+                return redirect(url_for('staff_dashboard'))
             return redirect(url_for('admin_dashboard'))
         flash(result.get('message', 'Invalid credentials.'), 'error')
     return render_template('admin_login.html')
@@ -782,8 +792,13 @@ def admin_logout():
 # ─── Staff Login ─────────────────────────────────────────────
 @app.route('/staff/login', methods=['GET', 'POST'])
 def staff_login():
-    if current_user.is_authenticated and current_user.is_staff():
-        return redirect(url_for('staff_dashboard'))
+    if current_user.is_authenticated:
+        if current_user.is_staff():
+            return redirect(url_for('staff_dashboard'))
+        elif current_user.role == 'Super Admin':
+            return redirect(url_for('super_admin_dashboard'))
+        elif current_user.role == 'Admin':
+            return redirect(url_for('admin_dashboard'))
     if request.method == 'POST':
         ip    = request.remote_addr or '0.0.0.0'
         email = (request.form.get('email') or '').strip().lower()
@@ -795,13 +810,17 @@ def staff_login():
         if result.get('status') == 'success':
             ud   = result['data']
             role = ud.get('role', '')
-            if role != 'Staff':
-                flash('This portal is for Staff only.', 'error')
+            if role not in ('Staff', 'Admin', 'Super Admin'):
+                flash('This portal is for Staff and Admins only. Clients please use Client Login.', 'error')
                 return render_template('staff_login.html')
             user = SheetsUser(ud)
             session['_user_cache'] = ud
             login_user(user, remember=True)
-            return redirect(url_for('staff_dashboard'))
+            if role == 'Staff':
+                return redirect(url_for('staff_dashboard'))
+            elif role == 'Super Admin':
+                return redirect(url_for('super_admin_dashboard'))
+            return redirect(url_for('admin_dashboard'))
         flash(result.get('message', 'Invalid credentials.'), 'error')
     return render_template('staff_login.html')
 
