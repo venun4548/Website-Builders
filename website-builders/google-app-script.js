@@ -971,10 +971,34 @@ function getProjects(p){
     };
   }).filter(pr=>pr.project_id);
 
-  if(p.customer_id) list=list.filter(pr=>pr.customer_id===p.customer_id);
-  if(p.status)      list=list.filter(pr=>pr.status.toLowerCase()===p.status.toLowerCase());
+  if(p.customer_id || p.client_id) {
+    const cid = String(p.customer_id || p.client_id).trim().toLowerCase();
+    list = list.filter(pr => String(pr.customer_id).trim().toLowerCase() === cid);
+  }
+  if(p.client_email) {
+    const cmail = String(p.client_email).trim().toLowerCase();
+    list = list.filter(pr => String(pr.client_email).trim().toLowerCase() === cmail);
+  }
+  if(p.status) list = list.filter(pr => pr.status.toLowerCase() === p.status.toLowerCase());
   if(p.staff_id){
-    list=list.filter(pr=>pr.assigned_staff_id===p.staff_id);
+    const sid = String(p.staff_id).trim();
+    const staffProjectIds = new Set();
+    list.forEach(pr => {
+      if (String(pr.assigned_staff_id).trim() === sid) staffProjectIds.add(pr.project_id);
+    });
+    try {
+      const tSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.TASKS || 'Tasks');
+      if (tSheet && tSheet.getLastRow() >= 2) {
+        const tRows = tSheet.getRange(2, 1, tSheet.getLastRow() - 1, T.TOTAL).getValues();
+        for (let i = 0; i < tRows.length; i++) {
+          if (String(tRows[i][T.STAFF_ID - 1]).trim() === sid) {
+            const pid = String(tRows[i][T.PROJ_ID - 1]).trim();
+            if (pid) staffProjectIds.add(pid);
+          }
+        }
+      }
+    } catch(e) {}
+    list = list.filter(pr => staffProjectIds.has(pr.project_id));
   }
   return jr('success',list);
 }
@@ -1207,9 +1231,49 @@ function getTasks(p){
     };
   }).filter(t=>t.task_id);
 
-  if(p.staff_id)   list=list.filter(t=>t.assigned_staff_id===p.staff_id);
-  if(p.project_id) list=list.filter(t=>t.project_id===p.project_id);
+  // Attach latest progress from TaskUpdates if available
+  try {
+    const updSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.TASK_UPDATES || 'TaskUpdates');
+    if (updSheet && updSheet.getLastRow() >= 2) {
+      const uRows = updSheet.getRange(2, 1, updSheet.getLastRow() - 1, 10).getValues();
+      const taskProgressMap = {};
+      const taskLatestUpdMap = {};
+      const taskVisMap = {};
+      for (let i = 0; i < uRows.length; i++) {
+        const tid = String(uRows[i][1]).trim();
+        const pVal = parseInt(uRows[i][6], 10) || 0;
+        const uText = String(uRows[i][5] || '').trim();
+        const vis = String(uRows[i][7] || 'INTERNAL').trim().toUpperCase();
+        taskProgressMap[tid] = pVal;
+        if (uText) taskLatestUpdMap[tid] = uText;
+        taskVisMap[tid] = vis;
+      }
+      list.forEach(t => {
+        t.progress = taskProgressMap[t.task_id] !== undefined ? taskProgressMap[t.task_id] : (t.status.toUpperCase() === 'COMPLETED' ? 100 : 0);
+        t.latest_update = taskLatestUpdMap[t.task_id] || '';
+        t.client_visible = taskVisMap[t.task_id] === 'CLIENT_VISIBLE';
+      });
+    } else {
+      list.forEach(t => {
+        t.progress = t.status.toUpperCase() === 'COMPLETED' ? 100 : 0;
+        t.latest_update = '';
+        t.client_visible = false;
+      });
+    }
+  } catch(e) {
+    list.forEach(t => {
+      t.progress = t.status.toUpperCase() === 'COMPLETED' ? 100 : 0;
+      t.latest_update = '';
+      t.client_visible = false;
+    });
+  }
+
+  if(p.staff_id)   list=list.filter(t=>String(t.assigned_staff_id).trim()===String(p.staff_id).trim());
+  if(p.project_id) list=list.filter(t=>String(t.project_id).trim()===String(p.project_id).trim());
   if(p.status)     list=list.filter(t=>t.status.toLowerCase()===p.status.toLowerCase());
+  if(p.client_view || p.role === 'Client' || p.role === 'User') {
+    list = list.filter(t => t.client_visible === true);
+  }
   return jr('success',list);
 }
 
@@ -4088,14 +4152,14 @@ function addTaskUpdate(d) {
   if (!taskId || !d.update_text) return jr('error', 'Task ID and update text are required.');
   
   const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
+  try { lock.waitLock(15000); } catch(e) {}
   try {
     const tSheet = getOrCreateSheet(SHEETS.TASKS || 'Tasks', HEADERS.Tasks);
-    const tRow = findRowByValue(tSheet, 1, taskId);
+    const tRow = findRowByValue(tSheet, T.ID, taskId);
     if (tRow < 0) return jr('error', 'Task not found: ' + taskId);
     
     const now = getNow();
-    const projId = String(tSheet.getRange(tRow, 2).getValue() || d.project_id || '');
+    const projId = String(tSheet.getRange(tRow, T.PROJ_ID).getValue() || d.project_id || '');
     const updId = generateTaskUpdateId();
     const progressVal = d.progress !== undefined ? parseInt(d.progress, 10) : 0;
     const visibility = (d.visibility || 'INTERNAL').toUpperCase();
@@ -4109,20 +4173,30 @@ function addTaskUpdate(d) {
       now.date, now.time
     ]);
     
-    // Update task row progress & latest update
-    if (d.progress !== undefined) {
-      tSheet.getRange(tRow, 14).setValue(now.date);
-      tSheet.getRange(tRow, 15).setValue(now.time);
+    // Update task row status & timestamps
+    if (d.status) {
+      tSheet.getRange(tRow, T.STATUS).setValue(d.status);
     }
+    tSheet.getRange(tRow, T.UPD_DATE).setValue(now.date);
+    tSheet.getRange(tRow, T.UPD_TIME).setValue(now.time);
     
-    // Update parent project progress
+    // Update parent project progress & latest update
     if (projId) {
       recalculateProjectProgress(projId);
+      try {
+        const pSheet = getOrCreateSheet(SHEETS.PROJECTS, HEADERS.Projects);
+        const pRow = findRowByValue(pSheet, P.ID, projId);
+        if (pRow > 0) {
+          pSheet.getRange(pRow, P.LATEST_UPDATE).setValue(d.update_text.trim());
+          pSheet.getRange(pRow, P.UPD_DATE).setValue(now.date);
+          pSheet.getRange(pRow, P.UPD_TIME).setValue(now.time);
+        }
+      } catch(e) {}
     }
     
-    return jr('success', { update_id: updId, message: 'Task update recorded successfully.' });
+    return jr('success', { update_id: updId, task_id: taskId, project_id: projId, progress: progressVal, message: 'Task update recorded successfully.' });
   } finally {
-    lock.releaseLock();
+    try { lock.releaseLock(); } catch(e) {}
   }
 }
 
@@ -4191,13 +4265,13 @@ function recalculateProjectProgress(projId) {
     const last = tSheet.getLastRow();
     if (last < 2) return;
     
-    const rows = tSheet.getRange(2, 1, last - 1, 10).getValues();
+    const rows = tSheet.getRange(2, 1, last - 1, T.TOTAL).getValues();
     let total = 0;
     let completed = 0;
     for (let i = 0; i < rows.length; i++) {
-      if (String(rows[i][1]) === String(projId)) {
+      if (String(rows[i][T.PROJ_ID - 1]).trim() === String(projId).trim()) {
         total++;
-        if (String(rows[i][8]).toUpperCase() === 'COMPLETED') {
+        if (String(rows[i][T.STATUS - 1]).trim().toUpperCase() === 'COMPLETED') {
           completed++;
         }
       }
@@ -4209,9 +4283,6 @@ function recalculateProjectProgress(projId) {
       const pRow = findRowByValue(pSheet, P.ID, projId);
       if (pRow > 0) {
         pSheet.getRange(pRow, P.PROGRESS).setValue(calcProgress);
-        if (calcProgress === 100) {
-          pSheet.getRange(pRow, P.STATUS).setValue('Completed');
-        }
       }
     }
   } catch (err) {

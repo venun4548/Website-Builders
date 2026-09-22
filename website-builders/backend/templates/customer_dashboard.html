@@ -456,12 +456,12 @@
           </div>
           <div class="card" style="padding: 1.25rem; border-radius: 12px; background: #FFF; border: 1px solid var(--border);">
             <div style="font-size: 0.8rem; font-weight: 700; color: #047857; text-transform: uppercase;">Total Paid</div>
-            <div id="stat-total-paid" style="font-size: 1.6rem; font-weight: 800; color: #047857; margin-top: 0.25rem;">₹25,000</div>
+            <div id="stat-total-paid" style="font-size: 1.6rem; font-weight: 800; color: #047857; margin-top: 0.25rem;">₹</div>
             <div style="font-size: 0.75rem; color: #047857; margin-top: 0.25rem;"><i class="fa-solid fa-check-circle"></i> Settled via Razorpay</div>
           </div>
           <div class="card" style="padding: 1.25rem; border-radius: 12px; background: #FFF; border: 1px solid var(--border);">
             <div style="font-size: 0.8rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Balance Due</div>
-            <div id="stat-balance-due" style="font-size: 1.6rem; font-weight: 800; color: #D97706; margin-top: 0.25rem;">₹20,000</div>
+            <div id="stat-balance-due" style="font-size: 1.6rem; font-weight: 800; color: #D97706; margin-top: 0.25rem;">₹</div>
             <div style="font-size: 0.75rem; color: #D97706; margin-top: 0.25rem;"><i class="fa-solid fa-clock"></i> Next milestone due</div>
           </div>
         </div>
@@ -911,6 +911,7 @@
               </div>
               
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="openClientProjectDetailsModal('${p.project_id}')" style="flex: 1; padding:0.6rem; border-radius:8px; min-width: 140px; font-weight:700;"><i class="fa-solid fa-circle-info"></i> Project Details</button>
                 <button class="btn btn-primary" onclick="switchTab('messages')" style="flex: 1; padding:0.6rem; border-radius:8px; min-width: 140px;"><i class="fa-solid fa-message"></i> Messages</button>
                 ${p.status !== 'COMPLETED' ? `
                 <button class="btn btn-warning" onclick="requestRevision('${p.project_id}')" style="flex: 1; padding:0.6rem; border-radius:8px; background: #F59E0B; color: white; border: none; min-width: 140px;"><i class="fa-solid fa-pen"></i> Request Revision</button>
@@ -1394,6 +1395,198 @@
       }
     }
 
+    
+    async function openClientProjectDetailsModal(projectId) {
+      const modal = document.getElementById('client-project-modal');
+      const container = document.getElementById('cpm-content');
+      modal.style.display = 'flex';
+      container.innerHTML = '<p style="text-align:center; padding:3rem; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-bottom:0.75rem; color:var(--primary);"></i><br>Loading live project timeline and updates from Google Sheets...</p>';
+
+      try {
+        const res = await fetch(`/api/client/projects/${projectId}/details`);
+        const result = await res.json();
+
+        if (!res.ok || !result.success || !result.data) {
+          container.innerHTML = `<p style="color:var(--status-failed); padding:2rem; text-align:center;">${result.error || 'Failed to load project details.'}</p>`;
+          return;
+        }
+
+        const d = result.data;
+        const p = d.project;
+        const stats = d.stats || {};
+        const tasks = d.tasks || [];
+        const team = d.team || {};
+        const updates = d.updates || [];
+        const timeline = d.timeline || [];
+
+        document.getElementById('cpm-title').innerText = p.name;
+        document.getElementById('cpm-id').innerText = p.id;
+
+        // Visual Timeline
+        let timelineHtml = '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin:1.25rem 0; position:relative; overflow-x:auto; padding-bottom:0.5rem;">';
+        timeline.forEach((step, idx) => {
+          const isComp = step.status === 'completed';
+          const isCur = step.status === 'in_progress';
+          const dotBg = isComp ? '#10B981' : (isCur ? 'var(--primary)' : '#E2E8F0');
+          const dotColor = (isComp || isCur) ? '#FFF' : '#64748B';
+          const textColor = isCur ? 'var(--primary)' : (isComp ? '#10B981' : 'var(--text-secondary)');
+          const icon = isComp ? '<i class="fa-solid fa-check"></i>' : (idx + 1);
+
+          timelineHtml += `
+            <div style="display:flex; flex-direction:column; align-items:center; min-width:80px; text-align:center; flex:1;">
+              <div style="width:34px; height:34px; border-radius:50%; background:${dotBg}; color:${dotColor}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; box-shadow:${isCur ? '0 0 0 4px rgba(15,118,110,0.2)' : 'none'};">
+                ${icon}
+              </div>
+              <span style="font-size:0.75rem; font-weight:${isCur ? '800' : '600'}; color:${textColor}; margin-top:0.4rem;">${step.stage}</span>
+            </div>
+          `;
+        });
+        timelineHtml += '</div>';
+
+        // Tasks table
+        let tasksHtml = '';
+        if (tasks.length > 0) {
+          tasksHtml = `
+            <div style="border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:1.5rem;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead style="background:#F8FAFC; border-bottom:1px solid var(--border);">
+                  <tr>
+                    <th style="padding:0.6rem 0.85rem; text-align:left;">Deliverable</th>
+                    <th style="padding:0.6rem 0.85rem; text-align:left;">Stage</th>
+                    <th style="padding:0.6rem 0.85rem; text-align:left;">Progress</th>
+                    <th style="padding:0.6rem 0.85rem; text-align:left;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${tasks.map(t => `
+                    <tr style="border-bottom:1px solid var(--border);">
+                      <td style="padding:0.7rem 0.85rem;"><strong>${t.title}</strong></td>
+                      <td style="padding:0.7rem 0.85rem;"><span style="font-size:0.75rem; background:#F1F5F9; padding:0.2rem 0.5rem; border-radius:4px;">${t.stage || '--'}</span></td>
+                      <td style="padding:0.7rem 0.85rem;">
+                        <div style="display:flex; align-items:center; gap:0.4rem;">
+                          <div style="background:#E2E8F0; width:60px; height:6px; border-radius:3px; overflow:hidden;"><div style="background:var(--primary); width:${t.progress || 0}%; height:100%;"></div></div>
+                          <span style="font-size:0.75rem; font-weight:700;">${t.progress || 0}%</span>
+                        </div>
+                      </td>
+                      <td style="padding:0.7rem 0.85rem;"><span class="badge" style="background:${t.status === 'COMPLETED' ? '#D1FAE5' : '#DBEAFE'}; color:${t.status === 'COMPLETED' ? '#065F46' : '#1E40AF'}; font-weight:700; font-size:0.75rem; padding:0.2rem 0.5rem; border-radius:12px;">${t.status}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else {
+          tasksHtml = '<p style="color:var(--text-secondary); font-size:0.85rem; font-style:italic; margin-bottom:1.5rem;">No deliverables published yet.</p>';
+        }
+
+        // Team info
+        let teamHtml = '';
+        if (team && (team.team_name || team.team_lead_name)) {
+          const membersList = (team.members || []).map(m => `
+            <div style="display:flex; align-items:center; gap:0.5rem; background:#FFF; border:1px solid var(--border); padding:0.4rem 0.6rem; border-radius:6px; font-size:0.82rem;">
+              <i class="fa-solid fa-user-circle" style="color:var(--primary); font-size:1.1rem;"></i>
+              <div>
+                <strong>${m.name}</strong>
+                <div style="font-size:0.72rem; color:var(--text-secondary);">${m.role}</div>
+              </div>
+            </div>
+          `).join('');
+
+          teamHtml = `
+            <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:1.5rem;">
+              <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:0.75rem;"><i class="fa-solid fa-users"></i> Project Delivery Team</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                <div>
+                  <h4 style="margin:0; font-size:1rem; color:var(--primary);">${team.team_name || 'Design & Engineering Team'}</h4>
+                  <div style="font-size:0.8rem; color:var(--text-secondary);">Lead by <strong>${team.team_lead_name || 'Project Manager'}</strong></div>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.6rem;">
+                ${membersList}
+              </div>
+            </div>
+          `;
+        }
+
+        // Updates feed
+        let updatesHtml = '';
+        if (updates.length > 0) {
+          updatesHtml = `
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+              ${updates.map(u => `
+                <div style="background:#FFF; border:1px solid var(--border); padding:0.85rem 1rem; border-radius:8px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                    <strong style="color:var(--primary); font-size:0.9rem;">${u.title}</strong>
+                    <span style="font-size:0.75rem; color:var(--text-secondary);"><i class="fa-regular fa-clock" style="margin-right:4px;"></i>${u.date} ${u.time || ''}</span>
+                  </div>
+                  <p style="font-size:0.85rem; color:var(--text-main); margin-bottom:0.35rem; line-height:1.4;">${u.message}</p>
+                  <div style="font-size:0.75rem; color:var(--text-secondary);">Logged by <strong>${u.author}</strong></div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          updatesHtml = '<p style="color:var(--text-secondary); font-size:0.85rem; font-style:italic;">No progress notes logged yet.</p>';
+        }
+
+        container.innerHTML = `
+          <!-- Overview Cards -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:1rem; background:rgba(15,118,110,0.06); padding:1.25rem; border-radius:12px; margin-bottom:1.5rem;">
+            <div>
+              <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:600; text-transform:uppercase;">Current Stage</span>
+              <div style="font-size:1.1rem; font-weight:800; color:var(--primary); margin-top:0.2rem;">${p.stage}</div>
+            </div>
+            <div>
+              <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:600; text-transform:uppercase;">Overall Progress</span>
+              <div style="font-size:1.1rem; font-weight:800; color:var(--primary); margin-top:0.2rem;">${p.progress}%</div>
+            </div>
+            <div>
+              <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:600; text-transform:uppercase;">Deliverables</span>
+              <div style="font-size:1.1rem; font-weight:800; color:var(--text-main); margin-top:0.2rem;">${stats.completed_tasks || 0} / ${stats.total_tasks || 0} Done</div>
+            </div>
+            <div>
+              <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:600; text-transform:uppercase;">Delivery Target</span>
+              <div style="font-size:1.1rem; font-weight:800; color:var(--text-main); margin-top:0.2rem;">${p.target_end_date || 'In Progress'}</div>
+            </div>
+          </div>
+
+          <!-- 7 Stage Interactive Workflow -->
+          <div style="margin-bottom:1.75rem;">
+            <h4 style="font-size:0.95rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:0.75rem;">
+              <i class="fa-solid fa-route"></i> 7-Stage Workflow Progress
+            </h4>
+            ${timelineHtml}
+          </div>
+
+          <!-- Deliverables List -->
+          <div style="margin-bottom:1.75rem;">
+            <h4 style="font-size:0.95rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:0.75rem;">
+              <i class="fa-solid fa-list-check"></i> Project Deliverables & Milestones
+            </h4>
+            ${tasksHtml}
+          </div>
+
+          <!-- Team Information -->
+          ${teamHtml}
+
+          <!-- Work Updates Feed -->
+          <div>
+            <h4 style="font-size:0.95rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:0.75rem;">
+              <i class="fa-solid fa-clock-rotate-left"></i> Verified Progress Notes
+            </h4>
+            ${updatesHtml}
+          </div>
+        `;
+      } catch (err) {
+        console.error('Failed to load project details:', err);
+        container.innerHTML = '<p style="color:var(--status-failed); padding:2rem; text-align:center;">Error loading live project data.</p>';
+      }
+    }
+
+    function closeClientProjectDetailsModal() {
+      document.getElementById('client-project-modal').style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       fetchClientProjects();
       fetchMeetings();
@@ -1532,5 +1725,28 @@
       loadClientDocuments();
     });
   </script>
+
+  <!-- Client Project Details Modal -->
+  <div class="modal-backdrop" id="client-project-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15, 118, 110, 0.45); display:none; z-index:1000; align-items:center; justify-content:center; padding:1.5rem; backdrop-filter:blur(3px);">
+    <div class="modal-card" style="background:#FFF; border:1px solid var(--border); border-radius:16px; width:100%; max-width:850px; max-height:90vh; overflow-y:auto; padding:2rem; box-shadow:0 20px 40px rgba(0,0,0,0.12);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border);">
+        <div>
+          <h3 style="font-size:1.35rem; font-weight:800; color:var(--primary);" id="cpm-title">Project Details</h3>
+          <span style="font-family:monospace; font-size:0.8rem; color:var(--primary); background:rgba(15,118,110,0.1); padding:0.2rem 0.6rem; border-radius:6px; font-weight:700;" id="cpm-id">WB-000</span>
+        </div>
+        <button style="background:none; border:none; font-size:1.4rem; color:var(--text-secondary); cursor:pointer; padding:0.25rem 0.5rem;" onclick="closeClientProjectDetailsModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <div id="cpm-content">
+        <p style="text-align:center; padding:2rem; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Loading details...</p>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border);">
+        <button class="btn btn-secondary" onclick="closeClientProjectDetailsModal()" style="padding:0.5rem 1rem; border-radius:8px;">Close</button>
+        <button class="btn btn-primary" onclick="closeClientProjectDetailsModal(); switchTab('messages');" style="padding:0.5rem 1.25rem; border-radius:8px; background:var(--primary); color:#FFF; font-weight:700;"><i class="fa-solid fa-message"></i> Message Team</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

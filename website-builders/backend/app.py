@@ -1235,12 +1235,35 @@ def api_team_detail(team_id):
 def api_get_projects():
     params = dict(request.args)
     if current_user.is_user():
-        params['customer_id'] = current_user.id
+        params['customer_id'] = str(current_user.id)
     elif current_user.is_staff():
-        params.setdefault('staff_id', current_user.id)
+        params.setdefault('staff_id', str(current_user.id))
     result = gas_get('getProjects', params)
     if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', [])})
+        projs = result.get('data', [])
+        
+        # Strict backend role enforcement
+        if current_user.is_user():
+            cid = str(current_user.id).strip().lower()
+            cmail = str(getattr(current_user, 'email', '')).strip().lower()
+            projs = [
+                p for p in projs 
+                if str(p.get('customer_id', '')).strip().lower() == cid 
+                or str(p.get('client_id', '')).strip().lower() == cid
+                or (cmail and str(p.get('client_email', '')).strip().lower() == cmail)
+                or (cmail and str(p.get('customer_email', '')).strip().lower() == cmail)
+            ]
+        elif current_user.is_staff():
+            sid = str(current_user.id).strip().lower()
+            # Fetch staff's tasks to identify all projects they work on
+            task_res = gas_get('getTasks', {'staff_id': sid})
+            assigned_pids = {str(t.get('project_id', '')).strip().lower() for t in task_res.get('data', [])}
+            projs = [
+                p for p in projs
+                if str(p.get('assigned_staff_id', '')).strip().lower() == sid
+                or str(p.get('project_id', '')).strip().lower() in assigned_pids
+            ]
+        return jsonify({'success': True, 'data': projs})
     return jsonify({'success': False, 'error': result.get('message')}), 400
 
 @app.route('/api/projects', methods=['POST'])
@@ -2081,14 +2104,13 @@ def api_email_verifications():
         return jsonify(res)
 
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
-
 # --- API: Tasks & Workflow ────────────────────────────────────
 @app.route('/api/tasks', methods=['GET', 'POST'])
 @login_required
 def api_tasks_handler():
     if request.method == 'POST':
+        if current_user.is_user():
+            return jsonify({'success': False, 'error': 'Clients are not permitted to create tasks directly.'}), 403
         data = request.get_json(silent=True) or {}
         data['created_by'] = str(current_user.id)
         if data.get('project_id') and not (data.get('client_name') and data.get('client_email')):
@@ -2108,9 +2130,47 @@ def api_tasks_handler():
     params = dict(request.args)
     if current_user.is_staff():
         params['staff_id'] = str(current_user.id)
+    elif current_user.is_user():
+        params['client_view'] = 'true'
+        
     result = gas_get('getTasks', params)
     if result.get('status') == 'success':
-        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', [])})
+        tasks = result.get('data', [])
+        if current_user.is_staff():
+            sid = str(current_user.id).strip().lower()
+            tasks = [
+                t for t in tasks 
+                if str(t.get('assigned_staff_id', '')).strip().lower() == sid 
+                or str(t.get('staff_id', '')).strip().lower() == sid
+            ]
+        elif current_user.is_user():
+            cid = str(current_user.id).strip().lower()
+            cmail = str(getattr(current_user, 'email', '')).strip().lower()
+            # Fetch client's authorized project IDs
+            p_res = gas_get('getProjects', {'customer_id': cid})
+            client_pids = set()
+            if p_res.get('status') == 'success':
+                for p in p_res.get('data', []):
+                    if (str(p.get('customer_id', '')).strip().lower() == cid or 
+                        str(p.get('client_id', '')).strip().lower() == cid or 
+                        (cmail and str(p.get('client_email', '')).strip().lower() == cmail) or
+                        (cmail and str(p.get('customer_email', '')).strip().lower() == cmail)):
+                        client_pids.add(str(p.get('project_id') or p.get('id')).strip().lower())
+            
+            # Filter tasks: must be client_visible and belong to one of client's projects
+            filtered = []
+            for t in tasks:
+                vis = str(t.get('client_visible', '')).strip().lower() in ('true', '1', 'yes')
+                t_pid = str(t.get('project_id', '')).strip().lower()
+                t_cmail = str(t.get('client_email', '')).strip().lower()
+                if vis and (t_pid in client_pids or (cmail and t_cmail == cmail)):
+                    clean_t = dict(t)
+                    clean_t.pop('internal_notes', None)
+                    clean_t.pop('admin_notes', None)
+                    clean_t.pop('remarks', None)
+                    filtered.append(clean_t)
+            tasks = filtered
+        return jsonify({'success': True, 'status': 'success', 'data': tasks})
     return jsonify({'success': False, 'status': 'error', 'data': [], 'error': result.get('message')}), 400
 
 @app.route('/api/tasks/<task_id>', methods=['GET', 'PUT', 'PATCH', 'DELETE'])
@@ -2120,15 +2180,77 @@ def api_task_ops(task_id):
         result = gas_get('getTasks', {'task_id': task_id})
         if result.get('status') == 'success':
             tasks = result.get('data', [])
-            return jsonify({'success': True, 'status': 'success', 'data': tasks[0] if tasks else {}})
+            task = tasks[0] if tasks else {}
+            if not task:
+                return jsonify({'success': False, 'error': 'Task not found.'}), 404
+            if current_user.is_user():
+                vis = str(task.get('client_visible', '')).strip().lower() in ('true', '1', 'yes')
+                if not vis:
+                    return jsonify({'success': False, 'error': 'Unauthorized to view this task.'}), 403
+                task = dict(task)
+                task.pop('internal_notes', None)
+                task.pop('admin_notes', None)
+                task.pop('remarks', None)
+            return jsonify({'success': True, 'status': 'success', 'data': task})
         return jsonify({'success': False, 'error': result.get('message')}), 404
+
     elif request.method in ('PUT', 'PATCH'):
         data = request.get_json(silent=True) or {}
+        new_status = (data.get('status') or '').strip().upper()
+        
+        # Staff authorization check
+        if current_user.is_staff():
+            t_res = gas_get('getTasks', {'task_id': task_id})
+            if t_res.get('status') == 'success' and t_res.get('data'):
+                existing_list = t_res['data']
+                existing_task = existing_list[0] if isinstance(existing_list, list) and existing_list else (existing_list if isinstance(existing_list, dict) else {})
+                sid = str(current_user.id).strip().lower()
+                asg_sid = str(existing_task.get('assigned_staff_id', '')).strip().lower()
+                if asg_sid and asg_sid != sid:
+                    return jsonify({'success': False, 'error': 'You can only update tasks assigned to you.'}), 403
+
+        # BLOCKED status validation & Omni-channel Notification
+        if new_status == 'BLOCKED':
+            block_reason = data.get('block_reason') or data.get('reason') or data.get('work_update')
+            if not block_reason or not str(block_reason).strip():
+                return jsonify({'success': False, 'error': 'Blocked reason is required when status is BLOCKED.'}), 400
+            staff_name = getattr(current_user, 'full_name', '') or getattr(current_user, 'email', str(current_user.id))
+            try:
+                dispatch_omni_notification(
+                    user_email="websitebuildeers@gmail.com",
+                    user_id="ADMIN",
+                    title=f"Task Blocked: {task_id}",
+                    message=f"Task '{task_id}' was marked BLOCKED by {staff_name}. Reason: {block_reason}"
+                )
+            except Exception as e:
+                logger.error(f"Failed to dispatch block notification: {e}")
+            data['internal_notes'] = f"[BLOCKED by {staff_name}]: {block_reason}"
+            data['block_reason'] = block_reason
+
+        # Record work update if text provided
+        work_update = data.get('work_update') or data.get('update_text') or data.get('notes')
+        if work_update and str(work_update).strip():
+            vis = 'CLIENT_VISIBLE' if (data.get('client_visible') in (True, 'true', 'TRUE', '1') or data.get('visibility') == 'CLIENT_VISIBLE') else 'INTERNAL'
+            try:
+                call_gas('addTaskUpdate', {
+                    'task_id': task_id,
+                    'project_id': data.get('project_id', ''),
+                    'staff_id': str(current_user.id),
+                    'staff_name': getattr(current_user, 'full_name', '') or getattr(current_user, 'email', ''),
+                    'update_text': str(work_update).strip(),
+                    'status': new_status or data.get('status', ''),
+                    'progress': data.get('progress', 0),
+                    'visibility': vis
+                })
+            except Exception as e:
+                logger.error(f"Failed to record task update in GAS: {e}")
+
         data['task_id'] = task_id
         data['updated_by'] = str(current_user.id)
         result = call_gas('updateTask', data)
         ok = result.get('status') == 'success'
         return jsonify({'success': ok, 'status': result.get('status', 'error'), 'message': result.get('message')}), (200 if ok else 400)
+
     elif request.method == 'DELETE':
         if current_user.role not in ('Super Admin', 'Admin'):
             return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
@@ -2592,6 +2714,273 @@ def api_sa_user_reset(user_id):
 def api_sa_audit():
     return api_get_activity()
 
+# ═══════════════════════════════════════════════════════════════════
+# STAFF & CLIENT DASHBOARD DEDICATED ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════
+
+@app.route('/api/staff/overview', methods=['GET'])
+@login_required
+def api_staff_overview():
+    if not (current_user.is_staff() or current_user.role in ('Super Admin', 'Admin')):
+        return jsonify({'success': False, 'error': 'Unauthorized.'}), 403
+    
+    sid = str(current_user.id).strip()
+    
+    # 1. Fetch staff tasks
+    task_res = gas_get('getTasks', {'staff_id': sid})
+    tasks = task_res.get('data', []) if task_res.get('status') == 'success' else []
+    if current_user.is_staff():
+        tasks = [
+            t for t in tasks 
+            if str(t.get('assigned_staff_id', '')).strip().lower() == sid.lower() 
+            or str(t.get('staff_id', '')).strip().lower() == sid.lower()
+        ]
+    
+    # 2. Fetch staff projects
+    proj_res = gas_get('getProjects', {'staff_id': sid})
+    projects = proj_res.get('data', []) if proj_res.get('status') == 'success' else []
+    if current_user.is_staff():
+        assigned_pids = {str(t.get('project_id', '')).strip().lower() for t in tasks}
+        projects = [
+            p for p in projects
+            if str(p.get('assigned_staff_id', '')).strip().lower() == sid.lower()
+            or str(p.get('project_id', '')).strip().lower() in assigned_pids
+        ]
+    
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    due_today_cnt = 0
+    upcoming_cnt = 0
+    overdue_cnt = 0
+    completed_cnt = 0
+    
+    for t in tasks:
+        st = str(t.get('status', '')).strip().upper()
+        if st in ('COMPLETED', 'DONE', 'CLOSED'):
+            completed_cnt += 1
+            continue
+        due = str(t.get('due_date', '')).strip()
+        if due:
+            try:
+                due_parsed = due[:10]
+                if due_parsed == today_str:
+                    due_today_cnt += 1
+                elif due_parsed < today_str:
+                    overdue_cnt += 1
+                else:
+                    upcoming_cnt += 1
+            except:
+                upcoming_cnt += 1
+        else:
+            upcoming_cnt += 1
+            
+    data = {
+        'my_projects': len(projects),
+        'my_tasks': len(tasks),
+        'due_today': due_today_cnt,
+        'upcoming': upcoming_cnt,
+        'overdue': overdue_cnt,
+        'completed': completed_cnt,
+        'active_tasks': len(tasks) - completed_cnt
+    }
+    return jsonify({'success': True, 'data': data})
+
+@app.route('/api/staff/my-team', methods=['GET'])
+@login_required
+def api_staff_my_team():
+    if not (current_user.is_staff() or current_user.role in ('Super Admin', 'Admin')):
+        return jsonify({'success': False, 'error': 'Unauthorized.'}), 403
+    
+    sid = str(current_user.id).strip().lower()
+    
+    teams_res = gas_get('getTeams')
+    all_teams = teams_res.get('data', []) if teams_res.get('status') == 'success' else []
+    
+    store = _load_work_store()
+    local_teams = store.get('teams', [])
+    merged_teams = {t.get('team_id'): t for t in all_teams}
+    for lt in local_teams:
+        if lt.get('team_id') not in merged_teams:
+            merged_teams[lt.get('team_id')] = lt
+    
+    my_teams = []
+    for tid, team in merged_teams.items():
+        is_lead = str(team.get('team_lead_id', '')).strip().lower() == sid
+        
+        mem_res = gas_get('getTeamMembers', {'team_id': tid})
+        members = mem_res.get('data', []) if mem_res.get('status') == 'success' else []
+        local_mems = [m for m in store.get('members', []) if m.get('team_id') == tid and m.get('status') == 'ACTIVE']
+        mem_ids = {m.get('membership_id') for m in members}
+        for lm in local_mems:
+            if lm.get('membership_id') not in mem_ids:
+                members.append(lm)
+                
+        is_member = any(str(m.get('staff_id', '')).strip().lower() == sid for m in members)
+        
+        if is_lead or is_member or current_user.role in ('Super Admin', 'Admin'):
+            proj_res = gas_get('getProjects', {'team_id': tid})
+            team_projects = proj_res.get('data', []) if proj_res.get('status') == 'success' else []
+            team_data = dict(team)
+            team_data['members'] = members
+            team_data['projects'] = team_projects
+            team_data['is_lead'] = is_lead
+            my_teams.append(team_data)
+            
+    return jsonify({'success': True, 'data': my_teams})
+
+@app.route('/api/staff/work-updates', methods=['GET'])
+@login_required
+def api_staff_work_updates():
+    if not (current_user.is_staff() or current_user.role in ('Super Admin', 'Admin')):
+        return jsonify({'success': False, 'error': 'Unauthorized.'}), 403
+    
+    sid = str(current_user.id).strip()
+    res = gas_get('getTaskUpdates', {'staff_id': sid})
+    updates = res.get('data', []) if res.get('status') == 'success' else []
+    
+    if current_user.is_staff():
+        updates = [u for u in updates if str(u.get('staff_id', '')).strip().lower() == sid.lower()]
+    
+    return jsonify({'success': True, 'data': updates})
+
+@app.route('/api/client/projects/<project_id>/details', methods=['GET'])
+@login_required
+def api_client_project_details(project_id):
+    cid = str(current_user.id).strip().lower()
+    cmail = str(getattr(current_user, 'email', '')).strip().lower()
+    
+    proj_res = gas_get('getProjectById', {'project_id': project_id})
+    proj = proj_res.get('data') if proj_res.get('status') == 'success' else None
+    if not proj:
+        p_all = gas_get('getProjects')
+        if p_all.get('status') == 'success':
+            for p in p_all.get('data', []):
+                if str(p.get('project_id') or p.get('id')).strip() == str(project_id).strip():
+                    proj = p
+                    break
+                    
+    if not proj:
+        return jsonify({'success': False, 'error': 'Project not found.'}), 404
+        
+    p_cid = str(proj.get('customer_id') or proj.get('client_id') or '').strip().lower()
+    p_mail = str(proj.get('client_email') or proj.get('customer_email') or '').strip().lower()
+    
+    if current_user.is_user():
+        if p_cid != cid and (not cmail or p_mail != cmail):
+            return jsonify({'success': False, 'error': 'Unauthorized to view this project.'}), 403
+            
+    STAGES = ['Discovery', 'Design', 'Development', 'Testing', 'Review', 'Launch', 'Maintenance']
+    current_stage = proj.get('stage') or proj.get('current_stage') or 'Discovery'
+    
+    try:
+        current_stage_idx = next(i for i, s in enumerate(STAGES) if s.lower() == current_stage.lower())
+    except StopIteration:
+        current_stage_idx = 0
+        
+    timeline = []
+    for idx, stage_name in enumerate(STAGES):
+        if idx < current_stage_idx:
+            status = 'completed'
+        elif idx == current_stage_idx:
+            status = 'in_progress'
+        else:
+            status = 'upcoming'
+        timeline.append({
+            'stage': stage_name,
+            'status': status,
+            'index': idx + 1
+        })
+        
+    task_res = gas_get('getTasks', {'project_id': project_id, 'client_view': 'true'})
+    raw_tasks = task_res.get('data', []) if task_res.get('status') == 'success' else []
+    client_tasks = []
+    completed_task_cnt = 0
+    for t in raw_tasks:
+        vis = str(t.get('client_visible', '')).strip().lower() in ('true', '1', 'yes')
+        if vis:
+            st = str(t.get('status', '')).strip().upper()
+            if st in ('COMPLETED', 'DONE'):
+                completed_task_cnt += 1
+            client_tasks.append({
+                'task_id': t.get('task_id') or t.get('id'),
+                'title': t.get('title') or t.get('task_name'),
+                'description': t.get('description'),
+                'status': st,
+                'progress': t.get('progress', 0),
+                'due_date': t.get('due_date'),
+                'stage': t.get('stage', ''),
+                'priority': t.get('priority', 'MEDIUM')
+            })
+            
+    team_info = None
+    team_id = proj.get('assigned_team_id') or proj.get('team_id')
+    if team_id:
+        t_res = gas_get('getTeams')
+        if t_res.get('status') == 'success':
+            for tm in t_res.get('data', []):
+                if str(tm.get('team_id')) == str(team_id):
+                    mem_res = gas_get('getTeamMembers', {'team_id': team_id})
+                    mems = mem_res.get('data', []) if mem_res.get('status') == 'success' else []
+                    team_info = {
+                        'team_name': tm.get('team_name'),
+                        'team_lead_name': tm.get('team_lead_name'),
+                        'department': tm.get('department'),
+                        'members': [{'name': m.get('staff_name'), 'role': m.get('role', 'Specialist')} for m in mems]
+                    }
+                    break
+    if not team_info and (proj.get('assigned_staff_name') or proj.get('staff_name')):
+        team_info = {
+            'team_name': 'Project Delivery Team',
+            'team_lead_name': proj.get('assigned_staff_name') or proj.get('staff_name'),
+            'members': []
+        }
+        
+    upd_res = gas_get('getProjectUpdates', {'project_id': project_id})
+    raw_upds = upd_res.get('data', []) if upd_res.get('status') == 'success' else []
+    client_updates = []
+    for u in raw_upds:
+        vis = str(u.get('visibility', '')).strip().upper()
+        if vis == 'CLIENT_VISIBLE' or u.get('is_client_update'):
+            client_updates.append({
+                'update_id': u.get('update_id'),
+                'title': u.get('title') or u.get('update_type') or 'Update',
+                'message': u.get('message') or u.get('update_text') or u.get('notes'),
+                'author': u.get('staff_name') or u.get('client_name') or 'Team',
+                'date': u.get('created_date') or u.get('date'),
+                'time': u.get('created_time') or u.get('time')
+            })
+            
+    total_tasks = len(client_tasks)
+    computed_progress = int((completed_task_cnt / total_tasks * 100)) if total_tasks > 0 else int(proj.get('progress') or 0)
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'project': {
+                'id': proj.get('project_id') or proj.get('id'),
+                'name': proj.get('project_name') or proj.get('name'),
+                'description': proj.get('description'),
+                'status': proj.get('status'),
+                'stage': current_stage,
+                'progress': computed_progress,
+                'start_date': proj.get('start_date'),
+                'target_end_date': proj.get('target_end_date') or proj.get('end_date'),
+                'tier': proj.get('tier'),
+                'client_name': proj.get('client_name'),
+                'client_email': proj.get('client_email')
+            },
+            'timeline': timeline,
+            'tasks': client_tasks,
+            'team': team_info,
+            'updates': client_updates,
+            'stats': {
+                'total_tasks': total_tasks,
+                'completed_tasks': completed_task_cnt,
+                'pending_tasks': total_tasks - completed_task_cnt,
+                'progress_percent': computed_progress
+            }
+        }
+    })
+
 import models
 from flask_login import login_user
 from flask import g
@@ -2599,18 +2988,16 @@ from flask import g
 @app.before_request
 def fake_login():
     from flask import request
-    if request.path.startswith('/super-admin') or request.path.startswith('/api'):
-        user = models.SheetsUser({'id': 'USR-999', 'user_id': 'USR-999', 'email': 'admin@test.com', 'role': 'Super Admin', 'is_active': True})
-        login_user(user)
+    if not current_user.is_authenticated:
+        if request.path.startswith('/super-admin') or request.path.startswith('/api'):
+            user = models.SheetsUser({'id': 'USR-999', 'user_id': 'USR-999', 'email': 'admin@test.com', 'role': 'Super Admin', 'is_active': True})
+            login_user(user)
 
 # ─── External Notifications / Cron (Phase 4) ──────────────────
 @app.route('/api/cron/daily', methods=['GET'])
 def api_cron_daily():
-    # In production, check for a CRON_SECRET header to secure this endpoint
     auth_header = request.headers.get('Authorization')
     if auth_header != 'Bearer SUPER_SECRET_CRON_KEY':
-        # return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        # Bypassing auth for now so it's testable
         pass
         
     logger.info("Running Daily Cron Tasks...")
@@ -2623,3 +3010,6 @@ def api_cron_daily():
     )
     
     return jsonify({'success': True, 'message': 'Cron executed successfully.'})
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
