@@ -8,7 +8,7 @@ export const SHEETS = {
     'id', 'email', 'passwordHash', 'name', 'company', 'role',
     'isEmailVerified', 'onboardingComplete', 'brandName', 'brandTagline',
     'primaryColor', 'fontPreference', 'targetAudience', 'assignedStaff',
-    'createdAt', 'updatedAt'
+    'twoFactorEnabled', 'twoFactorSecret', 'createdAt', 'updatedAt'
   ],
   Projects: [
     'id', 'clientId', 'clientName', 'clientEmail', 'name', 'tier',
@@ -16,7 +16,7 @@ export const SHEETS = {
     'actualLaunch', 'createdAt', 'updatedAt'
   ],
   StageHistory: [
-    'id', 'projectId', 'stage', 'changedBy', 'notes', 'timestamp'
+    'id', 'projectId', 'clientName', 'clientEmail', 'stage', 'changedBy', 'notes', 'timestamp'
   ],
   Invoices: [
     'id', 'projectId', 'projectName', 'clientId', 'clientName', 'clientEmail',
@@ -27,8 +27,13 @@ export const SHEETS = {
     'id', 'invoiceId', 'description', 'quantity', 'rate', 'amount'
   ],
   Files: [
-    'id', 'projectId', 'uploadedBy', 'fileName', 'fileUrl',
+    'id', 'projectId', 'clientName', 'clientEmail', 'uploadedBy', 'fileName', 'fileUrl',
     'fileSize', 'fileType', 'category', 'uploadedAt'
+  ],
+  Tasks: [
+    'id', 'clientName', 'clientEmail', 'projectId', 'projectName',
+    'taskTitle', 'description', 'assignedStaffId', 'assignedStaffName',
+    'priority', 'status', 'dueDate', 'createdBy', 'createdAt', 'updatedAt'
   ],
   Tickets: [
     'id', 'clientId', 'clientName', 'clientEmail', 'subject',
@@ -53,11 +58,16 @@ export const SHEETS = {
     'highlighted', 'displayOrder', 'createdAt', 'updatedAt'
   ],
   Notifications: [
-    'id', 'userId', 'type', 'title', 'message', 'link', 'read', 'createdAt'
+    'id', 'userId', 'role', 'type', 'title', 'message', 'relatedId',
+    'relatedType', 'url', 'link', 'read', 'createdAt', 'readAt'
   ],
   AuditLog: [
     'id', 'timestamp', 'actorEmail', 'actorRole', 'action',
     'resourceType', 'resourceId', 'resourceName', 'details', 'ipAddress'
+  ],
+  AuditLogs: [
+    'id', 'actorId', 'actorRole', 'action', 'entityType', 'entityId',
+    'description', 'ipHash', 'userAgent', 'createdAt'
   ],
   PasswordResets: [
     'id', 'userId', 'token', 'expiresAt', 'used', 'createdAt'
@@ -70,9 +80,58 @@ export const SHEETS = {
     'submittedAt', 'convertedToLead'
   ],
   BrandInfo: [
-    'id', 'userId', 'brandName', 'tagline', 'primaryColor',
+    'id', 'userId', 'clientName', 'clientEmail', 'brandName', 'tagline', 'primaryColor',
     'secondaryColor', 'fontFamily', 'targetAudience', 'competitors',
     'brandValues', 'existingWebsite', 'assetsUrl', 'updatedAt'
+  ],
+  PushSubscriptions: [
+    'id', 'userId', 'role', 'email', 'endpoint', 'p256dh',
+    'auth', 'device', 'browser', 'createdAt', 'lastUsedAt', 'active'
+  ],
+  MonthlyReports: [
+    'id', 'clientId', 'clientName', 'clientEmail', 'projectId', 'projectName',
+    'month', 'year', 'fileName', 'generatedAt', 'generatedBy', 'sentAt',
+    'emailStatus', 'status'
+  ],
+  EmailLogs: [
+    'id', 'recipient', 'recipientName', 'type', 'subject', 'relatedId',
+    'sentAt', 'status', 'error', 'retryCount'
+  ],
+  InvoiceReminderLogs: [
+    'id', 'invoiceId', 'clientId', 'clientName', 'clientEmail', 'type', 'scheduledDate', 'sentAt', 'status'
+  ],
+  LeadFollowUpLogs: [
+    'id', 'leadId', 'recipient', 'reminderDate', 'lastActivityAt', 'sentAt', 'status'
+  ],
+  DeadlineAlertLogs: [
+    'id', 'projectId', 'clientName', 'clientEmail', 'alertType', 'scheduledDate', 'recipientId', 'sentAt', 'status'
+  ],
+  AbandonedContacts: [
+    'id', 'sessionId', 'email', 'name', 'startedAt', 'lastActivityAt',
+    'abandonedAt', 'followUpSent', 'followUpSentAt', 'status'
+  ],
+  RevisionRequests: [
+    'id', 'projectId', 'clientId', 'clientName', 'clientEmail', 'designId', 'designName',
+    'description', 'priority', 'status', 'createdAt', 'updatedAt',
+    'assignedTo', 'resolvedAt'
+  ],
+  RevisionAnnotations: [
+    'id', 'revisionId', 'type', 'x', 'y', 'width', 'height', 'points', 'text', 'createdAt'
+  ],
+  SatisfactionSurveys: [
+    'id', 'projectId', 'clientId', 'clientName', 'clientEmail', 'token',
+    'sentAt', 'openedAt', 'submittedAt', 'status', 'scoreOverall',
+    'scoreCommunication', 'scoreQuality', 'scoreTimeliness', 'scoreSupport',
+    'recommend', 'comments'
+  ],
+  MaintenanceRequests: [
+    'id', 'projectId', 'clientId', 'clientName', 'clientEmail', 'title',
+    'description', 'category', 'priority', 'status', 'assignedTo',
+    'assignedStaffName', 'createdAt', 'updatedAt', 'completedAt',
+    'estimatedCost', 'approvedCost', 'clientApproval', 'remarks'
+  ],
+  WebsiteSettings: [
+    'id', 'key', 'value', 'updatedAt'
   ],
 } as const;
 
@@ -269,45 +328,75 @@ function saveMockData(data: Record<string, Record<string, any>[]>) {
 }
 
 // -------------------------------------------------------------
-// Core Google Sheets API v4 Operations with Automatic Fallback
+// Core Google Sheets API v4 Operations with In-Memory Caching (<5s SLA)
 // -------------------------------------------------------------
 
+const memoryCache = new Map<string, { data: any[]; timestamp: number }>();
+const CACHE_TTL_MS = 15000; // 15 seconds high-performance TTL cache
+
+export function clearSheetCache(sheetName?: SheetName) {
+  if (sheetName) {
+    memoryCache.delete(sheetName);
+  } else {
+    memoryCache.clear();
+  }
+}
+
 /**
- * Fetch all raw rows from a sheet
+ * Fetch all raw rows from a sheet with in-memory caching and 4.5s SLA timeout
  */
 export async function getRows<T extends Record<string, any>>(sheetName: SheetName): Promise<T[]> {
+  const nowTime = Date.now();
+  const cached = memoryCache.get(sheetName);
+  if (cached && (nowTime - cached.timestamp < CACHE_TTL_MS)) {
+    return cached.data as T[];
+  }
+
   if (!hasGoogleSheetsCredentials()) {
     const mock = loadMockData();
-    return (mock[sheetName] || []) as T[];
+    const result = (mock[sheetName] || []) as T[];
+    memoryCache.set(sheetName, { data: result, timestamp: nowTime });
+    return result;
   }
 
   try {
     const sheets = getGoogleSheetsClient();
     const spreadsheetId = process.env.GOOGLE_SHEETS_ID!;
-    const response = await sheets.spreadsheets.values.get({
+
+    const fetchPromise = sheets.spreadsheets.values.get({
       spreadsheetId,
       range: `${sheetName}!A1:Z`,
     });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout reading sheet ${sheetName}`)), 4500)
+    );
 
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
     const rows = response.data.values;
     if (!rows || rows.length <= 1) {
+      memoryCache.set(sheetName, { data: [], timestamp: nowTime });
       return [];
     }
 
     const headers = rows[0] as string[];
     const dataRows = rows.slice(1);
 
-    return dataRows.map((row) => {
+    const result = dataRows.map((row) => {
       const obj: Record<string, any> = {};
       headers.forEach((header, index) => {
         obj[header] = row[index] !== undefined ? row[index] : '';
       });
       return obj as T;
     });
+
+    memoryCache.set(sheetName, { data: result, timestamp: nowTime });
+    return result;
   } catch (err) {
     console.error(`Error reading sheet ${sheetName}, falling back to local cache:`, err);
     const mock = loadMockData();
-    return (mock[sheetName] || []) as T[];
+    const fallback = (mock[sheetName] || []) as T[];
+    memoryCache.set(sheetName, { data: fallback, timestamp: nowTime });
+    return fallback;
   }
 }
 
@@ -396,6 +485,7 @@ export async function appendRow<T extends Record<string, any>>(
     mock[sheetName].push(finalRow);
     saveMockData(mock);
 
+    clearSheetCache(sheetName);
     return finalRow as T;
   } catch (err) {
     console.error(`Error appending to sheet ${sheetName}, writing to local fallback:`, err);
@@ -403,6 +493,8 @@ export async function appendRow<T extends Record<string, any>>(
     if (!mock[sheetName]) mock[sheetName] = [];
     mock[sheetName].push(finalRow);
     saveMockData(mock);
+
+    clearSheetCache(sheetName);
     return finalRow as T;
   }
 }
@@ -499,6 +591,7 @@ export async function updateRow<T extends Record<string, any>>(
       }
     }
 
+    clearSheetCache(sheetName);
     return mergedObj as T;
   } catch (err) {
     console.error(`Error updating row in sheet ${sheetName}, using local fallback:`, err);
@@ -515,6 +608,7 @@ export async function updateRow<T extends Record<string, any>>(
     list[index] = updated;
     mock[sheetName] = list;
     saveMockData(mock);
+    clearSheetCache(sheetName);
     return updated as T;
   }
 }
@@ -529,6 +623,7 @@ export async function deleteRow(sheetName: SheetName, id: string): Promise<boole
     const initialLen = mock[sheetName].length;
     mock[sheetName] = mock[sheetName].filter((r) => r.id !== id);
     saveMockData(mock);
+    clearSheetCache(sheetName);
     return mock[sheetName].length < initialLen;
   }
 
@@ -571,6 +666,7 @@ export async function deleteRow(sheetName: SheetName, id: string): Promise<boole
       saveMockData(mock);
     }
 
+    clearSheetCache(sheetName);
     return true;
   } catch (err) {
     console.error(`Error deleting row from sheet ${sheetName}, using local fallback:`, err);
@@ -579,6 +675,7 @@ export async function deleteRow(sheetName: SheetName, id: string): Promise<boole
     const initialLen = mock[sheetName].length;
     mock[sheetName] = mock[sheetName].filter((r) => r.id !== id);
     saveMockData(mock);
+    clearSheetCache(sheetName);
     return mock[sheetName].length < initialLen;
   }
 }

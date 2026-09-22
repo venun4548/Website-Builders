@@ -27,8 +27,10 @@ import {
   Bar,
 } from 'recharts';
 import NotificationBell from '@/components/NotificationBell';
+import AdminTwoFactorSettings from '@/components/AdminTwoFactorSettings';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
-const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
+const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -59,10 +61,12 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { metrics, charts, recentActivity } = data || {
+  const { metrics, charts, recentActivity, recentProjects = [], recentInvoices = [] } = data || {
     metrics: {},
     charts: { revenueTimeline: [], projectDistribution: [], leadPipelineData: [] },
     recentActivity: [],
+    recentProjects: [],
+    recentInvoices: [],
   };
 
   return (
@@ -96,12 +100,25 @@ export default function AdminDashboardPage() {
               <a href="/admin/pricing" className="text-slate-400 hover:text-white transition-colors">
                 Pricing CMS
               </a>
+              <a href="/admin/reports" className="text-slate-400 hover:text-white transition-colors">
+                Reports & PDF
+              </a>
+              <a href="/admin/revisions" className="text-slate-400 hover:text-white transition-colors">
+                Revisions
+              </a>
+              <a href="/admin/maintenance" className="text-slate-400 hover:text-white transition-colors">
+                Maintenance
+              </a>
+              <a href="/admin/settings/automation" className="text-slate-400 hover:text-white transition-colors">
+                Automation
+              </a>
               <a href="/admin/audit-log" className="text-slate-400 hover:text-white transition-colors">
                 Audit Log
               </a>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <NotificationBell />
             <a
               href="/api/auth/logout"
@@ -340,6 +357,105 @@ export default function AdminDashboardPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Active Client Engagements & Invoices (with Client Name & Email) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Recent Projects with Client Contact */}
+          <div className="lg:col-span-6 p-6 sm:p-8 rounded-3xl bg-slate-900/70 border border-slate-800 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-bold text-white">Recent Client Projects</h3>
+                <p className="text-xs text-slate-400">Engineering deliverables synchronized with client accounts</p>
+              </div>
+              <a
+                href="/admin/projects"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              >
+                All Projects <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <div className="divide-y divide-slate-800/70 overflow-x-auto">
+              {recentProjects.length === 0 ? (
+                <p className="text-xs text-slate-500 py-6 text-center">No active projects found.</p>
+              ) : (
+                recentProjects.map((p: any) => (
+                  <div key={p.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <span className="font-bold text-white block truncate">{p.name}</span>
+                      <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mt-0.5">
+                        <span className="font-medium text-slate-200 truncate">{p.clientName}</span>
+                        <span>•</span>
+                        <span className="text-slate-400 truncate">{p.clientEmail}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/20">
+                        {p.stage}
+                      </span>
+                      <span className="font-mono text-slate-400 text-[11px]">{p.progress}%</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Recent Invoices with Client Contact */}
+          <div className="lg:col-span-6 p-6 sm:p-8 rounded-3xl bg-slate-900/70 border border-slate-800 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-bold text-white">Recent Invoices & Client Billing</h3>
+                <p className="text-xs text-slate-400">GST billing telemetry and payment statuses</p>
+              </div>
+              <a
+                href="/admin/invoices"
+                className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+              >
+                All Invoices <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <div className="divide-y divide-slate-800/70 overflow-x-auto">
+              {recentInvoices.length === 0 ? (
+                <p className="text-xs text-slate-500 py-6 text-center">No invoices issued yet.</p>
+              ) : (
+                recentInvoices.map((inv: any) => (
+                  <div key={inv.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-blue-400">{inv.id}</span>
+                        <span className="text-slate-300 truncate font-medium">{inv.projectName}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mt-0.5">
+                        <span className="font-medium text-slate-200 truncate">{inv.clientName}</span>
+                        <span>•</span>
+                        <span className="text-slate-400 truncate">{inv.clientEmail}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-mono font-bold text-white">₹{Number(inv.totalAmount || 0).toLocaleString('en-IN')}</span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          inv.status === 'Paid'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        }`}
+                      >
+                        {inv.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Two-Factor Authentication Security Settings */}
+        <div className="pt-4">
+          <AdminTwoFactorSettings initialEnabled={false} />
         </div>
       </div>
     </div>

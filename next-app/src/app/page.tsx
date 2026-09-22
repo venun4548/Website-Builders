@@ -171,6 +171,9 @@ export default async function Home() {
             <Link href="/contact" className="hover:text-blue-400 transition text-xs">
               Contact
             </Link>
+            <Link href="/security" className="hover:text-blue-400 transition text-xs">
+              Trust & Security
+            </Link>
             <Link href="/user/login" className="hover:text-blue-400 transition text-xs">
               Client Portal
             </Link>

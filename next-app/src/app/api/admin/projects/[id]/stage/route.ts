@@ -46,6 +46,8 @@ export const PUT = withRole(['admin', 'superadmin', 'staff'])(async (req, { user
     await appendRow<StageHistory>('StageHistory', {
       id: generateId(),
       projectId: id,
+      clientName: project.clientName || '',
+      clientEmail: project.clientEmail || '',
       stage,
       changedBy: user.email,
       notes: notes || `Stage updated to ${stage}`,

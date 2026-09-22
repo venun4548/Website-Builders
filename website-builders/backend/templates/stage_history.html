@@ -1,3 +1,4 @@
+
 {% extends "layout.html" %}
 {% block content %}
 <div class="container mx-auto p-4">
@@ -20,6 +21,7 @@
             <thead>
                 <tr>
                     <th class="border-b p-2">Project ID</th>
+                    <th class="border-b p-2">Client</th>
                     <th class="border-b p-2">Old Stage</th>
                     <th class="border-b p-2">New Stage</th>
                     <th class="border-b p-2">Changed By</th>
@@ -70,8 +72,14 @@ async function fetchStageHistory() {
     if (data && data.length > 0) {
         data.forEach(record => {
             const tr = document.createElement('tr');
+            const cName = record.client_name || record.clientName || 'Client';
+            const cEmail = record.client_email || record.clientEmail || '';
             tr.innerHTML = `
                 <td class="border-b p-2">${record.project_id}</td>
+                <td class="border-b p-2">
+                    <div class="font-medium">${cName}</div>
+                    ${cEmail ? `<div class="text-xs text-gray-500">${cEmail}</div>` : ''}
+                </td>
                 <td class="border-b p-2">${record.old_stage}</td>
                 <td class="border-b p-2">${record.new_stage}</td>
                 <td class="border-b p-2">${record.changed_by}</td>
@@ -81,7 +89,7 @@ async function fetchStageHistory() {
             tbody.appendChild(tr);
         });
     } else {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-2 text-center text-gray-500">No records found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-2 text-center text-gray-500">No records found.</td></tr>';
     }
 }
 </script>

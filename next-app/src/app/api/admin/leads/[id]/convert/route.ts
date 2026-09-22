@@ -66,6 +66,8 @@ export const POST = withRole(['admin', 'superadmin'])(async (req, { user, params
     await appendRow<StageHistory>('StageHistory', {
       id: generateId(),
       projectId,
+      clientName: clientUser.name,
+      clientEmail: clientUser.email,
       stage: 'Discovery',
       changedBy: user.email,
       notes: `Lead converted to project by ${user.email}`,

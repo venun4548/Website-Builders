@@ -43,6 +43,8 @@ export const POST = withRole(['client', 'admin', 'superadmin', 'staff'])(async (
     const newFile: ProjectFile = {
       id: generateId(),
       projectId,
+      clientName: project.clientName || '',
+      clientEmail: project.clientEmail || '',
       uploadedBy: user.email,
       fileName,
       fileUrl,

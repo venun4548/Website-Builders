@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Project Portal - Website Builders</title>
+  <link rel="icon" type="image/png" href="/images/logo.png">
+  <link rel="shortcut icon" type="image/png" href="/images/logo.png">
+  <link rel="apple-touch-icon" href="/images/logo.png">
+  <link rel="preload" as="image" href="/images/logo.png">
   <link rel="stylesheet" href="/css/messages.css">
   
   <link rel="stylesheet" href="/css/fontawesome.min.css">
@@ -279,7 +283,7 @@
   <aside class="sidebar">
     <a href="/index.html" class="sidebar-header" style="gap: 0.75rem; text-decoration: none; display: flex; align-items: center; padding: 1.25rem 1.5rem;">
       <img src="/images/logo.png" alt="Website Builders Logo" style="height: 36px; width: auto; object-fit: contain;">
-      <span style="font-size: 1.15rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">Website <span style="color: #60A5FA;">Builders</span></span>
+      <span style="font-size: 1.15rem; font-weight: 800; color: #17211F; letter-spacing: -0.02em;">Website <span style="color: #0F766E;">Builders</span></span>
     </a>
     <nav class="sidebar-nav">
       <div class="nav-section">My Portal</div>
@@ -320,7 +324,7 @@
         <div class="user-profile">
           <div class="user-meta">
             <div class="user-name">{{ user.full_name }}</div>
-            <div class="user-role">Client</div>
+            <div class="user-role">Client • {{ user.email }}</div>
           </div>
           <img src="https://ui-avatars.com/api/?name={{ user.full_name }}&background=0F766E&color=fff" alt="Avatar" class="user-avatar">
         </div>

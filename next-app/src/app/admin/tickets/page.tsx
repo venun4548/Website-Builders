@@ -271,7 +271,9 @@ export default function AdminTicketsPage() {
                     </div>
                     <p className="text-xs font-semibold text-white truncate">{tkt.subject}</p>
                     <div className="flex items-center justify-between mt-2 text-[10px] text-slate-500">
-                      <span>{tkt.clientName}</span>
+                      <span className="truncate max-w-[150px] text-slate-400">
+                        {tkt.clientName} {tkt.clientEmail ? `(${tkt.clientEmail})` : ''}
+                      </span>
                       <span>{new Date(tkt.createdAt).toLocaleDateString()}</span>
                     </div>
                   </button>

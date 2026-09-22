@@ -15,6 +15,8 @@ export interface User {
   fontPreference?: string;
   targetAudience?: string;
   assignedStaff?: string; // JSON array of user IDs
+  twoFactorEnabled?: 'true' | 'false';
+  twoFactorSecret?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +43,8 @@ export interface Project {
 export interface StageHistory {
   id: string;
   projectId: string;
+  clientName?: string;
+  clientEmail?: string;
   stage: ProjectStage;
   changedBy: string; // user email
   notes?: string;
@@ -82,6 +86,8 @@ export type FileCategory = 'Deliverable' | 'Asset';
 export interface ProjectFile {
   id: string;
   projectId: string;
+  clientName?: string;
+  clientEmail?: string;
   uploadedBy: string;
   fileName: string;
   fileUrl: string;
@@ -226,6 +232,8 @@ export interface ContactSubmission {
 export interface BrandInfo {
   id: string;
   userId: string;
+  clientName?: string;
+  clientEmail?: string;
   brandName?: string;
   tagline?: string;
   primaryColor?: string;
@@ -236,5 +244,244 @@ export interface BrandInfo {
   brandValues?: string;
   existingWebsite?: string;
   assetsUrl?: string;
+  updatedAt: string;
+}
+
+export interface PushSubscriptionRecord {
+  id: string;
+  userId: string;
+  role: string;
+  email: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  device?: string;
+  browser?: string;
+  createdAt: string;
+  lastUsedAt?: string;
+  active: 'true' | 'false';
+}
+
+export interface MonthlyReport {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientEmail: string;
+  projectId: string;
+  projectName: string;
+  month: string;
+  year: string;
+  fileName: string;
+  generatedAt: string;
+  generatedBy: string;
+  sentAt?: string;
+  emailStatus: 'Pending' | 'Sent' | 'Failed';
+  status: 'Generated' | 'Sent' | 'Failed';
+}
+
+export type EmailLogType =
+  | 'project_update'
+  | 'invoice_reminder'
+  | 'payment_confirmation'
+  | 'lead_followup'
+  | 'deadline_alert'
+  | 'monthly_report'
+  | 'survey'
+  | 'maintenance'
+  | 'revision_update'
+  | 'system';
+
+export interface EmailLog {
+  id: string;
+  recipient: string;
+  recipientName?: string;
+  type: EmailLogType;
+  subject: string;
+  relatedId?: string;
+  sentAt: string;
+  status: 'Sent' | 'Failed' | 'Pending';
+  error?: string;
+  retryCount?: number | string;
+}
+
+export interface InvoiceReminderLog {
+  id: string;
+  invoiceId: string;
+  clientId: string;
+  clientName?: string;
+  clientEmail?: string;
+  type: 'before_due' | 'due_today' | 'overdue';
+  scheduledDate: string;
+  sentAt: string;
+  status: 'Sent' | 'Failed' | 'Skipped';
+}
+
+export interface LeadFollowUpLog {
+  id: string;
+  leadId: string;
+  recipient: string;
+  reminderDate: string;
+  lastActivityAt: string;
+  sentAt: string;
+  status: 'Sent' | 'Failed' | 'Skipped';
+}
+
+export interface DeadlineAlertLog {
+  id: string;
+  projectId: string;
+  clientName?: string;
+  clientEmail?: string;
+  alertType: '7_days_before' | 'overdue';
+  scheduledDate: string;
+  recipientId: string;
+  sentAt: string;
+  status: 'Sent' | 'Failed' | 'Skipped';
+}
+
+export interface AbandonedContact {
+  id: string;
+  sessionId: string;
+  email: string;
+  name?: string;
+  startedAt: string;
+  lastActivityAt: string;
+  abandonedAt?: string;
+  followUpSent: 'true' | 'false';
+  followUpSentAt?: string;
+  status: 'pending' | 'followed_up' | 'converted' | 'opted_out';
+}
+
+export type RevisionPriority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type RevisionStatus = 'Open' | 'In Review' | 'In Progress' | 'Awaiting Client' | 'Resolved' | 'Rejected';
+
+export interface RevisionRequest {
+  id: string;
+  projectId: string;
+  clientId: string;
+  clientName: string;
+  clientEmail?: string;
+  designId?: string;
+  designName?: string;
+  description: string;
+  priority: RevisionPriority;
+  status: RevisionStatus;
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: string;
+  resolvedAt?: string;
+  internalRemarks?: string;
+}
+
+export interface RevisionAnnotation {
+  id: string;
+  revisionId: string;
+  type: 'point' | 'rect' | 'text';
+  x: number | string; // normalized 0-1
+  y: number | string; // normalized 0-1
+  width?: number | string; // normalized 0-1
+  height?: number | string; // normalized 0-1
+  points?: string;
+  text?: string;
+  createdAt: string;
+}
+
+export interface SatisfactionSurvey {
+  id: string;
+  projectId: string;
+  clientId: string;
+  clientName: string;
+  clientEmail: string;
+  token: string;
+  sentAt: string;
+  openedAt?: string;
+  submittedAt?: string;
+  status: 'Sent' | 'Opened' | 'Submitted';
+  scoreOverall?: number | string; // 1-5
+  scoreCommunication?: number | string; // 1-5
+  scoreQuality?: number | string; // 1-5
+  scoreTimeliness?: number | string; // 1-5
+  scoreSupport?: number | string; // 1-5
+  recommend?: 'true' | 'false';
+  comments?: string;
+}
+
+export type MaintenanceCategory =
+  | 'Content Update'
+  | 'Design Change'
+  | 'Bug Fix'
+  | 'Technical Support'
+  | 'Website Update'
+  | 'Other';
+
+export type MaintenancePriority = 'Low' | 'Medium' | 'High' | 'Critical';
+
+export type MaintenanceStatus =
+  | 'Submitted'
+  | 'Under Review'
+  | 'Quoted'
+  | 'Awaiting Approval'
+  | 'Approved'
+  | 'In Progress'
+  | 'Completed'
+  | 'Rejected'
+  | 'Cancelled';
+
+export interface MaintenanceRequest {
+  id: string;
+  projectId: string;
+  clientId: string;
+  clientName: string;
+  clientEmail: string;
+  title: string;
+  description: string;
+  category: MaintenanceCategory;
+  priority: MaintenancePriority;
+  status: MaintenanceStatus;
+  assignedTo?: string;
+  assignedStaffName?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  estimatedCost?: number | string;
+  approvedCost?: number | string;
+  clientApproval?: 'Pending' | 'Approved' | 'Rejected';
+  remarks?: string;
+}
+
+export interface AuditLogRecord {
+  id: string;
+  actorId: string;
+  actorRole: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  description: string;
+  ipHash?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+export interface WebsiteSetting {
+  id: string;
+  key: string;
+  value: string;
+  updatedAt: string;
+}
+
+export interface TaskRecord {
+  id: string;
+  clientName?: string;
+  clientEmail?: string;
+  projectId: string;
+  projectName?: string;
+  taskTitle: string;
+  description?: string;
+  assignedStaffId?: string;
+  assignedStaffName?: string;
+  priority?: string;
+  status: string;
+  dueDate?: string;
+  createdBy?: string;
+  createdAt: string;
   updatedAt: string;
 }

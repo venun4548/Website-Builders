@@ -1033,6 +1033,7 @@
         const pid = p.project_id || p.id;
         const pname = p.name || p.project_name;
         const clientName = p.customer_name || p.client_name || 'Client';
+        const clientEmail = p.customer_email || p.client_email || '';
         const priority = p.priority || 'MEDIUM';
         const status = p.status || 'ACTIVE';
         const progress = p.progress !== undefined ? p.progress : 0;
@@ -1052,7 +1053,10 @@
           <tr>
             <td style="font-family:monospace; font-weight:700;"><a href="#" onclick="openProjectDetailsModal('${pid}'); return false;" style="color:var(--primary-dark-green); text-decoration:underline;">${pid}</a></td>
             <td><strong>${pname}</strong></td>
-            <td>${clientName}</td>
+            <td>
+              <div style="font-weight:600;">${clientName}</div>
+              ${clientEmail ? `<div style="font-size:0.75rem; color:var(--muted-text);"><i class="fa-solid fa-envelope" style="font-size:0.7rem; margin-right:3px;"></i>${clientEmail}</div>` : ''}
+            </td>
             <td><span class="badge ${priBadge}">${priority}</span></td>
             <td><span class="badge ${statBadge}">${status}</span></td>
             <td style="width:140px;">
@@ -1152,6 +1156,8 @@
         const tid = t.task_id || t.id;
         const title = t.title || t.task_name || 'Untitled Task';
         const projName = t.project_name || t.project_id || 'General';
+        const clientName = t.client_name || t.customer_name || '';
+        const clientEmail = t.client_email || t.customer_email || '';
         const staffName = t.assigned_staff_name || 'Unassigned';
         const priority = t.priority || 'MEDIUM';
         const status = t.status || 'TODO';
@@ -1175,7 +1181,7 @@
             <td style="font-family:monospace; font-weight:700;">${tid}</td>
             <td>
               <strong>${title}</strong>
-              <div style="font-size:0.75rem; color:var(--secondary-text);">${projName}</div>
+              <div style="font-size:0.75rem; color:var(--secondary-text);">${projName}${clientName ? ` &bull; <strong>${clientName}</strong>` : ''}${clientEmail ? ` (${clientEmail})` : ''}</div>
             </td>
             <td>
               <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -1536,9 +1542,11 @@
         if (res.ok && data.success && data.data) {
           const p = data.data;
           document.getElementById('proj-details-title').innerText = `${p.project_id || projId}: ${p.name || p.project_name}`;
+          const cName = p.client_name || p.customer_name || 'Client';
+          const cEmail = p.client_email || p.customer_email || '';
           document.getElementById('pd-id').innerText = p.project_id || projId;
           document.getElementById('pd-name').innerText = p.name || p.project_name;
-          document.getElementById('pd-client').innerText = `${p.customer_name || 'Client'} (${p.customer_id || ''})`;
+          document.getElementById('pd-client').innerHTML = `<strong>${cName}</strong>${cEmail ? ` &bull; <a href="mailto:${cEmail}" style="color:var(--primary-dark-green); text-decoration:none;"><i class="fa-solid fa-envelope" style="font-size:0.8rem; margin:0 3px;"></i>${cEmail}</a>` : ''} <span style="color:var(--muted-text); font-size:0.8rem;">(${p.customer_id || ''})</span>`;
           document.getElementById('pd-status').innerText = p.status || 'Active';
           document.getElementById('pd-priority').innerText = p.priority || 'Normal';
           document.getElementById('pd-delivery').innerText = p.expected_delivery || 'TBD';

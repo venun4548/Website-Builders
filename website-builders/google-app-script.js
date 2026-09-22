@@ -36,7 +36,20 @@ const SHEETS = {
   PASSWORD_OTPS:'PasswordOTPs',
   TEAM_MEMBERS:'TeamMembers',
   TASK_UPDATES:'TaskUpdates',
-  TASK_ASSIGNMENTS:'TaskAssignments'
+  TASK_ASSIGNMENTS:'TaskAssignments',
+  PUSH_SUBSCRIPTIONS:'PushSubscriptions',
+  MONTHLY_REPORTS:'MonthlyReports',
+  EMAIL_LOGS:'EmailLogs',
+  INVOICE_REMINDER_LOGS:'InvoiceReminderLogs',
+  LEAD_FOLLOWUP_LOGS:'LeadFollowUpLogs',
+  DEADLINE_ALERT_LOGS:'DeadlineAlertLogs',
+  ABANDONED_CONTACTS:'AbandonedContacts',
+  REVISION_REQUESTS:'RevisionRequests',
+  REVISION_ANNOTATIONS:'RevisionAnnotations',
+  SATISFACTION_SURVEYS:'SatisfactionSurveys',
+  MAINTENANCE_REQUESTS:'MaintenanceRequests',
+  AUDIT_LOGS:'AuditLogs',
+  WEBSITE_SETTINGS:'WebsiteSettings'
 };
 
 // Column indexes (1-based)
@@ -49,7 +62,7 @@ const PU={ID:1,PROJ_ID:2,STAFF_ID:3,STAFF_NAME:4,STAGE:5,PROGRESS:6,TEXT:7,REMAR
 const AL={ID:1,USER_ID:2,USER_NAME:3,ROLE:4,ACTION:5,RELATED_ID:6,DESC:7,DATE:8,TIME:9,STATUS:10,TOTAL:10};
 const T={ID:1,CLIENT_NAME:2,CLIENT_EMAIL:3,PROJ_ID:4,PROJ_NAME:5,TITLE:6,DESC:7,STAFF_ID:8,STAFF_NAME:9,PRIORITY:10,STATUS:11,DUE_DATE:12,CREATED_BY:13,CREATED_DATE:14,CREATED_TIME:15,UPD_DATE:16,UPD_TIME:17,TOTAL:17};
 
-const SH={ID:1, PROJ_ID:2, OLD_STAGE:3, NEW_STAGE:4, CHANGED_BY:5, TIMESTAMP:6, REMARKS:7, TOTAL:7};
+const SH={ID:1, PROJ_ID:2, CLIENT_NAME:3, CLIENT_EMAIL:4, OLD_STAGE:5, NEW_STAGE:6, CHANGED_BY:7, TIMESTAMP:8, REMARKS:9, TOTAL:9};
 const LD={ID:1, NAME:2, EMAIL:3, PHONE:4, COMPANY:5, STATUS:6, SOURCE:7, ASSIGNED_TO:8, CREATED_AT:9, UPDATED_AT:10, TOTAL:10};
 const LN={ID:1, LEAD_ID:2, USER_ID:3, NOTE:4, CREATED_AT:5, TOTAL:5};
 const PT={ID:1, TITLE:2, DESC:3, IMAGE:4, LINK:5, CATEGORY:6, SORT_ORDER:7, CREATED_AT:8, TOTAL:8};
@@ -75,7 +88,7 @@ const HEADERS={
   Tickets:['Ticket ID','Client Name','Client Email','Customer ID','Subject','Priority','Status','Assigned To','Created At','Updated At'],
   TicketMessages:['Message ID','Ticket ID','Sender Email','Sender Role','Message','Timestamp'],
   BrandInfo:['Brand ID','Client Name','Client Email','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At'],
-  StageHistory:['Stage History ID','Project ID','Old Stage','New Stage','Changed By','Timestamp','Remarks'],
+  StageHistory:['Stage History ID','Project ID','Client Name','Client Email','Old Stage','New Stage','Changed By','Timestamp','Remarks'],
   Leads:['Lead ID','Name','Email','Phone','Company','Status','Source','Assigned To','Created At','Updated At'],
   LeadNotes:['Note ID','Lead ID','User ID','Note Text','Created At'],
   Portfolio:['Portfolio ID','Title','Description','Image URL','Link','Category','Sort Order','Created At'],
@@ -92,7 +105,20 @@ const HEADERS={
   PasswordOTPs:['otpId','email','otpHash','purpose','createdAt','expiresAt','verifiedAt','status','attempts','ipAddress','usedAt'],
   TeamMembers:['Membership ID','Team ID','Team Name','Staff ID','Staff Name','Staff Email','Role','Status','Added By','Added Date','Added Time','Removed Date','Removed Time'],
   TaskUpdates:['Update ID','Task ID','Project ID','Staff ID','Staff Name','Update Text','Progress','Visibility','Created Date','Created Time'],
-  TaskAssignments:['Assignment ID','Task ID','Project ID','Staff ID','Staff Name','Team ID','Team Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Unassigned Time','Status','Reassignment Reason']
+  TaskAssignments:['Assignment ID','Task ID','Project ID','Staff ID','Staff Name','Team ID','Team Name','Assigned By','Assigned Date','Assigned Time','Unassigned Date','Unassigned Time','Status','Reassignment Reason'],
+  PushSubscriptions:['id','userId','role','email','endpoint','p256dh','auth','device','browser','createdAt','lastUsedAt','active'],
+  MonthlyReports:['id','clientId','clientName','clientEmail','projectId','projectName','month','year','fileName','generatedAt','generatedBy','sentAt','emailStatus','status'],
+  EmailLogs:['id','recipient','recipientName','type','subject','relatedId','sentAt','status','error','retryCount'],
+  InvoiceReminderLogs:['id','invoiceId','clientId','clientName','clientEmail','type','scheduledDate','sentAt','status'],
+  LeadFollowUpLogs:['id','leadId','recipient','reminderDate','lastActivityAt','sentAt','status'],
+  DeadlineAlertLogs:['id','projectId','clientName','clientEmail','alertType','scheduledDate','recipientId','sentAt','status'],
+  AbandonedContacts:['id','sessionId','email','name','startedAt','lastActivityAt','abandonedAt','followUpSent','followUpSentAt','status'],
+  RevisionRequests:['id','projectId','clientId','clientName','clientEmail','designId','designName','description','priority','status','createdAt','updatedAt','assignedTo','resolvedAt'],
+  RevisionAnnotations:['id','revisionId','type','x','y','width','height','points','text','createdAt'],
+  SatisfactionSurveys:['id','projectId','clientId','clientName','clientEmail','token','sentAt','openedAt','submittedAt','status','scoreOverall','scoreCommunication','scoreQuality','scoreTimeliness','scoreSupport','recommend','comments'],
+  MaintenanceRequests:['id','projectId','clientId','clientName','clientEmail','title','description','category','priority','status','assignedTo','assignedStaffName','createdAt','updatedAt','completedAt','estimatedCost','approvedCost','clientApproval','remarks'],
+  AuditLogs:['id','actorId','actorRole','action','entityType','entityId','description','ipHash','userAgent','createdAt'],
+  WebsiteSettings:['id','key','value','updatedAt']
 };
 
 function initialSetup(){
@@ -131,7 +157,7 @@ function createAllPaymentAndRemainingSheets() {
     'Tickets': ['Ticket ID','Client Name','Client Email','Customer ID','Subject','Priority','Status','Assigned To','Created At','Updated At'],
     'TicketMessages': ['Message ID','Ticket ID','Sender Email','Sender Role','Message','Timestamp'],
     'BrandInfo': ['Brand ID','Client Name','Client Email','User ID','Brand Name','Tagline','Primary Color','Secondary Color','Font Family','Target Audience','Competitors','Brand Values','Assets URL','Updated At'],
-    'StageHistory':['Stage History ID','Project ID','Old Stage','New Stage','Changed By','Timestamp','Remarks'],
+    'StageHistory':['Stage History ID','Project ID','Client Name','Client Email','Old Stage','New Stage','Changed By','Timestamp','Remarks'],
     'Leads':['Lead ID','Name','Email','Phone','Company','Status','Source','Assigned To','Created At','Updated At'],
     'LeadNotes':['Note ID','Lead ID','User ID','Note Text','Created At'],
     'Portfolio':['Portfolio ID','Title','Description','Image URL','Link','Category','Sort Order','Created At'],
@@ -3054,22 +3080,55 @@ function getInvoices(p) {
 // =======================================================
 
 function createStageHistory(d) {
+  d = d || {};
   const sheet = getOrCreateSheet(SHEETS.STAGE_HISTORY, HEADERS.StageHistory);
   const id = generateId('SH', SHEETS.STAGE_HISTORY, SH.ID);
   const now = getNow();
-  sheet.appendRow([id, d.project_id||'', d.old_stage||'', d.new_stage||'', d.changed_by||'', now.date + ' ' + now.time, d.remarks||'']);
+  let clientName = d.client_name || d.clientName || d.customer_name || '';
+  let clientEmail = d.client_email || d.clientEmail || d.customer_email || '';
+  if ((!clientName || !clientEmail) && d.project_id) {
+    try {
+      const pSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.PROJECTS);
+      if (pSheet) {
+        const pRow = findRowByValue(pSheet, P.ID, d.project_id);
+        if (pRow > 0) {
+          if (!clientName) clientName = String(pSheet.getRange(pRow, P.CUST_NAME).getValue() || '');
+          if (!clientEmail) clientEmail = String(pSheet.getRange(pRow, P.CUST_EMAIL).getValue() || '');
+        }
+      }
+    } catch(e) {}
+  }
+  sheet.appendRow([
+    id,
+    d.project_id || '',
+    clientName,
+    clientEmail,
+    d.old_stage || d.oldStage || '',
+    d.new_stage || d.newStage || '',
+    d.changed_by || d.changedBy || '',
+    now.date + ' ' + now.time,
+    d.remarks || ''
+  ]);
   return jr('success', {id: id});
 }
 function getStageHistory(p) {
+  p = p || {};
   const sheet = getOrCreateSheet(SHEETS.STAGE_HISTORY, HEADERS.StageHistory);
   const rows = sheet.getDataRange().getValues();
   let res = [];
   for(let i=1; i<rows.length; i++) {
     if(p.project_id && String(rows[i][SH.PROJ_ID-1]) !== String(p.project_id)) continue;
     res.push({
-      id: rows[i][SH.ID-1], project_id: rows[i][SH.PROJ_ID-1],
-      old_stage: rows[i][SH.OLD_STAGE-1], new_stage: rows[i][SH.NEW_STAGE-1],
-      changed_by: rows[i][SH.CHANGED_BY-1], timestamp: rows[i][SH.TIMESTAMP-1],
+      id: rows[i][SH.ID-1],
+      project_id: rows[i][SH.PROJ_ID-1],
+      client_name: rows[i][SH.CLIENT_NAME-1] || '',
+      clientName: rows[i][SH.CLIENT_NAME-1] || '',
+      client_email: rows[i][SH.CLIENT_EMAIL-1] || '',
+      clientEmail: rows[i][SH.CLIENT_EMAIL-1] || '',
+      old_stage: rows[i][SH.OLD_STAGE-1],
+      new_stage: rows[i][SH.NEW_STAGE-1],
+      changed_by: rows[i][SH.CHANGED_BY-1],
+      timestamp: rows[i][SH.TIMESTAMP-1],
       remarks: rows[i][SH.REMARKS-1]
     });
   }

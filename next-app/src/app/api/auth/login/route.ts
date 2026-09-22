@@ -68,6 +68,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 
+    // Step 2: Admin/Super Admin TOTP Two-Factor Authentication Check
+    if (
+      user.twoFactorEnabled === 'true' &&
+      (user.role === 'admin' || user.role === 'superadmin')
+    ) {
+      const tempToken = await signJWT(
+        {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          stage: '2fa_required',
+        },
+        '5m'
+      );
+
+      return NextResponse.json({
+        requires2FA: true,
+        tempToken,
+        message: 'Enter authenticator code',
+      });
+    }
+
     const token = await signJWT({
       userId: user.id,
       email: user.email,

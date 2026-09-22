@@ -37,15 +37,16 @@ async function runTests() {
     }
   }
 
-  // 1. Verify all 18 Google Sheets tabs are registered
+  // 1. Verify all Google Sheets tabs are registered
   const tabNames = Object.keys(SHEETS);
-  assert(tabNames.length === 18, `All 18 Google Sheets tabs defined (found ${tabNames.length})`);
+  assert(tabNames.length >= 30, `All Google Sheets tabs defined (found ${tabNames.length})`);
   assert(tabNames.includes('Users'), 'Users tab exists');
   assert(tabNames.includes('Projects'), 'Projects tab exists');
   assert(tabNames.includes('StageHistory'), 'StageHistory tab exists');
   assert(tabNames.includes('Invoices'), 'Invoices tab exists');
   assert(tabNames.includes('InvoiceItems'), 'InvoiceItems tab exists');
   assert(tabNames.includes('Files'), 'Files tab exists');
+  assert(tabNames.includes('Tasks'), 'Tasks tab exists');
   assert(tabNames.includes('Tickets'), 'Tickets tab exists');
   assert(tabNames.includes('TicketMessages'), 'TicketMessages tab exists');
   assert(tabNames.includes('Leads'), 'Leads tab exists');
@@ -58,6 +59,18 @@ async function runTests() {
   assert(tabNames.includes('EmailVerifications'), 'EmailVerifications tab exists');
   assert(tabNames.includes('ContactSubmissions'), 'ContactSubmissions tab exists');
   assert(tabNames.includes('BrandInfo'), 'BrandInfo tab exists');
+  assert(tabNames.includes('PushSubscriptions'), 'PushSubscriptions tab exists');
+  assert(tabNames.includes('MonthlyReports'), 'MonthlyReports tab exists');
+  assert(tabNames.includes('EmailLogs'), 'EmailLogs tab exists');
+  assert(tabNames.includes('InvoiceReminderLogs'), 'InvoiceReminderLogs tab exists');
+  assert(tabNames.includes('LeadFollowUpLogs'), 'LeadFollowUpLogs tab exists');
+  assert(tabNames.includes('DeadlineAlertLogs'), 'DeadlineAlertLogs tab exists');
+  assert(tabNames.includes('AbandonedContacts'), 'AbandonedContacts tab exists');
+  assert(tabNames.includes('RevisionRequests'), 'RevisionRequests tab exists');
+  assert(tabNames.includes('RevisionAnnotations'), 'RevisionAnnotations tab exists');
+  assert(tabNames.includes('SatisfactionSurveys'), 'SatisfactionSurveys tab exists');
+  assert(tabNames.includes('MaintenanceRequests'), 'MaintenanceRequests tab exists');
+  assert(tabNames.includes('WebsiteSettings'), 'WebsiteSettings tab exists');
 
   // 2. Test User creation & lookup
   const testUserId = generateId();
@@ -108,6 +121,8 @@ async function runTests() {
   await appendRow('StageHistory', {
     id: generateId(),
     projectId: testProjectId,
+    clientName: 'Jane Doe',
+    clientEmail: testEmail,
     stage: 'Development',
     changedBy: 'admin@websitebuilders.com',
     notes: 'Frontend and backend sprint initiated',
@@ -155,6 +170,8 @@ async function runTests() {
   await appendRow('Files', {
     id: testFileId,
     projectId: testProjectId,
+    clientName: 'Jane Doe',
+    clientEmail: testEmail,
     uploadedBy: 'staff@websitebuilders.com',
     fileName: 'Final_Design_System.pdf',
     fileUrl: 'https://res.cloudinary.com/demo/image/upload/sample.pdf',
@@ -165,7 +182,7 @@ async function runTests() {
   });
 
   const foundFile = await findRow('Files', (f: any) => f.id === testFileId);
-  assert(foundFile !== null && foundFile.category === 'Deliverable', 'Project deliverable file registered in Files tab');
+  assert(foundFile !== null && foundFile.category === 'Deliverable' && foundFile.clientEmail === testEmail, 'Project deliverable file registered in Files tab with clientEmail');
 
   // 6. Test Sequential Support Ticket Generation (TKT-XXXX) & Messages
   const nextTkt = await getNextTicketNumber();

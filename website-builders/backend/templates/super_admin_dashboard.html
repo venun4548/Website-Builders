@@ -2395,10 +2395,15 @@
           let upcomingDue = 0;
           (projData.data || []).forEach(p => {
             if (p.status !== 'Completed') upcomingDue++;
+            const cName = p.client_name || p.customer_name || 'Client';
+            const cEmail = p.client_email || p.customer_email || '';
             rows += `<tr>
               <td style="font-family:monospace;">${p.project_id}</td>
               <td><strong>${p.name}</strong></td>
-              <td>${p.customer_name || 'Client'}</td>
+              <td>
+                <div style="font-weight:600;">${cName}</div>
+                ${cEmail ? `<div style="font-size:0.75rem; color:var(--secondary-text);">${cEmail}</div>` : ''}
+              </td>
               <td>${p.stage}</td>
               <td>${p.progress}%</td>
               <td><span class="badge badge-success">${p.status}</span></td>
@@ -2434,8 +2439,13 @@
             if (t.is_overdue) overdueTaskCount++;
             const pClass = t.priority === 'Urgent' ? 'badge-danger' : (t.priority === 'High' ? 'badge-warning' : 'badge-info');
             const sClass = t.status === 'Completed' ? 'badge-success' : 'badge-info';
+            const clientName = t.client_name || t.customer_name || '';
+            const clientEmail = t.client_email || t.customer_email || '';
             rows += `<tr>
-              <td><strong>${t.title}</strong></td>
+              <td>
+                <strong>${t.title}</strong>
+                ${clientName ? `<div style="font-size:0.75rem; color:var(--secondary-text);">${clientName}${clientEmail ? ` &bull; ${clientEmail}` : ''}</div>` : ''}
+              </td>
               <td>${t.assigned_staff_name || 'Unassigned'}</td>
               <td><span class="badge ${pClass}">${t.priority || 'Normal'}</span></td>
               <td><span class="badge ${sClass}">${t.status || 'Pending'}</span></td>

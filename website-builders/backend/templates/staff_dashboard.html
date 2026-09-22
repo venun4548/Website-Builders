@@ -1123,6 +1123,9 @@
         const prog = t.progress || 0;
         const isOverdue = t.due_date && t.due_date < todayStr && st !== 'COMPLETED';
 
+        const clientName = t.client_name || t.customer_name || '';
+        const clientEmail = t.client_email || t.customer_email || '';
+
         // Kanban Card
         const prioBadge = prio === 'HIGH' ? 'badge-danger' : (prio === 'LOW' ? 'badge-info' : 'badge-warning');
         const kCard = `
@@ -1136,6 +1139,10 @@
               <div>Proj: <strong>${t.project_id || 'General'}</strong></div>
               <div>Due: <span style="${isOverdue ? 'color:var(--danger); font-weight:700;' : ''}">${t.due_date || 'TBD'}</span></div>
             </div>
+            ${clientName ? `
+            <div style="font-size:0.75rem; color:var(--muted-text); margin-bottom:0.35rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${clientName} (${clientEmail})">
+              <i class="fa-solid fa-user" style="font-size:0.7rem; margin-right:3px;"></i>${clientName}
+            </div>` : ''}
             <div class="progress-track" style="margin-bottom:0.6rem; height:5px;">
               <div class="progress-fill" style="width:${prog}%;"></div>
             </div>
@@ -1163,7 +1170,10 @@
         listRows += `
           <tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
             <td style="font-family:monospace; font-weight:700; color:var(--sidebar-teal);">${tid}</td>
-            <td><strong>${title}</strong></td>
+            <td>
+              <strong>${title}</strong>
+              ${clientName ? `<div style="font-size:0.75rem; color:var(--muted-text);"><i class="fa-solid fa-user" style="font-size:0.7rem; margin-right:3px;"></i>${clientName}${clientEmail ? ` (${clientEmail})` : ''}</div>` : ''}
+            </td>
             <td>${t.project_id || 'General'}</td>
             <td><span class="badge badge-info">${t.stage || 'General'}</span></td>
             <td><span class="badge ${prioBadge}">${prio}</span></td>
@@ -1252,7 +1262,10 @@
           <tr>
             <td style="font-family:monospace; font-weight:700; color:var(--sidebar-teal);">${pid}</td>
             <td><strong>${pname}</strong></td>
-            <td>${p.customer_name || p.client_name || 'Client'}</td>
+            <td>
+              <strong>${p.customer_name || p.client_name || 'Client'}</strong>
+              ${(p.customer_email || p.client_email) ? `<br><small style="color:var(--secondary-text); font-size:0.75rem;">${p.customer_email || p.client_email}</small>` : ''}
+            </td>
             <td>${p.assigned_team_name || p.team_name || 'Delivery Team'}</td>
             <td style="min-width:120px;">
               <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -1635,8 +1648,11 @@
 
         body.innerHTML = `
           <!-- Meta Grid -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; background:var(--very-light-mint); padding:1rem; border-radius:8px; margin-bottom:1.25rem; font-size:0.85rem;">
-            <div><span style="color:var(--secondary-text);">Client:</span><br><strong>${proj.client_name || proj.customer_name || 'Client'}</strong></div>
+            <div>
+              <span style="color:var(--secondary-text);">Client:</span><br>
+              <strong>${proj.client_name || proj.customer_name || 'Client'}</strong>
+              ${(proj.client_email || proj.customer_email) ? `<br><small style="color:var(--muted-text); font-size:0.75rem;">${proj.client_email || proj.customer_email}</small>` : ''}
+            </div>
             <div><span style="color:var(--secondary-text);">Target End Date:</span><br><strong>${proj.target_end_date || proj.expected_delivery || 'TBD'}</strong></div>
             <div><span style="color:var(--secondary-text);">Assigned Team:</span><br><strong>${proj.assigned_team_name || proj.team_name || 'Project Team'}</strong></div>
             <div><span style="color:var(--secondary-text);">Overall Status:</span><br><span class="badge badge-success">${proj.status || 'Active'}</span></div>
@@ -1845,16 +1861,23 @@
             tb.innerHTML = '<tr><td colspan="6" style="text-align:center;">No tickets available.</td></tr>';
             return;
           }
-          tb.innerHTML = list.map(t => `
+          tb.innerHTML = list.map(t => {
+            const cName = t.client_name || t.customer_name || t.customer_id || 'Client';
+            const cEmail = t.client_email || t.customer_email || '';
+            return `
             <tr>
               <td><strong>${t.ticket_id}</strong></td>
               <td>${t.subject}</td>
-              <td>${t.customer_name || t.customer_id}</td>
+              <td>
+                <div style="font-weight:600;">${cName}</div>
+                ${cEmail ? `<div style="font-size:0.75rem; color:var(--muted-text);">${cEmail}</div>` : ''}
+              </td>
               <td><span class="badge ${t.priority === 'High' ? 'badge-danger' : 'badge-info'}">${t.priority}</span></td>
               <td><span class="badge ${t.status === 'Open' ? 'badge-warning' : 'badge-success'}">${t.status}</span></td>
               <td><button class="btn btn-primary btn-sm">Manage</button></td>
             </tr>
-          `).join('');
+          `;
+          }).join('');
         }
       } catch(err) { console.error(err); }
     }

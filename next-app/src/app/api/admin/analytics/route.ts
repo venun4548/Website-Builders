@@ -106,6 +106,34 @@ export const GET = withRole(['admin', 'superadmin', 'staff'])(async () => {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 8);
 
+    // 7. Recent projects with client name & email
+    const recentProjects = [...projects]
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+      .slice(0, 6)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        clientName: p.clientName || 'Valued Client',
+        clientEmail: p.clientEmail || '',
+        stage: p.stage,
+        progress: p.progress,
+        tier: p.tier,
+      }));
+
+    // 8. Recent invoices with client name & email
+    const recentInvoices = [...invoices]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 6)
+      .map((inv) => ({
+        id: inv.id,
+        projectName: inv.projectName,
+        clientName: inv.clientName || 'Valued Client',
+        clientEmail: inv.clientEmail || '',
+        totalAmount: inv.totalAmount,
+        status: inv.status,
+        dueDate: inv.dueDate,
+      }));
+
     return NextResponse.json({
       metrics: {
         totalRevenue,
@@ -126,6 +154,8 @@ export const GET = withRole(['admin', 'superadmin', 'staff'])(async () => {
         leadPipelineData,
       },
       recentActivity,
+      recentProjects,
+      recentInvoices,
     });
   } catch (err) {
     console.error('GET /api/admin/analytics error:', err);

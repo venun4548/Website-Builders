@@ -58,6 +58,8 @@ export const POST = withRole(['admin', 'superadmin'])(async (req, { user }) => {
     await appendRow<StageHistory>('StageHistory', {
       id: generateId(),
       projectId,
+      clientName: clientName || '',
+      clientEmail: clientEmail || '',
       stage: initialStage,
       changedBy: user.email,
       notes: 'Project created and initialized in Discovery stage.',

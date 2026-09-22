@@ -162,6 +162,15 @@ function ContactFormInner() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => {
+                  if (email && email.includes('@') && !successSubmissionId) {
+                    fetch('/api/contact/abandoned', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email, name, sessionId: 'contact_' + Date.now() }),
+                    }).catch(() => {});
+                  }
+                }}
                 placeholder="alex@company.com"
                 className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition text-sm"
                 required

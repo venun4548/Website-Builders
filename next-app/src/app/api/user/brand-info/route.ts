@@ -1,3 +1,5 @@
+
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { findRow, updateRow, appendRow, generateId, now } from '@/lib/sheets';
@@ -30,6 +32,8 @@ export async function POST(req: NextRequest) {
 
     if (existing) {
       result = (await updateRow<BrandInfo>('BrandInfo', existing.id, {
+        clientName: session.name || '',
+        clientEmail: session.email || '',
         brandName,
         tagline,
         primaryColor,
@@ -46,6 +50,8 @@ export async function POST(req: NextRequest) {
       result = await appendRow<BrandInfo>('BrandInfo', {
         id: generateId(),
         userId: session.userId,
+        clientName: session.name || '',
+        clientEmail: session.email || '',
         brandName: brandName || '',
         tagline: tagline || '',
         primaryColor: primaryColor || '#3b82f6',

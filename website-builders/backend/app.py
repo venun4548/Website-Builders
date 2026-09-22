@@ -42,6 +42,18 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# ─── Static Asset Cache Headers (Performance) ─────────────────
+@app.after_request
+def add_cache_headers(response):
+    """Add long-lived cache headers for static assets to speed up loads."""
+    path = request.path.lower()
+    if any(path.endswith(ext) for ext in ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
+                                           '.css', '.js', '.woff', '.woff2', '.ttf', '.ico')):
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    elif path.startswith('/images/') or path.startswith('/css/') or path.startswith('/js/'):
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+    return response
+
 # ─── GAS Proxy Helpers with Connection Pooling & Cache ────────
 import time
 
