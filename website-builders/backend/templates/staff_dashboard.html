@@ -372,7 +372,7 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">MY TASKS</h2>
-            <button onclick="switchSection('tasks-kanban', event)" class="btn btn-outline btn-sm">View Kanban Board</button>
+            <button onclick="switchSection('tasks-kanban', event)" class="btn btn-outline btn-sm"><i class="fa-solid fa-table-columns"></i> View Task Board</button>
           </div>
           <div class="table-responsive">
             <table>
@@ -416,7 +416,7 @@
         </div>
       </div>
 
-      <!-- Section: Task Board Kanban & List View -->
+      <!-- Section: Task Board & List View -->
       <div id="sec-tasks-kanban" class="view-section" style="display:none;">
         <div class="card-header" style="margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
           <div>
@@ -424,8 +424,8 @@
             <p style="color:var(--secondary-text); font-size:0.85rem;">Manage and update your assigned tasks across workflow stages.</p>
           </div>
           <div style="display:flex; gap:0.5rem;">
-            <button id="btn-view-kanban" class="btn btn-teal btn-sm" onclick="switchTaskView('kanban')"><i class="fa-solid fa-table-columns"></i> Kanban Board</button>
-            <button id="btn-view-list" class="btn btn-outline btn-sm" onclick="switchTaskView('list')"><i class="fa-solid fa-list"></i> List View</button>
+            <button id="btn-view-kanban" class="btn btn-teal btn-sm" onclick="switchTaskView('kanban')"><i class="fa-solid fa-table-columns"></i> Task Board</button>
+            <button id="btn-view-list" class="btn btn-outline btn-sm" onclick="switchTaskView('list')"><i class="fa-solid fa-list"></i> Table View</button>
           </div>
         </div>
 
