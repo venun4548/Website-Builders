@@ -16,9 +16,6 @@ const PRECACHE_ASSETS = [
   '/css/style.css',
   '/js/locales.js',
   '/images/logo.png',
-  '/images/icon-192.png',
-  '/images/icon-512.png',
-  '/images/icon-maskable.png',
   '/security'
 ];
 
