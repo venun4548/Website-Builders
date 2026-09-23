@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Operations Dashboard - Enterprise IT Operations</title>
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/css/messages.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="/js/locales.js"></script>
   
   <style>
     :root {
@@ -209,6 +211,12 @@
       <a href="/admin/clients" class="nav-link" onclick="switchSection('clients', event)">
         <i class="fa-solid fa-building"></i> Clients
       </a>
+      <a href="/admin/revisions" class="nav-link" onclick="switchSection('admin-revisions', event)">
+        <i class="fa-solid fa-pen-ruler"></i> Revisions
+      </a>
+      <a href="/admin/maintenance" class="nav-link" onclick="switchSection('admin-maintenance', event)">
+        <i class="fa-solid fa-wrench"></i> Maintenance
+      </a>
       <a href="/admin/websites" class="nav-link" onclick="switchSection('websites', event)">
         <i class="fa-solid fa-globe"></i> Websites
       </a>
@@ -227,7 +235,19 @@
         <i class="fa-solid fa-bell"></i> Notifications
       </a>
 
-      <div class="nav-group-label">REPORTING</div>
+      <div class="nav-group-label">ANALYTICS & AUTOMATION</div>
+      <a href="/admin/funnel" class="nav-link" onclick="switchSection('funnel', event)">
+        <i class="fa-solid fa-filter"></i> Conversion Funnel
+      </a>
+      <a href="/admin/forecast" class="nav-link" onclick="switchSection('forecast', event)">
+        <i class="fa-solid fa-chart-line"></i> Revenue Forecast
+      </a>
+      <a href="/admin/monthly-reports" class="nav-link" onclick="switchSection('monthly-reports', event)">
+        <i class="fa-solid fa-file-pdf"></i> Monthly PDF Reports
+      </a>
+      <a href="/admin/security" class="nav-link" onclick="switchSection('admin-security', event)">
+        <i class="fa-solid fa-shield-halved"></i> 2FA & Security
+      </a>
       <a href="/admin/reports" class="nav-link" onclick="switchSection('reports', event)">
         <i class="fa-solid fa-file-invoice"></i> Reports
       </a>
@@ -799,11 +819,160 @@
         </div>
       </div>
 
-      <!-- Section: Settings -->
-      <div id="sec-settings" class="view-section" style="display:none;">
+      <!-- Section: Conversion Funnel (Part 15) -->
+      <div id="sec-funnel" class="view-section" style="display:none;">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 class="card-title"><i class="fa-solid fa-filter"></i> Lead-to-Client Conversion Funnel</h2>
+              <p style="color:var(--secondary-text); font-size:0.85rem; margin-top:0.25rem;">Real-time conversion metrics calculated from active enquiries, proposals, and payments.</p>
+            </div>
+            <button onclick="loadFunnelData()" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Refresh Funnel</button>
+          </div>
+          <div id="funnel-container" style="padding:1.5rem 0; display:flex; flex-direction:column; gap:1rem;">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Revenue Forecast (Part 16) -->
+      <div id="sec-forecast" class="view-section" style="display:none;">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 class="card-title"><i class="fa-solid fa-chart-line"></i> Revenue Forecast & Pipeline Value</h2>
+              <p style="color:var(--secondary-text); font-size:0.85rem; margin-top:0.25rem;">Transparent calculation: Confirmed Revenue + Weighted Pipeline Value.</p>
+            </div>
+            <button onclick="loadForecastData()" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Refresh Forecast</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; margin-top:1.25rem;" id="forecast-cards">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Monthly PDF Reports (Part 11-14) -->
+      <div id="sec-monthly-reports" class="view-section" style="display:none;">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 class="card-title"><i class="fa-solid fa-file-pdf"></i> Monthly Client Project Reports</h2>
+              <p style="color:var(--secondary-text); font-size:0.85rem; margin-top:0.25rem;">Server-side ReportLab PDF generation with automated client distribution.</p>
+            </div>
+          </div>
+          
+          <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:1.25rem; margin:1rem 0; display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+            <div style="flex:1; min-width:200px;">
+              <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Select Project</label>
+              <select id="report-project-select" style="width:100%; padding:0.6rem; border:1px solid var(--border-color); border-radius:8px;">
+                <option value="WB-2026-001">WB-2026-001 — Enterprise Web Platform</option>
+              </select>
+            </div>
+            <div style="width:140px;">
+              <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Month</label>
+              <select id="report-month-select" style="width:100%; padding:0.6rem; border:1px solid var(--border-color); border-radius:8px;">
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+              </select>
+            </div>
+            <div style="width:110px;">
+              <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Year</label>
+              <select id="report-year-select" style="width:100%; padding:0.6rem; border:1px solid var(--border-color); border-radius:8px;">
+                <option value="2026">2026</option>
+              </select>
+            </div>
+            <button onclick="generateMonthlyPdfAdmin()" class="btn btn-primary" style="padding:0.6rem 1.25rem; font-weight:700;">
+              <i class="fa-solid fa-download"></i> Generate & Download PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Revisions (Admin Management) -->
+      <div id="sec-admin-revisions" class="view-section" style="display:none;">
         <div class="card">
-          <div class="card-header"><h2 class="card-title">Settings</h2></div>
-          <p style="color:var(--secondary-text);">Manage operational account preferences.</p>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="card-title"><i class="fa-solid fa-pen-ruler"></i> Client Design Revision Requests</h2>
+            <button onclick="loadAdminRevisionsView()" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="table-responsive" style="margin-top:1rem;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Revision ID</th>
+                  <th>Project / Mockup</th>
+                  <th>Client</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-admin-revisions-body">
+                <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--muted-text);">Loading revisions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Maintenance (Admin Management) -->
+      <div id="sec-admin-maintenance" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="card-title"><i class="fa-solid fa-wrench"></i> Post-Launch Maintenance Requests</h2>
+            <button onclick="loadAdminMaintenanceView()" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          </div>
+          <div class="table-responsive" style="margin-top:1rem;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Title</th>
+                  <th>Client</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-admin-maintenance-body">
+                <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--muted-text);">Loading maintenance requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: 2FA & Security Management -->
+      <div id="sec-admin-security" class="view-section" style="display:none;">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title"><i class="fa-solid fa-shield-halved"></i> Two-Factor Authentication (2FA) & Security</h2></div>
+          <div style="padding:1.5rem 0; max-width:600px;">
+            <p style="color:var(--secondary-text); margin-bottom:1.25rem;">Protect your administrator login with Google Authenticator or any TOTP RFC 6238 compatible app.</p>
+            
+            <div id="admin-2fa-status-box" style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:10px; padding:1.5rem; margin-bottom:1.5rem;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                  <h4 style="margin:0 0 0.25rem; color:var(--main-text);">Google Authenticator TOTP</h4>
+                  <span class="badge" id="badge-2fa-status" style="background:#DCFCE7; color:#166534; padding:0.2rem 0.6rem; border-radius:6px; font-weight:700;">Status: Ready for Setup</span>
+                </div>
+                <button onclick="startAdmin2FASetup()" id="btn-toggle-2fa" class="btn btn-primary" style="padding:0.5rem 1rem;">Setup 2FA</button>
+              </div>
+            </div>
+
+            <!-- QR Code Verification Panel -->
+            <div id="panel-2fa-setup" style="display:none; background:#FFF; border:1.5px solid var(--primary-green); border-radius:12px; padding:1.5rem; margin-top:1rem; text-align:center;">
+              <h4 style="margin:0 0 0.5rem;">Scan with Authenticator App</h4>
+              <p style="font-size:0.85rem; color:var(--secondary-text);">Open Google Authenticator on your phone and scan this QR code.</p>
+              <div id="admin-qr-container" style="margin:1rem 0;"></div>
+              
+              <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Enter 6-digit Code from Authenticator:</label>
+                <input type="text" id="input-2fa-verify-code" placeholder="123456" maxlength="6" style="width:160px; text-align:center; font-size:1.25rem; font-weight:700; padding:0.5rem; border:1.5px solid var(--border-color); border-radius:8px; letter-spacing:4px;">
+              </div>
+              <button onclick="confirmAdmin2FA()" class="btn btn-primary" style="padding:0.6rem 1.5rem; font-weight:700;">Verify & Enable 2FA</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2028,6 +2197,12 @@
           'tickets': 'Support Tickets',
           'notifications': 'System Notifications',
           'activity': 'Recent Activity',
+          'funnel': 'Conversion Funnel Analytics',
+          'forecast': 'Revenue Forecasting & Pipeline',
+          'monthly-reports': 'Monthly Client Project Reports',
+          'admin-revisions': 'Design Revision Requests',
+          'admin-maintenance': 'Maintenance Requests',
+          'admin-security': '2FA & Account Security',
           'settings': 'Account Settings'
         };
         const title = titleMap[secId] || secId.charAt(0).toUpperCase() + secId.slice(1);
@@ -2048,6 +2223,12 @@
       if (secId === 'notifications') loadAdminNotifications();
       if (secId === 'meetings') loadAdminMeetings();
       if (secId === 'tickets') loadAdminTickets();
+      if (secId === 'funnel') loadFunnelData();
+      if (secId === 'forecast') loadForecastData();
+      if (secId === 'monthly-reports') loadMonthlyReportsAdmin();
+      if (secId === 'admin-revisions') loadAdminRevisionsView();
+      if (secId === 'admin-maintenance') loadAdminMaintenanceView();
+      if (secId === 'admin-security') loadAdmin2FASetup();
     }
 
     async function loadClientsView() {
@@ -2451,7 +2632,252 @@
             </tr>`;
         }).join('');
       } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading tickets.</td></tr>';
+    // ─── Conversion Funnel Analytics (Part 15) ───────────────
+    async function loadFunnelData() {
+      const container = document.getElementById('funnel-container');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin"></i> Calculating conversion funnel metrics...</div>';
+
+      try {
+        const res = await fetch('/api/analytics/conversion-funnel');
+        const data = await res.json();
+        const funnel = data.funnel || [];
+        
+        container.innerHTML = funnel.map((step, idx) => `
+          <div style="background:#FFF; border:1px solid var(--border-color); border-radius:10px; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; position:relative; overflow:hidden;">
+            <div style="position:absolute; left:0; top:0; bottom:0; width:${step.percentage}%; background:rgba(34, 197, 94, 0.08); z-index:1;"></div>
+            <div style="z-index:2; display:flex; align-items:center; gap:0.75rem;">
+              <span style="width:28px; height:28px; border-radius:50%; background:var(--primary-green); color:#FFF; font-weight:800; font-size:0.85rem; display:flex; align-items:center; justify-content:center;">${idx + 1}</span>
+              <div>
+                <strong style="font-size:1rem; color:var(--main-text);">${step.stage}</strong>
+                <div style="font-size:0.8rem; color:var(--muted-text);">${step.count} contacts</div>
+              </div>
+            </div>
+            <div style="z-index:2; text-align:right;">
+              <div style="font-size:1.25rem; font-weight:800; color:var(--forest-green);">${step.percentage}%</div>
+              <small style="color:var(--muted-text);">Stage Conversion</small>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = '<div style="text-align:center; padding:1.5rem; color:var(--danger);">Error loading conversion funnel data.</div>';
+      }
+    }
+
+    // ─── Revenue Forecasting (Part 16) ────────────────────────
+    async function loadForecastData() {
+      const container = document.getElementById('forecast-cards');
+      if (!container) return;
+      container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:2rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin"></i> Calculating revenue forecast...</div>';
+
+      try {
+        const res = await fetch('/api/analytics/revenue-forecast');
+        const data = await res.json();
+        
+        container.innerHTML = `
+          <div style="background:#FFF; border:1px solid var(--border-color); border-radius:10px; padding:1.25rem;">
+            <div style="color:var(--muted-text); font-size:0.85rem; font-weight:700;">CONFIRMED REVENUE (PAID)</div>
+            <div style="font-size:1.75rem; font-weight:800; color:var(--forest-green); margin-top:0.35rem;">₹ ${Number(data.confirmed_revenue || 0).toLocaleString()}</div>
+            <small style="color:var(--secondary-text);">Verified Bank & UPI receipts</small>
+          </div>
+          <div style="background:#FFF; border:1px solid var(--border-color); border-radius:10px; padding:1.25rem;">
+            <div style="color:var(--muted-text); font-size:0.85rem; font-weight:700;">ACTIVE PIPELINE VALUE</div>
+            <div style="font-size:1.75rem; font-weight:800; color:#0284C7; margin-top:0.35rem;">₹ ${Number(data.pipeline_value || 0).toLocaleString()}</div>
+            <small style="color:var(--secondary-text);">Active proposals & open invoices</small>
+          </div>
+          <div style="background:#FFF; border:1.5px solid var(--primary-green); border-radius:10px; padding:1.25rem; background:#F0FDF4;">
+            <div style="color:var(--forest-green); font-size:0.85rem; font-weight:700;">WEIGHTED REVENUE FORECAST</div>
+            <div style="font-size:1.75rem; font-weight:800; color:var(--forest-green); margin-top:0.35rem;">₹ ${Number(data.weighted_forecast || 0).toLocaleString()}</div>
+            <small style="color:var(--forest-green);">Estimated (Confirmed + 60% Pipeline)</small>
+          </div>
+          <div style="background:#FFF; border:1px solid var(--border-color); border-radius:10px; padding:1.25rem;">
+            <div style="color:var(--muted-text); font-size:0.85rem; font-weight:700;">NEXT MONTH PROJECTION</div>
+            <div style="font-size:1.75rem; font-weight:800; color:var(--main-text); margin-top:0.35rem;">₹ ${Number(data.next_month_projected || 0).toLocaleString()}</div>
+            <small style="color:var(--secondary-text);">Estimated 30-day cash flow</small>
+          </div>
+        `;
+      } catch (e) {
+        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:1.5rem; color:var(--danger);">Error loading revenue forecast.</div>';
+      }
+    }
+
+    // ─── Monthly PDF Reports (Part 11-14) ─────────────────────
+    async function loadMonthlyReportsAdmin() {
+      const select = document.getElementById('report-project-select');
+      if (!select) return;
+      if (allProjectsData && allProjectsData.length > 0) {
+        select.innerHTML = allProjectsData.map(p => `
+          <option value="${p.id || p.project_id}">${p.id || p.project_id} — ${p.name || p.project_name || 'Website'}</option>
+        `).join('');
+      }
+    }
+
+    async function generateMonthlyPdfAdmin() {
+      const projectId = document.getElementById('report-project-select').value;
+      const month = document.getElementById('report-month-select').value;
+      const year = document.getElementById('report-year-select').value;
+
+      try {
+        const res = await fetch('/api/reports/monthly/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId, month, year })
+        });
+        
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Report-${projectId}-${month}-${year}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          alert('Monthly client PDF generated and downloaded successfully.');
+        } else {
+          alert('Failed to generate PDF report.');
+        }
+      } catch (err) {
+        alert('Server error generating PDF report.');
+      }
+    }
+
+    // ─── Revisions & Maintenance Admin View (Part 26-35) ──────
+    async function loadAdminRevisionsView() {
+      const tbody = document.getElementById('tbl-admin-revisions-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading revisions...</td></tr>';
+
+      try {
+        const res = await fetch('/api/revisions');
+        const data = await res.json();
+        const items = data.data || [];
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--muted-text);">No client revision requests submitted yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = items.map(rev => `
+          <tr>
+            <td style="font-family:monospace; font-weight:700;">${rev.id}</td>
+            <td><strong>${rev.designName || rev.projectId}</strong></td>
+            <td>${rev.clientName || 'Client'}</td>
+            <td><span class="badge ${rev.priority === 'Critical' ? 'badge-danger' : 'badge-warning'}">${rev.priority}</span></td>
+            <td><span class="badge ${rev.status === 'Resolved' ? 'badge-success' : 'badge-info'}">${rev.status}</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick="updateRevisionStatusPrompt('${rev.id}')">Update Status</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--danger);">Error loading revisions.</td></tr>';
+      }
+    }
+
+    async function updateRevisionStatusPrompt(revId) {
+      const status = prompt('Enter new status (In Review, In Progress, Resolved, Rejected):', 'Resolved');
+      if (status) {
+        await fetch(`/api/revisions/${revId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadAdminRevisionsView();
+      }
+    }
+
+    async function loadAdminMaintenanceView() {
+      const tbody = document.getElementById('tbl-admin-maintenance-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading maintenance requests...</td></tr>';
+
+      try {
+        const res = await fetch('/api/maintenance');
+        const data = await res.json();
+        const items = data.data || [];
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--muted-text);">No post-launch maintenance requests found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = items.map(req => `
+          <tr>
+            <td style="font-family:monospace; font-weight:700;">${req.id}</td>
+            <td><strong>${req.title}</strong></td>
+            <td>${req.clientName || req.clientEmail}</td>
+            <td><span class="badge badge-info">${req.category}</span></td>
+            <td><span class="badge ${req.status === 'Completed' ? 'badge-success' : 'badge-warning'}">${req.status}</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick="updateMaintenanceStatusPrompt('${req.id}')">Manage Quote/Status</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--danger);">Error loading maintenance requests.</td></tr>';
+      }
+    }
+
+    async function updateMaintenanceStatusPrompt(reqId) {
+      const status = prompt('Enter status (Approved, In Progress, Completed, Rejected):', 'Completed');
+      if (status) {
+        await fetch(`/api/maintenance/${reqId}/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadAdminMaintenanceView();
+      }
+    }
+
+    // ─── 2FA Setup Handler (Part 8-9) ─────────────────────────
+    let current2FASecret = '';
+
+    async function loadAdmin2FASetup() {
+      // Intentionally lightweight placeholder check
+    }
+
+    async function startAdmin2FASetup() {
+      const panel = document.getElementById('panel-2fa-setup');
+      const qrContainer = document.getElementById('admin-qr-container');
+      
+      try {
+        const res = await fetch('/api/admin/2fa/setup');
+        const data = await res.json();
+        if (data.success) {
+          current2FASecret = data.secret;
+          qrContainer.innerHTML = `<img src="${data.qr_code}" alt="2FA QR Code" style="width:200px; height:200px; border-radius:8px; border:1px solid #E2E8F0;">`;
+          panel.style.display = 'block';
+        } else {
+          alert('Failed to initialize 2FA setup: ' + data.error);
+        }
+      } catch (err) {
+        alert('Server error generating 2FA QR code.');
+      }
+    }
+
+    async function confirmAdmin2FA() {
+      const token = document.getElementById('input-2fa-verify-code').value.trim();
+      if (token.length !== 6) {
+        alert('Please enter all 6 digits.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/2fa/enable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, secret: current2FASecret })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Two-Factor Authentication has been successfully enabled on your account!');
+          document.getElementById('panel-2fa-setup').style.display = 'none';
+          document.getElementById('badge-2fa-status').textContent = 'Status: Active & Protected';
+        } else {
+          alert(data.error || 'Invalid verification code.');
+        }
+      } catch (err) {
+        alert('Server error verifying 2FA.');
       }
     }
 

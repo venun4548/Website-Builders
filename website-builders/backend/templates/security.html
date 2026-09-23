@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trust & Security Hub — Website Builders</title>
+  <link rel="stylesheet" href="/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #10b981;
+      --accent-light: #ecfdf5;
+      --bg: #f8fafc;
+      --text: #334155;
+      --muted: #64748b;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+    .security-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      padding: 4rem 1.5rem;
+      text-align: center;
+    }
+    .security-header h1 {
+      font-size: 2.5rem;
+      margin: 0 0 1rem;
+      color: #ffffff;
+    }
+    .security-header p {
+      font-size: 1.15rem;
+      color: #94a3b8;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    .badge-pill {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent);
+      padding: 0.35rem 1rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .container {
+      max-width: 1100px;
+      margin: -2.5rem auto 4rem;
+      padding: 0 1.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h3 {
+      margin: 0 0 0.75rem;
+      color: var(--primary);
+      font-size: 1.25rem;
+    }
+    .card p {
+      color: var(--muted);
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .features-list {
+      margin: 1rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .features-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .features-list li i {
+      color: var(--accent);
+    }
+    .footer-action {
+      text-align: center;
+      margin-top: 3rem;
+      padding: 2.5rem;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .btn-back {
+      display: inline-block;
+      background: var(--primary);
+      color: #ffffff;
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-back:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="security-header">
+    <div class="badge-pill">Enterprise Trust & Security</div>
+    <h1>Bank-Grade Security for Your Web Infrastructure</h1>
+    <p>How Website Builders protects your client data, transactions, and intellectual property.</p>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <!-- SSL & Data Encryption -->
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-lock"></i></div>
+        <h3>256-Bit SSL / TLS Encryption</h3>
+        <p>All network traffic between your browser and our platform is encrypted in transit using modern TLS 1.3 encryption protocols.</p>
+        <ul class="features-list">
+          <li><i class="fas fa-check-circle"></i> Strict HTTPS enforcement</li>
+          <li><i class="fas fa-check-circle"></i> Automated SSL renewal</li>
+          <li><i class="fas fa-check-circle"></i> HSTS preloading headers</li>
+        </ul>
+      </div>
+
+      <!-- Payment Protection -->
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+        <h3>PCI-DSS Level 1 Payment Security</h3>
+        <p>We do not store credit card or bank account credentials. All transactions are securely routed through PCI-DSS certified payment gateways (Razorpay/Stripe).</p>
+        <ul class="features-list">
+          <li><i class="fas fa-check-circle"></i> Tokenized checkout</li>
+          <li><i class="fas fa-check-circle"></i> Digital cryptographic invoice verification</li>
+          <li><i class="fas fa-check-circle"></i> Automated instant payment receipts</li>
+        </ul>
+      </div>
+
+      <!-- Two-Factor Authentication -->
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-key"></i></div>
+        <h3>Two-Factor Authentication (2FA)</h3>
+        <p>Administrator accounts are protected with RFC 6238 Time-based One-Time Password (TOTP) verification using Google Authenticator or Authy.</p>
+        <ul class="features-list">
+          <li><i class="fas fa-check-circle"></i> Rate-limited login challenge</li>
+          <li><i class="fas fa-check-circle"></i> Brute-force protection & session rotation</li>
+          <li><i class="fas fa-check-circle"></i> Zero plain-text secret storage</li>
+        </ul>
+      </div>
+
+      <!-- Data Privacy & Backups -->
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-database"></i></div>
+        <h3>Data Privacy & Continuous Backups</h3>
+        <p>Your project files, revision assets, and client records are stored with role-based access control and persistent cloud backups.</p>
+        <ul class="features-list">
+          <li><i class="fas fa-check-circle"></i> Strictly scoped client isolation</li>
+          <li><i class="fas fa-check-circle"></i> Non-destructive document versioning</li>
+          <li><i class="fas fa-check-circle"></i> GDPR & regional privacy alignment</li>
+        </ul>
+      </div>
+
+      <!-- Infrastructure Reliability -->
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-server"></i></div>
+        <h3>99.98% High Availability</h3>
+        <p>Hosted on geo-distributed cloud infrastructure with health monitoring, automatic failover, and zero single points of failure.</p>
+        <ul class="features-list">
+          <li><i class="fas fa-check-circle"></i> 24/7 uptime monitoring</li>
+          <li><i class="fas fa-check-circle"></i> Edge CDN asset acceleration</li>
+          <li><i class="fas fa-check-circle"></i> Rapid incident recovery response</li>
+        </ul>
+      </div>
+
+      <!-- Audit & Compliance -->
+      <div class="card">
+        <div class="card-icon"><i class="fas fa-clipboard-check"></i></div>
+        <h3>Full Audit Logging</h3>
+        <p>Every administrative action, permission change, document signature, and invoice generation is recorded in tamper-resistant audit logs.</p>
+        <ul class="features-list">
+          <li><i class="fas fa-check-circle"></i> IP hash & timestamp tracking</li>
+          <li><i class="fas fa-check-circle"></i> User action provenance</li>
+          <li><i class="fas fa-check-circle"></i> Real-time anomaly detection</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-action">
+      <h2>Have security questions or need compliance documentation?</h2>
+      <p style="color: var(--muted); margin-bottom: 1.5rem;">Our security and engineering team is available to assist you.</p>
+      <a href="/login" class="btn-back"><i class="fas fa-arrow-left"></i> Return to Portal</a>
+    </div>
+  </main>
+
+</body>
+</html>

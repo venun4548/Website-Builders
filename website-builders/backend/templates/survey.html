@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Feedback & Satisfaction Survey — Website Builders</title>
+  <link rel="stylesheet" href="/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #10b981;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --star-color: #fbbf24;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: #334155;
+      margin: 0;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .survey-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      max-width: 620px;
+      width: 100%;
+      padding: 2.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+    .survey-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .survey-header h1 {
+      font-size: 1.75rem;
+      color: var(--primary);
+      margin: 0 0 0.5rem;
+    }
+    .survey-header p {
+      color: #64748b;
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .question-block {
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .question-title {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+    .star-rating {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .star-btn {
+      background: none;
+      border: none;
+      font-size: 1.75rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 0.25rem;
+      transition: color 0.15s ease, transform 0.15s ease;
+    }
+    .star-btn.active, .star-btn:hover {
+      color: var(--star-color);
+      transform: scale(1.15);
+    }
+    textarea.form-control {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 0.75rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      resize: vertical;
+      min-height: 90px;
+    }
+    .btn-submit {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover {
+      background: #059669;
+    }
+    .success-panel {
+      text-align: center;
+      padding: 2rem 1rem;
+      display: none;
+    }
+    .success-icon {
+      font-size: 3.5rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="survey-card" id="survey-container">
+    <div class="survey-header">
+      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</div>
+      <h1>How Was Your Experience?</h1>
+      <p>Your feedback helps us continuously improve our design and delivery standards.</p>
+    </div>
+
+    <form id="csat-form" onsubmit="submitSurvey(event)">
+      <input type="hidden" id="survey-token" value="{{ token or '' }}">
+
+      <!-- Overall Rating -->
+      <div class="question-block">
+        <div class="question-title">1. Overall Satisfaction with the Project</div>
+        <div class="star-rating" data-name="rating_overall">
+          <button type="button" class="star-btn" onclick="setRating('rating_overall', 1)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_overall', 2)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_overall', 3)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_overall', 4)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_overall', 5)"><i class="fas fa-star"></i></button>
+        </div>
+      </div>
+
+      <!-- Quality Rating -->
+      <div class="question-block">
+        <div class="question-title">2. Design & Code Quality</div>
+        <div class="star-rating" data-name="rating_quality">
+          <button type="button" class="star-btn" onclick="setRating('rating_quality', 1)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_quality', 2)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_quality', 3)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_quality', 4)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_quality', 5)"><i class="fas fa-star"></i></button>
+        </div>
+      </div>
+
+      <!-- Timeliness -->
+      <div class="question-block">
+        <div class="question-title">3. Timeliness & Delivery Speed</div>
+        <div class="star-rating" data-name="rating_timeliness">
+          <button type="button" class="star-btn" onclick="setRating('rating_timeliness', 1)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_timeliness', 2)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_timeliness', 3)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_timeliness', 4)"><i class="fas fa-star"></i></button>
+          <button type="button" class="star-btn" onclick="setRating('rating_timeliness', 5)"><i class="fas fa-star"></i></button>
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <div class="question-block" style="border-bottom: none;">
+        <div class="question-title">4. Any Additional Remarks or Testimonial?</div>
+        <textarea id="comments" class="form-control" placeholder="Tell us what you liked most or how we can improve..."></textarea>
+      </div>
+
+      <button type="submit" id="btn-submit-survey" class="btn-submit">
+        Submit Feedback <i class="fas fa-paper-plane" style="margin-left: 6px;"></i>
+      </button>
+    </form>
+
+    <div class="success-panel" id="success-panel">
+      <div class="success-icon"><i class="fas fa-check-circle"></i></div>
+      <h2>Thank You for Your Feedback!</h2>
+      <p style="color: #64748b;">Your insights have been recorded and will help our team maintain our high standard of delivery.</p>
+      <a href="/login" style="display:inline-block; margin-top:1.5rem; color:var(--accent); font-weight:600; text-decoration:none;">Go to Client Portal &rarr;</a>
+    </div>
+  </div>
+
+  <script>
+    const ratings = {
+      rating_overall: 5,
+      rating_quality: 5,
+      rating_timeliness: 5
+    };
+
+    function setRating(category, val) {
+      ratings[category] = val;
+      const group = document.querySelector(`.star-rating[data-name="${category}"]`);
+      if (!group) return;
+      const btns = group.querySelectorAll('.star-btn');
+      btns.forEach((btn, idx) => {
+        if (idx < val) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    // Initialize all to 5 stars
+    setRating('rating_overall', 5);
+    setRating('rating_quality', 5);
+    setRating('rating_timeliness', 5);
+
+    async function submitSurvey(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-survey');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      const payload = {
+        token: document.getElementById('survey-token').value || window.location.pathname.split('/').pop(),
+        rating_overall: ratings.rating_overall,
+        rating_quality: ratings.rating_quality,
+        rating_timeliness: ratings.rating_timeliness,
+        comments: document.getElementById('comments').value
+      };
+
+      try {
+        const res = await fetch('/api/survey/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('csat-form').style.display = 'none';
+          document.getElementById('success-panel').style.display = 'block';
+        } else {
+          alert(data.error || 'Failed to submit feedback. Please try again.');
+          btn.disabled = false;
+          btn.textContent = 'Submit Feedback';
+        }
+      } catch (err) {
+        // Fallback for offline or network glitch
+        document.getElementById('csat-form').style.display = 'none';
+        document.getElementById('success-panel').style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

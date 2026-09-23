@@ -4,14 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Project Portal - Website Builders</title>
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" type="image/png" href="/images/logo.png">
   <link rel="shortcut icon" type="image/png" href="/images/logo.png">
   <link rel="apple-touch-icon" href="/images/logo.png">
   <link rel="preload" as="image" href="/images/logo.png">
   <link rel="stylesheet" href="/css/messages.css">
-  
   <link rel="stylesheet" href="/css/fontawesome.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="/js/locales.js"></script>
   
   <style>
     :root {
@@ -286,21 +287,31 @@
       <span style="font-size: 1.15rem; font-weight: 800; color: #17211F; letter-spacing: -0.02em;">Website <span style="color: #0F766E;">Builders</span></span>
     </a>
     <nav class="sidebar-nav">
-      <div class="nav-section">My Portal</div>
-      <a href="#" class="nav-link active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> Home</a>
-      <a href="#" class="nav-link" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> Projects</a>
-      <a href="#" class="nav-link" onclick="switchTab('invoices')" id="tab-invoices"><i class="fa-solid fa-credit-card"></i> Invoices & Payments</a>
+      <div class="nav-section" data-i18n="nav.projects">My Portal</div>
+      <a href="#" class="nav-link active" onclick="switchTab('dashboard')" id="tab-dashboard"><i class="fa-solid fa-house"></i> <span data-i18n="nav.command_center">Home</span></a>
+      <a href="#" class="nav-link" onclick="switchTab('projects')" id="tab-projects"><i class="fa-solid fa-folder-open"></i> <span data-i18n="nav.projects">Projects</span></a>
+      <a href="#" class="nav-link" onclick="switchTab('invoices')" id="tab-invoices"><i class="fa-solid fa-credit-card"></i> <span data-i18n="nav.invoices">Invoices & Payments</span></a>
+      
+      <div class="nav-section">DELIVERABLES & SUPPORT</div>
+      <a href="#" class="nav-link" onclick="switchTab('revisions')" id="tab-revisions"><i class="fa-solid fa-pen-ruler"></i> <span data-i18n="nav.revisions">Design Revisions</span></a>
+      <a href="#" class="nav-link" onclick="switchTab('maintenance')" id="tab-maintenance"><i class="fa-solid fa-wrench"></i> <span data-i18n="nav.maintenance">Maintenance</span></a>
+
       <div class="nav-section">COMMUNICATION</div>
-      <a href="#" class="nav-link" onclick="switchTab('messages')" id="tab-messages"><i class="fa-solid fa-envelope"></i> Messages</a>
+      <a href="#" class="nav-link" onclick="switchTab('messages')" id="tab-messages"><i class="fa-solid fa-envelope"></i> <span data-i18n="nav.messages">Messages</span></a>
       <a href="#" class="nav-link" onclick="switchTab('meetings')" id="tab-meetings"><i class="fa-solid fa-video"></i> Meetings</a>
       <a href="#" class="nav-link" onclick="switchTab('support')" id="tab-support"><i class="fa-solid fa-headset"></i> Support Tickets</a>
       <a href="#" class="nav-link" onclick="switchTab('files')" id="tab-files"><i class="fa-solid fa-file-arrow-up"></i> Files</a>
-      <div class="nav-section">LEGAL</div>
-      <a href="#" class="nav-link" onclick="switchTab('documents')" id="tab-documents"><i class="fa-solid fa-file-signature"></i> Documents & Signing</a>
+      
+      <div class="nav-section">TRUST & SECURITY</div>
+      <a href="#" class="nav-link" onclick="switchTab('documents')" id="tab-documents"><i class="fa-solid fa-file-signature"></i> <span data-i18n="nav.documents">Documents & Signing</span></a>
+      <a href="/security" target="_blank" class="nav-link"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="nav.security">Trust & Security</span></a>
 
-      <div style="margin-top: 2rem;">
-        <a href="{{ url_for('profile') }}" class="nav-link"><i class="fa-solid fa-user-circle"></i> Profile</a>
-        <a href="{{ url_for('logout') }}" class="nav-link" style="color: var(--status-failed);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+      <div style="margin-top: 1.5rem;">
+        <button id="btn-install-pwa" onclick="triggerPwaInstall()" style="display:none; width:100%; background:var(--primary); color:#FFF; border:none; padding:0.6rem 0.75rem; border-radius:var(--radius-sm); font-size:0.85rem; font-weight:700; cursor:pointer; margin-bottom:0.75rem; align-items:center; gap:0.5rem; justify-content:center;">
+          <i class="fa-solid fa-download"></i> <span data-i18n="dashboard.install_app">Install App</span>
+        </button>
+        <a href="{{ url_for('profile') }}" class="nav-link"><i class="fa-solid fa-user-circle"></i> <span data-i18n="nav.settings">Profile</span></a>
+        <a href="{{ url_for('logout') }}" class="nav-link" style="color: var(--status-failed);"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span data-i18n="nav.logout">Logout</span></a>
       </div>
     </nav>
   </aside>
@@ -315,10 +326,21 @@
         <input type="text" placeholder="Search (Ctrl + K)...">
       </div>
       
-      <div class="topbar-actions">
-        <button class="btn-icon">
+      <div class="topbar-actions" style="display:flex; align-items:center; gap:1rem;">
+        <!-- Language Switcher -->
+        <div style="display:flex; align-items:center; gap:0.4rem; background:var(--bg-page); padding:0.3rem 0.6rem; border-radius:8px; border:1px solid var(--border);">
+          <i class="fa-solid fa-globe" style="color:var(--primary); font-size:0.85rem;"></i>
+          <select id="wb-language-select" onchange="window.i18n && window.i18n.setLanguage(this.value)" style="border:none; background:transparent; font-size:0.85rem; font-weight:600; color:var(--text-main); cursor:pointer; outline:none;">
+            <option value="en">English</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+          </select>
+        </div>
+
+        <!-- Push Notifications Toggle -->
+        <button id="btn-push-subscribe" class="btn-icon" title="Enable Push Notifications" onclick="togglePushNotifications()" style="cursor:pointer;">
           <i class="fa-regular fa-bell"></i>
-          <span class="notif-dot" style="background: var(--status-new);"></span>
+          <span class="notif-dot" id="push-status-dot" style="background: var(--status-new);"></span>
         </button>
         
         <div class="user-profile">
@@ -330,6 +352,12 @@
         </div>
       </div>
     </header>
+
+    <!-- Offline Banner -->
+    <div id="wb-offline-banner" style="display:none; background:#FEF3C7; color:#92400E; padding:0.6rem 1.5rem; font-size:0.85rem; font-weight:600; border-bottom:1px solid #FCD34D; display:none; align-items:center; gap:0.5rem;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span data-i18n="offline.badge">You are currently offline</span> — <span data-i18n="offline.desc">Showing cached project information.</span>
+    </div>
 
     <div class="content-area">
       <div id="section-dashboard">
@@ -550,7 +578,7 @@
         </div>
       </div>
 
-      <!-- Dedicated Section: Files & Documents -->
+      <!-- Dedicated Section: Meetings -->
       <div id="section-meetings" style="display: none;">
         <div class="card" style="margin-bottom: 2rem;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -561,11 +589,52 @@
         </div>
 
         <div id="meetings-list" style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
-          <!-- Meetings populated via JS -->
           <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-secondary); background: #FFF; border-radius: 12px; border: 1px dashed var(--border);">
             <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; margin-bottom: 1rem; color: #CBD5E1;"></i>
             <h3>No Meetings Scheduled</h3>
             <p>Click "Request Meeting" to propose a time.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dedicated Section: Visual Design Revisions (Part 26-29) -->
+      <div id="section-revisions" style="display: none;">
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="font-size: 1.5rem; color: var(--text-main); margin: 0;" data-i18n="revisions.title">Visual Design Revisions</h2>
+              <p style="color: var(--text-secondary); margin-top: 0.25rem;" data-i18n="revisions.subtitle">Click on any mockup image to pinpoint feedback and annotations.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openNewRevisionModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="dashboard.new_revision">New Revision</span></button>
+          </div>
+        </div>
+
+        <div id="revisions-list-container" style="display: grid; gap: 1.5rem;">
+          <div class="card" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+            <i class="fa-solid fa-pen-ruler" style="font-size: 2.5rem; color: #CBD5E1; margin-bottom: 1rem;"></i>
+            <h3>No Revision Requests Yet</h3>
+            <p>You can upload or select a design mockup to leave pinpoint visual feedback.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dedicated Section: Post-Launch Maintenance Requests (Part 33-35) -->
+      <div id="section-maintenance" style="display: none;">
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h2 style="font-size: 1.5rem; color: var(--text-main); margin: 0;" data-i18n="maintenance.title">Post-Launch Maintenance Hub</h2>
+              <p style="color: var(--text-secondary); margin-top: 0.25rem;" data-i18n="maintenance.subtitle">Submit quick updates, bug fixes, or design adjustments.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openMaintenanceModal()"><i class="fa-solid fa-wrench"></i> <span data-i18n="dashboard.new_maintenance">New Request</span></button>
+          </div>
+        </div>
+
+        <div id="maintenance-list-container" style="display: grid; gap: 1.5rem;">
+          <div class="card" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+            <i class="fa-solid fa-screwdriver-wrench" style="font-size: 2.5rem; color: #CBD5E1; margin-bottom: 1rem;"></i>
+            <h3>No Maintenance Requests</h3>
+            <p>Raise change requests or technical updates whenever you need post-launch support.</p>
           </div>
         </div>
       </div>
@@ -641,6 +710,8 @@
         if (tabId === 'dashboard') fetchClientProjects();
         if (tabId === 'messages') loadCustMessagesHub();
         if (tabId === 'documents') loadDocumentsSection();
+        if (tabId === 'revisions') loadClientRevisions();
+        if (tabId === 'maintenance') loadClientMaintenance();
       } else {
         document.getElementById('section-placeholder').style.display = 'block';
         document.getElementById('placeholder-title').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
@@ -1724,11 +1795,366 @@
       }
     }
 
+    // ─── PWA & Service Worker (Part 1-3) ──────────────────────
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btn-install-pwa');
+      if (btn && !localStorage.getItem('wb_pwa_dismissed')) {
+        btn.style.display = 'flex';
+      }
+    });
+
+    function triggerPwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            document.getElementById('btn-install-pwa').style.display = 'none';
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          console.log('[PWA] Service Worker registered with scope:', reg.scope);
+        }).catch((err) => {
+          console.warn('[PWA] Service Worker registration failed:', err);
+        });
+      });
+    }
+
+    // Offline / Online Connectivity Listeners
+    function updateOnlineStatus() {
+      const banner = document.getElementById('wb-offline-banner');
+      if (banner) {
+        banner.style.display = navigator.onLine ? 'none' : 'flex';
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // ─── Web Push Notifications (Part 4-5) ────────────────────
+    async function togglePushNotifications() {
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        alert('Push notifications are not supported by your current browser.');
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Notification permission denied. Please allow notifications in your browser settings.');
+        return;
+      }
+
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const keyRes = await fetch('/api/push/public-key');
+        const keyData = await keyRes.json();
+        
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: keyData.publicKey
+          });
+        }
+
+        const subPayload = sub.toJSON();
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: subPayload })
+        });
+
+        const dot = document.getElementById('push-status-dot');
+        if (dot) dot.style.background = '#10b981';
+        alert('Browser push notifications enabled for this device!');
+      } catch (err) {
+        console.error('Push registration error:', err);
+        alert('Failed to register push subscription.');
+      }
+    }
+
+    // ─── Visual Revisions Handler (Part 26-29) ─────────────────
+    let currentAnnotations = [];
+
+    async function loadClientRevisions() {
+      const container = document.getElementById('revisions-list-container');
+      if (!container) return;
+      container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Loading revision requests...</div>';
+
+      try {
+        const res = await fetch('/api/revisions');
+        const data = await res.json();
+        const items = data.data || [];
+        if (items.length === 0) {
+          container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+              <i class="fa-solid fa-pen-ruler" style="font-size: 2.5rem; color: #CBD5E1; margin-bottom: 1rem;"></i>
+              <h3>No Revision Requests Yet</h3>
+              <p>You can upload or select a design mockup to leave pinpoint visual feedback.</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = items.map(rev => `
+          <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; padding:1.25rem;">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+                <span style="font-weight:700; font-size:1.05rem; color:var(--text-main);">${rev.designName || 'Design Mockup'}</span>
+                <span class="badge" style="background:${rev.status === 'Resolved' ? '#DCFCE7' : '#FEF3C7'}; color:${rev.status === 'Resolved' ? '#166534' : '#92400E'}; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; font-weight:700;">${rev.status}</span>
+                <span class="badge" style="background:#F1F5F9; color:#475569; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem;">Priority: ${rev.priority}</span>
+              </div>
+              <p style="font-size:0.9rem; color:var(--text-secondary); margin:0.25rem 0 0.5rem;">${rev.description || 'Visual annotations attached'}</p>
+              <div style="font-size:0.75rem; color:var(--text-secondary);">Created: ${new Date(rev.createdAt || Date.now()).toLocaleDateString()}</div>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <span style="font-size:0.85rem; font-weight:700; color:var(--primary); background:rgba(15,118,110,0.1); padding:0.35rem 0.75rem; border-radius:8px;">${rev.id}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load revisions:', err);
+      }
+    }
+
+    function openNewRevisionModal() {
+      currentAnnotations = [];
+      document.getElementById('modal-revision-create').style.display = 'flex';
+      renderAnnotationPins();
+    }
+
+    function closeRevisionModal() {
+      document.getElementById('modal-revision-create').style.display = 'none';
+    }
+
+    function handleImageCanvasClick(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width).toFixed(3);
+      const y = ((e.clientY - rect.top) / rect.height).toFixed(3);
+      const comment = prompt('Enter your feedback for this pinpoint area:');
+      if (comment) {
+        currentAnnotations.push({ x: parseFloat(x), y: parseFloat(y), text: comment });
+        renderAnnotationPins();
+      }
+    }
+
+    function renderAnnotationPins() {
+      const overlay = document.getElementById('revision-pins-overlay');
+      if (!overlay) return;
+      overlay.innerHTML = currentAnnotations.map((pin, i) => `
+        <div style="position:absolute; left:${pin.x * 100}%; top:${pin.y * 100}%; transform:translate(-50%, -50%); width:24px; height:24px; border-radius:50%; background:#EF4444; color:#FFF; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 3px rgba(255,255,255,0.8); cursor:pointer;" title="${pin.text}">
+          ${i + 1}
+        </div>
+      `).join('');
+    }
+
+    async function submitRevisionRequest(e) {
+      e.preventDefault();
+      const desc = document.getElementById('rev-description').value;
+      const priority = document.getElementById('rev-priority').value;
+
+      try {
+        const res = await fetch('/api/revisions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            designName: document.getElementById('rev-design-title').value,
+            description: desc,
+            priority: priority,
+            annotations: currentAnnotations
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Revision request submitted with pinpoint annotations!');
+          closeRevisionModal();
+          loadClientRevisions();
+        } else {
+          alert(data.error || 'Failed to submit revision.');
+        }
+      } catch (err) {
+        alert('Server error submitting revision.');
+      }
+    }
+
+    // ─── Maintenance Requests Handler (Part 33-35) ─────────────
+    async function loadClientMaintenance() {
+      const container = document.getElementById('maintenance-list-container');
+      if (!container) return;
+      container.innerHTML = '<div style="padding:2rem; text-align:center; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Loading maintenance requests...</div>';
+
+      try {
+        const res = await fetch('/api/maintenance');
+        const data = await res.json();
+        const items = data.data || [];
+        if (items.length === 0) {
+          container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+              <i class="fa-solid fa-screwdriver-wrench" style="font-size: 2.5rem; color: #CBD5E1; margin-bottom: 1rem;"></i>
+              <h3>No Maintenance Requests</h3>
+              <p>Raise change requests or technical updates whenever you need post-launch support.</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = items.map(req => `
+          <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; padding:1.25rem;">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+                <span style="font-weight:700; font-size:1.05rem; color:var(--text-main);">${req.title}</span>
+                <span class="badge" style="background:#E0F2FE; color:#0369A1; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem; font-weight:700;">${req.status}</span>
+                <span class="badge" style="background:#F1F5F9; color:#475569; padding:0.2rem 0.5rem; border-radius:6px; font-size:0.75rem;">${req.category}</span>
+              </div>
+              <p style="font-size:0.9rem; color:var(--text-secondary); margin:0.25rem 0 0.5rem;">${req.description}</p>
+              <div style="font-size:0.75rem; color:var(--text-secondary);">Submitted: ${new Date(req.createdAt || Date.now()).toLocaleDateString()}</div>
+            </div>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--primary); background:rgba(15,118,110,0.1); padding:0.35rem 0.75rem; border-radius:8px;">${req.id}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load maintenance:', err);
+      }
+    }
+
+    function openMaintenanceModal() {
+      document.getElementById('modal-maintenance-create').style.display = 'flex';
+    }
+
+    function closeMaintenanceModal() {
+      document.getElementById('modal-maintenance-create').style.display = 'none';
+    }
+
+    async function submitMaintenanceRequest(e) {
+      e.preventDefault();
+      const payload = {
+        title: document.getElementById('mnt-title').value,
+        description: document.getElementById('mnt-desc').value,
+        category: document.getElementById('mnt-category').value,
+        priority: document.getElementById('mnt-priority').value
+      };
+
+      try {
+        const res = await fetch('/api/maintenance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Maintenance request submitted successfully!');
+          closeMaintenanceModal();
+          loadClientMaintenance();
+        } else {
+          alert(data.error || 'Failed to submit maintenance request.');
+        }
+      } catch (err) {
+        alert('Server error submitting maintenance request.');
+      }
+    }
+
     // Bind to DOM loaded
     document.addEventListener('DOMContentLoaded', () => {
       loadClientDocuments();
     });
   </script>
+
+  <!-- Visual Revision Request Modal -->
+  <div id="modal-revision-create" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:#FFF; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; border-radius:16px; padding:2rem; position:relative;">
+      <button onclick="closeRevisionModal()" style="position:absolute; top:1.25rem; right:1.25rem; background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-secondary);">&times;</button>
+      <h3 style="margin:0 0 0.5rem; color:var(--primary); font-size:1.3rem;" data-i18n="revisions.title">New Visual Revision Request</h3>
+      <p style="color:var(--text-secondary); font-size:0.85rem; margin:0 0 1.25rem;" data-i18n="revisions.add_pin">Click on the mockup below to drop numbered feedback pins.</p>
+
+      <form onsubmit="submitRevisionRequest(event)">
+        <div style="margin-bottom:1rem;">
+          <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Deliverable Title</label>
+          <input type="text" id="rev-design-title" value="Homepage Mockup v2" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
+        </div>
+
+        <!-- Annotation Canvas Area -->
+        <div style="position:relative; width:100%; height:240px; background:#1e293b; border-radius:8px; overflow:hidden; margin-bottom:1rem; cursor:crosshair; display:flex; align-items:center; justify-content:center;" onclick="handleImageCanvasClick(event)">
+          <div style="color:#94a3b8; font-size:0.9rem; text-align:center; pointer-events:none;">
+            <i class="fa-solid fa-crosshairs" style="font-size:2rem; margin-bottom:0.5rem; display:block;"></i>
+            Click anywhere on this preview area to drop a pinpoint note
+          </div>
+          <div id="revision-pins-overlay" style="position:absolute; inset:0; pointer-events:none;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+          <div>
+            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Priority Level</label>
+            <select id="rev-priority" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
+              <option value="Low">Low Priority</option>
+              <option value="Medium" selected>Medium Priority</option>
+              <option value="High">High Priority</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Revision Notes</label>
+            <input type="text" id="rev-description" placeholder="Brief summary of requested changes" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:0.85rem; font-weight:700; font-size:0.95rem; border-radius:8px;">
+          Submit Revision Request &rarr;
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Post-Launch Maintenance Modal -->
+  <div id="modal-maintenance-create" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:#FFF; width:100%; max-width:540px; border-radius:16px; padding:2rem; position:relative;">
+      <button onclick="closeMaintenanceModal()" style="position:absolute; top:1.25rem; right:1.25rem; background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-secondary);">&times;</button>
+      <h3 style="margin:0 0 0.5rem; color:var(--primary); font-size:1.3rem;" data-i18n="maintenance.title">Post-Launch Maintenance Request</h3>
+      <p style="color:var(--text-secondary); font-size:0.85rem; margin:0 0 1.25rem;" data-i18n="maintenance.subtitle">Submit quick updates, bug fixes, or design adjustments.</p>
+
+      <form onsubmit="submitMaintenanceRequest(event)">
+        <div style="margin-bottom:1rem;">
+          <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Request Title</label>
+          <input type="text" id="mnt-title" placeholder="e.g. Update pricing table content / Fix hero image" required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+          <div>
+            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Category</label>
+            <select id="mnt-category" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
+              <option value="Content Update">Content Update</option>
+              <option value="Design Change">Design Change</option>
+              <option value="Bug Fix">Bug Fix</option>
+              <option value="Technical Support">Technical Support</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Priority</label>
+            <select id="mnt-priority" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+          <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:0.35rem;">Description & Details</label>
+          <textarea id="mnt-desc" rows="3" placeholder="Provide details on the exact changes or URL needed..." required style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; font-family:inherit;"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:0.85rem; font-weight:700; font-size:0.95rem; border-radius:8px;">
+          Submit Maintenance Ticket &rarr;
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Client Project Details Modal -->
   <div class="modal-backdrop" id="client-project-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15, 118, 110, 0.45); display:none; z-index:1000; align-items:center; justify-content:center; padding:1.5rem; backdrop-filter:blur(3px);">
