@@ -901,6 +901,18 @@ def admin_payments_redirect():
 def staff_notifications_redirect():
     return redirect(url_for('staff_dashboard') + '#notifications')
 
+@app.route('/messages')
+@app.route('/admin/messages')
+@login_required
+def messages_redirect():
+    if current_user.role == 'Super Admin':
+        return redirect(url_for('super_admin_dashboard') + '#messages')
+    elif current_user.role == 'Admin':
+        return redirect(url_for('admin_dashboard') + '#messages')
+    elif current_user.is_staff():
+        return redirect(url_for('staff_dashboard') + '#messages')
+    return redirect(url_for('customer_dashboard') + '#messages')
+
 @app.route('/profile')
 @app.route('/super-admin/profile')
 @app.route('/admin/profile')
@@ -1297,7 +1309,9 @@ def api_get_projects():
                 or str(p.get('project_id', '')).strip().lower() in assigned_pids
             ]
         return jsonify({'success': True, 'data': projs})
-    return jsonify({'success': False, 'error': result.get('message')}), 400
+    # Return empty array fallback — never return 400 on a GET list endpoint
+    logger.warning('getProjects GAS error: %s', result.get('message'))
+    return jsonify({'success': True, 'data': [], 'warning': result.get('message', 'Could not fetch from GAS')}), 200
 
 @app.route('/api/projects', methods=['POST'])
 @login_required
@@ -1591,7 +1605,8 @@ def api_get_tickets():
     result = gas_get('getTickets', args)
     if result.get('status') == 'success':
         return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': False, 'error': result.get('message')}), 400
+    logger.warning('getTickets GAS error: %s', result.get('message'))
+    return jsonify({'success': True, 'data': [], 'warning': result.get('message', 'Could not fetch tickets')}), 200
 
 @app.route('/api/tickets', methods=['POST'])
 @login_required
@@ -1635,7 +1650,8 @@ def api_get_meetings():
     result = gas_get('getMeetings', args)
     if result.get('status') == 'success':
         return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': False, 'error': result.get('message')}), 400
+    logger.warning('getMeetings GAS error: %s', result.get('message'))
+    return jsonify({'success': True, 'data': [], 'warning': result.get('message', 'Could not fetch meetings')}), 200
 
 @app.route('/api/meetings', methods=['POST'])
 @login_required
@@ -2204,7 +2220,9 @@ def api_tasks_handler():
                     filtered.append(clean_t)
             tasks = filtered
         return jsonify({'success': True, 'status': 'success', 'data': tasks})
-    return jsonify({'success': False, 'status': 'error', 'data': [], 'error': result.get('message')}), 400
+    # Return empty array fallback — never return 400 on a GET list endpoint
+    logger.warning('getTasks GAS error: %s', result.get('message'))
+    return jsonify({'success': True, 'status': 'success', 'data': [], 'warning': result.get('message', 'Could not fetch from GAS')}), 200
 
 @app.route('/api/tasks/<task_id>', methods=['GET', 'PUT', 'PATCH', 'DELETE'])
 @login_required
@@ -2325,7 +2343,9 @@ def api_clients_handler():
         if current_user.is_staff():
             clients = [c for c in clients if str(c.get('assigned_staff_id', '')) == str(current_user.id)]
         return jsonify({'success': True, 'status': 'success', 'data': clients})
-    return jsonify({'success': False, 'status': 'error', 'data': [], 'error': result.get('message')}), 400
+    # Return empty array fallback — never return 400 on a GET list endpoint
+    logger.warning('getUsers(clients) GAS error: %s', result.get('message'))
+    return jsonify({'success': True, 'status': 'success', 'data': [], 'warning': result.get('message', 'Could not fetch from GAS')}), 200
 
 # --- API: Websites ────────────────────────────────────────────
 @app.route('/api/websites', methods=['GET', 'POST'])

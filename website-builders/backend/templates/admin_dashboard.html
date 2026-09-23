@@ -2207,6 +2207,254 @@
         switchSection('overview');
       }
     });
+
+    // ─── Missing Section Loaders (Messages, Notifications, Meetings, Tickets) ───
+    async function loadAdminMessagesHub() {
+      const convList = document.getElementById('conversation-list');
+      if (!convList) return;
+      convList.innerHTML = '<p style="text-align:center;padding:1.5rem;color:var(--secondary-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading conversations...</p>';
+      try {
+        const res = await fetch('/api/messages/conversations');
+        const data = await res.json();
+        const convs = data.data || [];
+        if (convs.length === 0) {
+          convList.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted-text);">No conversations yet. Start a new message.</p>';
+          return;
+        }
+        convList.innerHTML = convs.map(c => {
+          const name = c.other_name || c.other_user_name || 'Unknown';
+          const subject = c.subject || c.last_message || 'No subject';
+          const unread = c.unread_count || 0;
+          return `
+            <div class="conversation-item ${unread > 0 ? 'unread' : ''}" onclick="openConversation('${c.conversation_id}')" style="padding:0.85rem 1rem;border-bottom:1px solid var(--border-color);cursor:pointer;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="font-size:0.9rem;">${name}</strong>
+                ${unread > 0 ? `<span class="badge badge-success" style="font-size:0.7rem;">${unread}</span>` : ''}
+              </div>
+              <div style="font-size:0.82rem;color:var(--secondary-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${subject}</div>
+            </div>`;
+        }).join('');
+        // Also load recipients for compose
+        loadRecipients();
+      } catch (e) {
+        convList.innerHTML = '<p style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading messages.</p>';
+      }
+    }
+
+    async function loadRecipients() {
+      try {
+        const res = await fetch('/api/messages/recipients');
+        const data = await res.json();
+        const recipients = data.data || [];
+        const sel = document.getElementById('compose-recipient');
+        if (sel) {
+          sel.innerHTML = '<option value="">-- Select Recipient --</option>';
+          recipients.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id || r.user_id;
+            opt.innerText = `${r.full_name || r.name || 'User'} (${r.role || 'User'})`;
+            sel.appendChild(opt);
+          });
+        }
+      } catch (e) {
+        console.error('Error loading recipients:', e);
+      }
+    }
+
+    async function openConversation(convId) {
+      const chatHistory = document.getElementById('chat-history');
+      const chatHeader = document.getElementById('chat-header');
+      const chatComposer = document.getElementById('chat-composer');
+      if (!chatHistory) return;
+      chatHistory.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--secondary-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading messages...</p>';
+      if (chatHeader) chatHeader.style.display = 'block';
+      if (chatComposer) chatComposer.style.display = 'block';
+      try {
+        const res = await fetch(`/api/messages/conversations/${convId}`);
+        const data = await res.json();
+        const msgs = data.data || [];
+        if (msgs.length === 0) {
+          chatHistory.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted-text);">No messages in this conversation.</p>';
+          return;
+        }
+        const currentUserId = '{{ user.id }}';
+        chatHistory.innerHTML = msgs.map(m => {
+          const isMine = String(m.sender_id) === String(currentUserId);
+          return `<div class="chat-bubble ${isMine ? 'sent' : 'received'}" style="max-width:80%;padding:0.75rem 1rem;margin:0.5rem ${isMine ? '0 0.5rem auto' : 'auto 0.5rem 0'};background:${isMine ? 'var(--light-green)' : '#f3f4f6'};border-radius:12px;">
+            <div style="font-size:0.75rem;color:var(--secondary-text);margin-bottom:0.25rem;">${m.sender_name || 'Unknown'}</div>
+            <div style="font-size:0.88rem;">${m.message || m.body || ''}</div>
+            <div style="font-size:0.7rem;color:var(--muted-text);text-align:right;margin-top:0.25rem;">${m.sent_at || m.created_at || ''}</div>
+          </div>`;
+        }).join('');
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        window._currentConvId = convId;
+      } catch (e) {
+        chatHistory.innerHTML = '<p style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading conversation.</p>';
+      }
+    }
+
+    async function sendReply() {
+      const input = document.getElementById('msg-input');
+      if (!input || !input.value.trim() || !window._currentConvId) return;
+      try {
+        await fetch('/api/messages', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({conversation_id: window._currentConvId, message: input.value.trim()})
+        });
+        input.value = '';
+        openConversation(window._currentConvId);
+      } catch (e) {
+        alert('Error sending message.');
+      }
+    }
+
+    function openNewMessageModal() {
+      const modal = document.getElementById('compose-modal');
+      if (modal) modal.style.display = 'flex';
+      loadRecipients();
+    }
+
+    function closeNewMessageModal() {
+      const modal = document.getElementById('compose-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function sendNewMessage(e) {
+      if (e) e.preventDefault();
+      const recipient = document.getElementById('compose-recipient').value;
+      const subject = document.getElementById('compose-subject').value.trim();
+      const message = document.getElementById('compose-message').value.trim();
+      const projectId = document.getElementById('compose-project')?.value?.trim() || '';
+      if (!recipient || !subject || !message) {
+        alert('Please fill in recipient, subject, and message.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({recipient_id: recipient, subject, message, project_id: projectId})
+        });
+        const data = await res.json();
+        if (res.ok && (data.success || data.status === 'success')) {
+          closeNewMessageModal();
+          alert('Message sent!');
+          loadAdminMessagesHub();
+        } else {
+          alert(data.message || data.error || 'Failed to send message.');
+        }
+      } catch (e) {
+        alert('Server error sending message.');
+      }
+    }
+
+    function setFilter(filter) {
+      document.querySelectorAll('.msg-filter-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      // Filter logic would go here — for now just reload
+      loadAdminMessagesHub();
+    }
+
+    function doMsgSearch() {
+      // Simple search through conversation list items
+      const q = (document.getElementById('msg-search')?.value || '').toLowerCase();
+      document.querySelectorAll('.conversation-item').forEach(item => {
+        item.style.display = item.innerText.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
+    async function loadAdminNotifications() {
+      const container = document.getElementById('admin-tbl-notifications');
+      if (!container) return;
+      container.innerHTML = '<p style="text-align:center;padding:1.5rem;color:var(--secondary-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading notifications...</p>';
+      try {
+        const res = await fetch('/api/notifications');
+        const data = await res.json();
+        const notifs = data.data || [];
+        if (notifs.length === 0) {
+          container.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted-text);">No notifications.</p>';
+          return;
+        }
+        container.innerHTML = '<div style="max-height:500px;overflow-y:auto;">' + notifs.map(n => `
+          <div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border-color);${n.read ? '' : 'background:var(--very-light-green);'}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong style="font-size:0.88rem;">${n.title || 'Notification'}</strong>
+              <small style="color:var(--muted-text);">${n.created_at || ''}</small>
+            </div>
+            <p style="font-size:0.82rem;color:var(--secondary-text);margin-top:0.25rem;">${n.message || ''}</p>
+          </div>
+        `).join('') + '</div>';
+      } catch (e) {
+        container.innerHTML = '<p style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading notifications.</p>';
+      }
+    }
+
+    function markAllNotificationsRead() {
+      fetch('/api/notifications', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'mark_all_read'})
+      }).then(() => loadAdminNotifications());
+    }
+
+    async function loadAdminMeetings() {
+      const tbody = document.getElementById('tbl-meetings-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--secondary-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading meetings...</td></tr>';
+      try {
+        const res = await fetch('/api/meetings');
+        const data = await res.json();
+        const meetings = data.data || [];
+        if (meetings.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted-text);">No scheduled meetings.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = meetings.map(m => `
+          <tr>
+            <td style="font-family:monospace;font-weight:700;">${m.meeting_id || m.id || '-'}</td>
+            <td><strong>${m.title || m.subject || 'Meeting'}</strong></td>
+            <td>${m.client_name || m.customer_name || '-'}</td>
+            <td>${m.date || m.scheduled_date || '-'}</td>
+            <td><span class="badge ${m.status === 'Completed' ? 'badge-success' : 'badge-info'}">${m.status || 'Scheduled'}</span></td>
+            <td><a href="${m.link || '#'}" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-video"></i> Join</a></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading meetings.</td></tr>';
+      }
+    }
+
+    async function loadAdminTickets() {
+      const tbody = document.getElementById('tbl-tickets-body');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--secondary-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading tickets...</td></tr>';
+      try {
+        const res = await fetch('/api/tickets');
+        const data = await res.json();
+        const tickets = data.data || [];
+        if (tickets.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted-text);">No support tickets found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = tickets.map(t => {
+          const priBadge = (t.priority || '').toUpperCase() === 'URGENT' ? 'badge-danger' : (t.priority || '').toUpperCase() === 'HIGH' ? 'badge-warning' : 'badge-info';
+          const statusBadge = (t.status || '').toUpperCase() === 'RESOLVED' ? 'badge-success' : (t.status || '').toUpperCase() === 'OPEN' ? 'badge-warning' : 'badge-info';
+          return `
+            <tr>
+              <td style="font-family:monospace;font-weight:700;">${t.ticket_id || t.id || '-'}</td>
+              <td><strong>${t.subject || 'No Subject'}</strong></td>
+              <td>${t.customer_name || t.client_name || '-'}</td>
+              <td><span class="badge ${priBadge}">${t.priority || 'Normal'}</span></td>
+              <td><span class="badge ${statusBadge}">${t.status || 'Open'}</span></td>
+              <td><button class="btn btn-outline btn-sm" onclick="alert('Ticket details: ' + JSON.stringify(${JSON.stringify(t)}, null, 2))"><i class="fa-solid fa-eye"></i> View</button></td>
+            </tr>`;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading tickets.</td></tr>';
+      }
+    }
+
   </script>
 
   <!-- ═══════════════════════════════════════════════════════════════ -->
