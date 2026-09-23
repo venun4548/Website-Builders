@@ -17,7 +17,7 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 
 from config import Config
-from models import SheetsUser, ist_now, format_ist
+from models import SheetsUser, AnonymousUser, ist_now, format_ist
 
 # ─── App Init ─────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -41,6 +41,7 @@ bcrypt = Bcrypt(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+login_manager.anonymous_user = AnonymousUser
 
 # ─── Static Asset Cache Headers (Performance) ─────────────────
 @app.after_request

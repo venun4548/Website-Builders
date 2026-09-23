@@ -3,7 +3,7 @@ models.py — Session-backed User model for Google Sheets storage system.
 No SQLAlchemy / database ORM. All data comes from Google Sheets via GAS.
 """
 from datetime import datetime, timedelta
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 
 IST_OFFSET = timedelta(hours=5, minutes=30)
 
@@ -18,6 +18,27 @@ def format_ist(dt=None, fmt="%d-%m-%Y %H:%M:%S"):
     return dt.strftime(fmt)
 
 
+class AnonymousUser(AnonymousUserMixin):
+    id = ''
+    full_name = 'Guest'
+    name = 'Guest'
+    email = ''
+    role = 'Guest'
+    is_active = False
+
+    def is_super_admin(self):
+        return False
+
+    def is_admin(self):
+        return False
+
+    def is_staff(self):
+        return False
+
+    def is_user(self):
+        return False
+
+
 class SheetsUser(UserMixin):
     """
     Flask-Login compatible user backed by data from Google Sheets.
@@ -27,10 +48,13 @@ class SheetsUser(UserMixin):
     def __init__(self, data: dict):
         # Accept both 'user_id' and 'id' from GAS responses
         self.id           = str(data.get('user_id') or data.get('id') or '')
-        self.full_name    = str(data.get('full_name', ''))
+        self.full_name    = str(data.get('full_name') or data.get('name') or data.get('email', 'User')).strip()
+        if not self.full_name:
+            self.full_name = 'User'
+        self.name         = self.full_name
         self.email        = str(data.get('email', '')).lower()
         self.mobile       = str(data.get('mobile', ''))
-        self.role         = str(data.get('role', ''))
+        self.role         = str(data.get('role', 'User'))
         self.status       = str(data.get('status', 'ACTIVE'))
         self.last_login   = str(data.get('last_login', ''))
         self.created_at = None
