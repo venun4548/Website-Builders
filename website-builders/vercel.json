@@ -8,12 +8,24 @@
     {
       "src": "*.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "manifest.webmanifest",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "sw.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/(css|js|images|webfonts)/(.*)",
       "dest": "/$1/$2"
+    },
+    {
+      "src": "/(sw.js|manifest.webmanifest|favicon.ico|robots.txt)",
+      "dest": "/$1"
     },
     {
       "src": "/(index|services|contact).html",
@@ -25,3 +37,4 @@
     }
   ]
 }
+

@@ -4,8 +4,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Website Builders - Premium Website Design & Development Agency">
-  <meta name="theme-color" content="#0b1120">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#10b981">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" sizes="192x192" href="/images/icon-192.png">
+  <link rel="shortcut icon" type="image/png" href="/images/icon-192.png">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
   <title>Website Builders - Premium Web Design Agency</title>
 
   <!-- Open Graph Tags -->
@@ -421,8 +427,68 @@ position:relative;">
     </div>
   </footer>
 
+  <!-- Floating PWA Install Prompt -->
+  <div id="pwa-install-banner" style="display:none; position:fixed; bottom:24px; right:24px; z-index:9999; background:linear-gradient(135deg, #0f172a, #1e293b); border:1px solid #10b981; border-radius:14px; padding:12px 18px; box-shadow:0 10px 25px rgba(0,0,0,0.5); align-items:center; gap:12px; animation:slideUpPwa 0.4s ease-out;">
+    <img src="/images/icon-192.png" alt="App Icon" style="width:38px; height:38px; border-radius:8px;">
+    <div>
+      <div style="color:#FFF; font-weight:700; font-size:0.9rem;">Install Website Builders</div>
+      <div style="color:#94a3b8; font-size:0.75rem;">Fast access on Phone & Desktop</div>
+    </div>
+    <button id="btn-pwa-install-action" onclick="triggerPwaInstallIndex()" style="background:#10b981; color:#FFF; border:none; border-radius:8px; padding:7px 14px; font-weight:700; font-size:0.8rem; cursor:pointer; margin-left:6px;">
+      Install
+    </button>
+    <button onclick="dismissPwaBanner()" style="background:transparent; color:#64748b; border:none; font-size:1.1rem; cursor:pointer; padding:2px 6px;">&times;</button>
+  </div>
+  <style>
+    @keyframes slideUpPwa {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+
   <script src="js/main.js"></script>
   <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+          console.log('[PWA] Service Worker registered:', reg.scope);
+        }).catch((err) => {
+          console.warn('[PWA] SW register error:', err);
+        });
+      });
+    }
+
+    // PWA Install Event
+    let deferredPromptIndex = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPromptIndex = e;
+      if (!sessionStorage.getItem('wb_pwa_dismissed')) {
+        const banner = document.getElementById('pwa-install-banner');
+        if (banner) banner.style.display = 'flex';
+      }
+    });
+
+    function triggerPwaInstallIndex() {
+      if (deferredPromptIndex) {
+        deferredPromptIndex.prompt();
+        deferredPromptIndex.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.style.display = 'none';
+          }
+          deferredPromptIndex = null;
+        });
+      }
+    }
+
+    function dismissPwaBanner() {
+      sessionStorage.setItem('wb_pwa_dismissed', 'true');
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', async function loadSession() {
       try {
         const backendUrl = '';

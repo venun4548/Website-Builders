@@ -3062,6 +3062,11 @@ def serve_service_worker():
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response
 
+@app.route('/favicon.ico')
+def serve_favicon():
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    return send_from_directory(os.path.join(root_dir, 'images'), 'favicon.ico', mimetype='image/x-icon')
+
 @app.route('/security')
 @app.route('/trust-and-security')
 def security_page():

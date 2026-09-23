@@ -3,7 +3,7 @@
  * Handles offline caching, PWA installation, and Web Push notifications.
  */
 
-const CACHE_VERSION = 'wb-cache-v1.0.1';
+const CACHE_VERSION = 'wb-cache-v1.0.2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DATA_CACHE = `${CACHE_VERSION}-data`;
 
@@ -16,6 +16,9 @@ const PRECACHE_ASSETS = [
   '/css/style.css',
   '/js/locales.js',
   '/images/logo.png',
+  '/images/icon-192.png',
+  '/images/icon-512.png',
+  '/images/icon-maskable.png',
   '/security'
 ];
 
