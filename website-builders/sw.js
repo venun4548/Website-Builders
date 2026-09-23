@@ -3,15 +3,16 @@
  * Handles offline caching, PWA installation, and Web Push notifications.
  */
 
-const CACHE_VERSION = 'wb-cache-v1.0.0';
+const CACHE_VERSION = 'wb-cache-v1.0.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DATA_CACHE = `${CACHE_VERSION}-data`;
 
-// Safe static assets to precache
+// Safe static assets to precache (verified existing paths)
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.webmanifest',
-  '/css/all.min.css',
+  '/css/fontawesome.min.css',
+  '/css/messages.css',
   '/css/style.css',
   '/js/locales.js',
   '/images/logo.png',
@@ -30,13 +31,22 @@ const SENSITIVE_PATTERNS = [
   /\/logout/
 ];
 
-// Install Event - Precache static assets
+// Install Event - Resilient precache of verified static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('[SW] Precache asset fetch warning:', err);
-      });
+    caches.open(STATIC_CACHE).then(async (cache) => {
+      await Promise.allSettled(
+        PRECACHE_ASSETS.map(async (url) => {
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              await cache.put(url, res);
+            }
+          } catch (e) {
+            // Silently skip any individual asset fetch issue
+          }
+        })
+      );
     }).then(() => self.skipWaiting())
   );
 });
