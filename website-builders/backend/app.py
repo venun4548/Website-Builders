@@ -3440,9 +3440,11 @@ def api_revisions_status(rev_id):
     return jsonify({'success': True, 'message': f"Revision {rev_id} updated to {status}."})
 
 # ─── Client Satisfaction Surveys (Part 30-32) ──────────────────
+@app.route('/survey')
 @app.route('/survey/<token>')
-def view_survey(token):
-    return render_template('survey.html', token=token)
+def view_survey(token=None):
+    t = token or request.args.get('token', '')
+    return render_template('survey.html', token=t)
 
 @app.route('/api/survey/submit', methods=['POST'])
 def api_survey_submit():
