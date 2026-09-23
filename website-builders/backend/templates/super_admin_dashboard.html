@@ -3573,10 +3573,10 @@
           <td><small style="font-weight:600; color:var(--secondary-text);">${e.created_at || 'N/A'}</small></td>
           <td style="text-align:right;">
             <div class="action-btn-group" style="justify-content:flex-end; gap:0.35rem;">
-              <button class="btn-icon" onclick="viewEnquiryDetails(this.dataset.id)" data-id="${e.id || e.enquiry_id || ''}" title="View Enquiry Details">
+              <button class="btn-icon" onclick="viewEnquiryDetails('${e.id || e.enquiry_id || ''}')" title="View Enquiry Details">
                 <i class="fa-solid fa-eye"></i>
               </button>
-              ${!e.is_converted ? `<button class="btn btn-primary btn-sm" onclick="openConvertEnquiryModal(this.dataset.id)" data-id="${e.id || e.enquiry_id || ''}" title="Convert to Project"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert</button>` : ''}
+              ${!e.is_converted ? `<button class="btn btn-primary btn-sm" onclick="openConvertEnquiryModal('${e.id || e.enquiry_id || ''}')" title="Convert to Project"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert</button>` : ''}
             </div>
           </td>
         </tr>`;
@@ -3615,7 +3615,13 @@
             if (uData.status === 'success' || uData.success) rawPeopleData = uData.data || [];
           } catch(e) {}
         }
-        const enq = (rawEnquiryData || []).find(e => String(e.id) === String(enquiryId) || String(e.enquiry_id) === String(enquiryId));
+        const enq = (rawEnquiryData || []).find(e => 
+          String(e.id) === String(enquiryId) || 
+          String(e.enquiry_id) === String(enquiryId) ||
+          String(e.submission_id) === String(enquiryId) ||
+          String(e.id) === String(enquiryId).replace('#ENQ-', '') ||
+          String(e.enquiry_id) === String(enquiryId).replace('#ENQ-', '')
+        );
         if (!enq) {
           alert('Enquiry not found! ID: ' + enquiryId);
           return;
@@ -3701,7 +3707,13 @@
           } catch(e) {}
         }
 
-        const enq = (rawEnquiryData || []).find(e => String(e.id) === String(enquiryId) || String(e.enquiry_id) === String(enquiryId));
+        const enq = (rawEnquiryData || []).find(e => 
+          String(e.id) === String(enquiryId) || 
+          String(e.enquiry_id) === String(enquiryId) ||
+          String(e.submission_id) === String(enquiryId) ||
+          String(e.id) === String(enquiryId).replace('#ENQ-', '') ||
+          String(e.enquiry_id) === String(enquiryId).replace('#ENQ-', '')
+        );
         if (!enq) { alert('Enquiry not found: ' + enquiryId); return; }
 
         const elId = document.getElementById('convert-enquiry-id');
