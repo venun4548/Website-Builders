@@ -2634,12 +2634,16 @@
               <td>${t.customer_name || t.client_name || '-'}</td>
               <td><span class="badge ${priBadge}">${t.priority || 'Normal'}</span></td>
               <td><span class="badge ${statusBadge}">${t.status || 'Open'}</span></td>
-              <td><button class="btn btn-outline btn-sm" onclick="alert('Ticket: ' + (${JSON.stringify(t.subject || '')}))"><i class="fa-solid fa-eye"></i> View</button></td>
+              <td><button class="btn btn-outline btn-sm" onclick="viewTicketDetails('${t.ticket_id || t.id || ''}')"><i class="fa-solid fa-eye"></i> View</button></td>
             </tr>`;
         }).join('');
       } catch (e) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading tickets.</td></tr>';
       }
+    }
+
+    function viewTicketDetails(tid) {
+      alert('Viewing Ticket: ' + (tid || 'N/A'));
     }
     // ─── Conversion Funnel Analytics (Part 15) ───────────────
     async function loadFunnelData() {
