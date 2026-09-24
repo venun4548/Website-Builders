@@ -1981,7 +1981,23 @@ def api_verify_payment():
         call_gas('logPayment', payment_record)
     except Exception as e:
         logger.warning("GAS logPayment call failed: %s", e)
-        return jsonify({'success': False, 'error': 'Payment verified but failed to log to Database.'}), 500
+
+    # 2. Update status of invoice if matching invoice_id in work store
+    inv_key = str(payment_record.get('invoice_id', '')).strip().lower()
+    try:
+        store = _load_work_store()
+        updated_inv = False
+        for inv in store.get('invoices', []):
+            if str(inv.get('invoice_id', '')).strip().lower() == inv_key or str(inv.get('id', '')).strip().lower() == inv_key:
+                inv['status'] = 'PAID'
+                inv['paid_at'] = paid_at_str
+                inv['payment_id'] = payment_id
+                inv['payment_method'] = 'Razorpay'
+                updated_inv = True
+        if updated_inv:
+            _save_work_store(store)
+    except Exception as e_inv:
+        logger.warning("Error updating invoice status upon payment verification: %s", e_inv)
 
     return jsonify({
         'success': True,
@@ -2007,15 +2023,210 @@ def api_get_payments():
         logger.warning("GAS getPayments error: %s", e)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/invoices', methods=['GET'])
+@app.route('/api/invoices', methods=['GET', 'POST'])
 @login_required
-def api_get_invoices():
-    result = gas_get('getInvoices', {
-        'customer_id': str(current_user.id) if current_user.role == 'Client' else ''
+def api_invoices_handler():
+    if request.method == 'POST':
+        if current_user.role not in ('Super Admin', 'Admin'):
+            return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+        data = request.get_json(silent=True) or {}
+        
+        project_id = (data.get('project_id') or '').strip()
+        client_name = (data.get('client_name') or data.get('customer_name') or '').strip()
+        client_email = (data.get('client_email') or data.get('customer_email') or '').strip()
+        client_id = (data.get('client_id') or data.get('customer_id') or '').strip()
+        title = (data.get('title') or data.get('description') or 'Project Milestone Payment').strip()
+        milestone = (data.get('milestone') or data.get('stage') or 'Milestone').strip()
+        notes = (data.get('notes') or '').strip()
+        due_date = (data.get('due_date') or '').strip()
+        
+        try:
+            amount = float(data.get('amount', 0))
+        except:
+            amount = 0.0
+            
+        if amount <= 0:
+            return jsonify({'success': False, 'error': 'Invoice amount must be greater than zero.'}), 400
+
+        # Auto-resolve client details from project if missing
+        if project_id and (not client_name or not client_email or not client_id):
+            try:
+                store = _load_work_store()
+                for p in store.get('projects', []):
+                    if str(p.get('project_id') or p.get('id')) == project_id:
+                        client_name = client_name or p.get('customer_name') or p.get('client_name') or ''
+                        client_email = client_email or p.get('customer_email') or p.get('client_email') or ''
+                        client_id = client_id or p.get('customer_id') or p.get('client_id') or ''
+                        break
+            except:
+                pass
+            
+        pid_clean = project_id.replace('WB-', '') if project_id else datetime.now().strftime('%Y%m%d')
+        inv_id = f"INV-{pid_clean}-{uuid.uuid4().hex[:4].upper()}"
+        now_dt = datetime.now()
+        created_at_str = now_dt.strftime('%Y-%m-%d %H:%M:%S')
+        created_date_str = now_dt.strftime('%d %b %Y')
+        
+        invoice_obj = {
+            'invoice_id': inv_id,
+            'id': inv_id,
+            'project_id': project_id,
+            'project_name': data.get('project_name') or (f"Project {project_id}" if project_id else "Custom Project"),
+            'client_id': client_id,
+            'customer_id': client_id,
+            'client_name': client_name or 'Client',
+            'customer_name': client_name or 'Client',
+            'client_email': client_email,
+            'customer_email': client_email,
+            'title': title,
+            'description': title,
+            'milestone': milestone,
+            'amount': amount,
+            'due_date': due_date or created_date_str,
+            'created_at': created_at_str,
+            'created_date': created_date_str,
+            'notes': notes,
+            'status': 'DUE',
+            'created_by': str(current_user.id),
+            'created_by_name': getattr(current_user, 'full_name', 'Admin')
+        }
+        
+        # Save to local work store
+        try:
+            store = _load_work_store()
+            if 'invoices' not in store or not isinstance(store['invoices'], list):
+                store['invoices'] = []
+            store['invoices'].insert(0, invoice_obj)
+            _save_work_store(store)
+        except Exception as e_store:
+            logger.warning("Error saving invoice to local store: %s", e_store)
+            
+        # Call GAS to store
+        try:
+            call_gas('createInvoice', invoice_obj)
+        except Exception as e_gas:
+            logger.warning("GAS createInvoice call error: %s", e_gas)
+            
+        # Dispatch notification to client
+        if client_email or client_id:
+            try:
+                dispatch_omni_notification(
+                    user_email=client_email,
+                    user_id=client_id or 'CLIENT',
+                    title=f"New Invoice Created: {title} (₹{amount:,.2f})",
+                    message=f"Admin created a new invoice {inv_id} for {title} on project {project_id or 'General'}. Amount: ₹{amount:,.2f}. Please visit your portal to pay online."
+                )
+            except Exception as e_notif:
+                logger.warning("Failed to dispatch invoice notification: %s", e_notif)
+                
+        return jsonify({
+            'success': True,
+            'status': 'success',
+            'message': f'Payment request {inv_id} created successfully.',
+            'data': invoice_obj
+        }), 201
+
+    # GET Invoices
+    params = dict(request.args)
+    if current_user.is_user():
+        params['customer_id'] = str(current_user.id)
+        
+    invoices = []
+    try:
+        result = gas_get('getInvoices', params)
+        if result.get('status') == 'success' and isinstance(result.get('data'), list):
+            invoices = result.get('data', [])
+    except Exception as e:
+        logger.warning("GAS getInvoices error: %s", e)
+        
+    try:
+        store = _load_work_store()
+        local_invoices = store.get('invoices', [])
+        known_ids = {str(inv.get('invoice_id') or inv.get('id')) for inv in invoices}
+        for li in local_invoices:
+            li_id = str(li.get('invoice_id') or li.get('id'))
+            if li_id and li_id not in known_ids:
+                invoices.insert(0, li)
+                known_ids.add(li_id)
+    except Exception as e_m:
+        logger.warning("Error merging local invoices: %s", e_m)
+        
+    # Strict role filtering for clients
+    if current_user.is_user():
+        cid = str(current_user.id).strip().lower()
+        cmail = str(getattr(current_user, 'email', '')).strip().lower()
+        client_pids = set()
+        p_res = gas_get('getProjects', {'customer_id': cid})
+        if p_res.get('status') == 'success' and isinstance(p_res.get('data'), list):
+            for p in p_res.get('data', []):
+                client_pids.add(str(p.get('project_id') or p.get('id', '')).strip().lower())
+        try:
+            store = _load_work_store()
+            for p in store.get('projects', []):
+                if (str(p.get('customer_id', '')).strip().lower() == cid or 
+                    str(p.get('client_id', '')).strip().lower() == cid or 
+                    (cmail and str(p.get('client_email', '')).strip().lower() == cmail) or
+                    (cmail and str(p.get('customer_email', '')).strip().lower() == cmail)):
+                    client_pids.add(str(p.get('project_id') or p.get('id', '')).strip().lower())
+        except:
+            pass
+            
+        invoices = [
+            inv for inv in invoices
+            if str(inv.get('customer_id', '')).strip().lower() == cid
+            or str(inv.get('client_id', '')).strip().lower() == cid
+            or (cmail and str(inv.get('customer_email', '')).strip().lower() == cmail)
+            or (cmail and str(inv.get('client_email', '')).strip().lower() == cmail)
+            or (str(inv.get('project_id', '')).strip().lower() in client_pids)
+        ]
+        
+    return jsonify({'success': True, 'status': 'success', 'data': invoices})
+
+@app.route('/api/invoices/<invoice_id>/mark-paid', methods=['POST'])
+@login_required
+def api_mark_invoice_paid(invoice_id):
+    if current_user.role not in ('Super Admin', 'Admin'):
+        return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+    data = request.get_json(silent=True) or {}
+    payment_method = data.get('payment_method') or 'Offline / Bank Transfer'
+    paid_at_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Update in local store
+    try:
+        store = _load_work_store()
+        for inv in store.get('invoices', []):
+            if str(inv.get('invoice_id') or inv.get('id')) == str(invoice_id):
+                inv['status'] = 'PAID'
+                inv['paid_at'] = paid_at_str
+                inv['payment_method'] = payment_method
+                inv['payment_id'] = f"pay_manual_{int(time.time())}"
+        _save_work_store(store)
+    except Exception as e:
+        logger.warning("Error marking invoice paid in store: %s", e)
+        
+    call_gas('updateInvoice', {
+        'invoice_id': invoice_id,
+        'status': 'PAID',
+        'paid_at': paid_at_str,
+        'payment_method': payment_method
     })
-    if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': True, 'data': [], 'warning': result.get('message')}), 200
+    
+    return jsonify({'success': True, 'status': 'success', 'message': f'Invoice {invoice_id} marked as PAID.'})
+
+@app.route('/api/invoices/<invoice_id>', methods=['DELETE'])
+@login_required
+def api_delete_invoice(invoice_id):
+    if current_user.role not in ('Super Admin', 'Admin'):
+        return jsonify({'success': False, 'error': 'Insufficient permissions.'}), 403
+    try:
+        store = _load_work_store()
+        store['invoices'] = [inv for inv in store.get('invoices', []) if str(inv.get('invoice_id') or inv.get('id')) != str(invoice_id)]
+        _save_work_store(store)
+    except Exception as e:
+        logger.warning("Error deleting invoice from store: %s", e)
+    call_gas('deleteInvoice', {'invoice_id': invoice_id})
+    return jsonify({'success': True, 'status': 'success', 'message': f'Invoice {invoice_id} deleted.'})
+
 
 # ─── API: Messages ────────────────────────────────────────────
 @app.route('/api/messages', methods=['GET'])

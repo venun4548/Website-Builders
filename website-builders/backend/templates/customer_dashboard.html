@@ -915,14 +915,19 @@
 
     async function fetchClientProjects() {
       try {
-        const [projRes, payRes] = await Promise.all([
+        const [projRes, payRes, invRes] = await Promise.all([
           fetch('/api/projects'),
-          fetch('/api/payments').catch(() => ({ json: () => ({ success: true, data: [] }) }))
+          fetch('/api/payments').catch(() => ({ json: () => ({ success: true, data: [] }) })),
+          fetch('/api/invoices').catch(() => ({ json: () => ({ success: true, data: [] }) }))
         ]);
         const data = await projRes.json();
         let paymentsData = { data: [] };
         try { paymentsData = await payRes.json(); } catch(e) {}
         const paymentsList = (paymentsData && paymentsData.data) ? paymentsData.data : [];
+
+        let invoicesData = { data: [] };
+        try { invoicesData = await invRes.json(); } catch(e) {}
+        const customInvoicesList = (invoicesData && invoicesData.data) ? invoicesData.data : [];
 
         const grid = document.getElementById('client-projects-grid');
         const dirList = document.getElementById('projects-directory-list');
@@ -935,11 +940,11 @@
         if (grid) grid.innerHTML = '';
         
         const projects = (data.status === 'success' || data.success) ? (data.data || []) : [];
-        if (projects.length === 0 && paymentsList.length === 0) {
+        if (projects.length === 0 && paymentsList.length === 0 && customInvoicesList.length === 0) {
           const emptyHtml = '<div style="grid-column:1/-1; text-align:center; padding:3rem; background:#FFF; border-radius:12px; border:1px solid var(--border);"><i class="fa-solid fa-folder-open" style="font-size:2.5rem; color:var(--text-secondary); margin-bottom:0.75rem;"></i><p style="color: var(--text-secondary); font-weight:600;">You do not have any active projects yet.</p></div>';
           if (grid) grid.innerHTML = emptyHtml;
           if (dirList) dirList.innerHTML = emptyHtml;
-          if (invoiceTbl) invoiceTbl.innerHTML = '<tr><td colspan="6" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">No invoices billed for your account yet.</td></tr>';
+          if (invoiceTbl) invoiceTbl.innerHTML = '<tr><td colspan="7" style="padding:1.5rem; text-align:center; color:var(--text-secondary);">No invoices billed for your account yet.</td></tr>';
           if (filesList) filesList.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);"><i class="fa-solid fa-folder-open" style="font-size:2rem; margin-bottom:0.5rem; color:var(--primary);"></i><p>No project documents or media files uploaded yet.</p></div>';
           return;
         }
@@ -949,6 +954,48 @@
         let fileItems = '';
         const handledInvIds = new Set();
 
+        // 1. Render Admin-Created Custom Payment Requests / Invoices FIRST
+        customInvoicesList.forEach(inv => {
+          const invId = inv.invoice_id || inv.id;
+          if (!invId || handledInvIds.has(invId)) return;
+          handledInvIds.add(invId);
+
+          const amt = Number(inv.amount) || 0;
+          totalBilled += amt;
+          const isPaid = (inv.status || '').toUpperCase() === 'PAID';
+          if (isPaid) totalPaid += amt;
+
+          const invDate = inv.due_date || inv.created_date || inv.created_at || 'Current';
+          const desc = inv.title || inv.description || `${inv.project_name || inv.project_id || 'Project'} Milestone`;
+          const milestone = inv.milestone || inv.stage || 'Milestone';
+          const safeDesc = desc.replace(/'/g, "\\'");
+
+          invoiceRows += `
+            <tr style="border-bottom:1px solid var(--border); font-size:0.9rem; ${isPaid ? 'background:#F0FDF4;' : 'background:#FFFBEB;'}">
+              <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${invId}</td>
+              <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${invDate}</td>
+              <td style="padding:0.85rem; font-weight:700;">
+                ${desc}
+                ${inv.project_id ? `<div style="font-size:0.75rem; color:var(--text-secondary); font-family:monospace;">Project: ${inv.project_id}</div>` : ''}
+                ${inv.notes ? `<div style="font-size:0.75rem; color:var(--text-secondary); font-style:italic;">Note: ${inv.notes}</div>` : ''}
+              </td>
+              <td style="padding:0.85rem;"><span class="badge" style="background:#E0F2FE; color:#0369A1; font-weight:600; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.75rem;">${milestone}</span></td>
+              <td style="padding:0.85rem; font-weight:800; color:${isPaid ? '#047857' : '#D97706'};">₹${amt.toLocaleString()}</td>
+              <td style="padding:0.85rem;">
+                ${isPaid ? 
+                  '<span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span>' : 
+                  '<span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> DUE NOW</span>'}
+              </td>
+              <td style="padding:0.85rem; text-align:right;">
+                ${isPaid ? 
+                  `<button class="btn btn-secondary" onclick="viewReceipt('${invId}', '${safeDesc}', ${amt}, '${inv.payment_id || 'pay_custom_' + invId}', '${invDate}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>` : 
+                  `<button class="btn btn-primary" onclick="launchRazorpayCheckout('${safeDesc}', ${amt}, '${invId}')" style="padding:0.35rem 0.85rem; font-size:0.8rem; background:#0F766E; border:none; border-radius:6px; color:#FFF; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(15,118,110,0.3);"><i class="fa-solid fa-credit-card"></i> Pay via Razorpay</button>`}
+              </td>
+            </tr>
+          `;
+        });
+
+        // 2. Render Project Milestone Invoices
         projects.forEach(p => {
           const card = `
             <div class="project-card" style="background:#FFF; border:1px solid var(--border); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:var(--shadow-subtle);">
@@ -1001,56 +1048,60 @@
           const inv1Id = `INV-${p.project_id.replace('WB-', '')}-01`;
           const inv1Amt = 25000;
           const inv1Date = p.created_date ? (p.created_date + (p.created_time ? ' ' + p.created_time : '')) : 'Kickoff';
-          totalBilled += inv1Amt;
-          totalPaid += inv1Amt;
-          handledInvIds.add(inv1Id);
+          if (!handledInvIds.has(inv1Id)) {
+            totalBilled += inv1Amt;
+            totalPaid += inv1Amt;
+            handledInvIds.add(inv1Id);
 
-          invoiceRows += `
-            <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
-              <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv1Id}</td>
-              <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${inv1Date}</td>
-              <td style="padding:0.85rem; font-weight:700;">${p.name} - Initial Scope & UI Wireframes</td>
-              <td style="padding:0.85rem;">Kickoff Milestone</td>
-              <td style="padding:0.85rem; font-weight:800; color:#047857;">₹${inv1Amt.toLocaleString()}</td>
-              <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span></td>
-              <td style="padding:0.85rem; text-align:right;">
-                <button class="btn btn-secondary" onclick="viewReceipt('${inv1Id}', '${p.name} - Initial Scope & Wireframes', ${inv1Amt}, 'pay_WB_${p.project_id}_01', '${inv1Date}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>
-              </td>
-            </tr>
-          `;
+            invoiceRows += `
+              <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
+                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv1Id}</td>
+                <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${inv1Date}</td>
+                <td style="padding:0.85rem; font-weight:700;">${p.name} - Initial Scope & UI Wireframes</td>
+                <td style="padding:0.85rem;">Kickoff Milestone</td>
+                <td style="padding:0.85rem; font-weight:800; color:#047857;">₹${inv1Amt.toLocaleString()}</td>
+                <td style="padding:0.85rem;"><span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span></td>
+                <td style="padding:0.85rem; text-align:right;">
+                  <button class="btn btn-secondary" onclick="viewReceipt('${inv1Id}', '${p.name} - Initial Scope & Wireframes', ${inv1Amt}, 'pay_WB_${p.project_id}_01', '${inv1Date}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>
+                </td>
+              </tr>
+            `;
+          }
 
           // Invoice 2: Current Stage Milestone
           const inv2Id = `INV-${p.project_id.replace('WB-', '')}-02`;
           const inv2Amt = 20000;
-          totalBilled += inv2Amt;
-          handledInvIds.add(inv2Id);
+          if (!handledInvIds.has(inv2Id)) {
+            totalBilled += inv2Amt;
+            handledInvIds.add(inv2Id);
 
-          const matchingPayment = paymentsList.find(pm => pm.invoice_id === inv2Id || pm.order_id === inv2Id);
-          const isStagePaid = Boolean(p.progress >= 100 || matchingPayment);
-          const inv2Date = matchingPayment ? (matchingPayment.paid_at || matchingPayment.date || 'Paid') : (p.expected_delivery || 'Due soon');
-          if (isStagePaid) {
-            totalPaid += inv2Amt;
+            const matchingPayment = paymentsList.find(pm => pm.invoice_id === inv2Id || pm.order_id === inv2Id);
+            const isStagePaid = Boolean(p.progress >= 100 || matchingPayment);
+            const inv2Date = matchingPayment ? (matchingPayment.paid_at || matchingPayment.date || 'Paid') : (p.expected_delivery || 'Due soon');
+            if (isStagePaid) {
+              totalPaid += inv2Amt;
+            }
+
+            invoiceRows += `
+              <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
+                <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv2Id}</td>
+                <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${inv2Date}</td>
+                <td style="padding:0.85rem; font-weight:700;">${p.name} - ${p.stage} Phase Milestone</td>
+                <td style="padding:0.85rem;">${p.stage}</td>
+                <td style="padding:0.85rem; font-weight:800; color:${isStagePaid ? '#047857' : '#D97706'};">₹${inv2Amt.toLocaleString()}</td>
+                <td style="padding:0.85rem;">
+                  ${isStagePaid ? 
+                    '<span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span>' : 
+                    '<span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> DUE NOW</span>'}
+                </td>
+                <td style="padding:0.85rem; text-align:right;">
+                  ${isStagePaid ? 
+                    `<button class="btn btn-secondary" onclick="viewReceipt('${inv2Id}', '${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${matchingPayment ? matchingPayment.payment_id : 'pay_WB_' + p.project_id + '_02'}', '${inv2Date}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>` : 
+                    `<button class="btn btn-primary" onclick="launchRazorpayCheckout('${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${inv2Id}')" style="padding:0.35rem 0.85rem; font-size:0.8rem; background:#0F766E; border:none; border-radius:6px; color:#FFF; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(15,118,110,0.3);"><i class="fa-solid fa-credit-card"></i> Pay via Razorpay</button>`}
+                </td>
+              </tr>
+            `;
           }
-
-          invoiceRows += `
-            <tr style="border-bottom:1px solid var(--border); font-size:0.9rem;">
-              <td style="padding:0.85rem; font-family:monospace; font-weight:700; color:var(--primary);">${inv2Id}</td>
-              <td style="padding:0.85rem; color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${inv2Date}</td>
-              <td style="padding:0.85rem; font-weight:700;">${p.name} - ${p.stage} Phase Milestone</td>
-              <td style="padding:0.85rem;">${p.stage}</td>
-              <td style="padding:0.85rem; font-weight:800; color:${isStagePaid ? '#047857' : '#D97706'};">₹${inv2Amt.toLocaleString()}</td>
-              <td style="padding:0.85rem;">
-                ${isStagePaid ? 
-                  '<span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-check"></i> PAID</span>' : 
-                  '<span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:700; padding:0.25rem 0.6rem; border-radius:12px; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> DUE NOW</span>'}
-              </td>
-              <td style="padding:0.85rem; text-align:right;">
-                ${isStagePaid ? 
-                  `<button class="btn btn-secondary" onclick="viewReceipt('${inv2Id}', '${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${matchingPayment ? matchingPayment.payment_id : 'pay_WB_' + p.project_id + '_02'}', '${inv2Date}')" style="padding:0.35rem 0.75rem; font-size:0.8rem;"><i class="fa-solid fa-file-invoice"></i> Receipt</button>` : 
-                  `<button class="btn btn-primary" onclick="launchRazorpayCheckout('${p.name} - ${p.stage} Milestone', ${inv2Amt}, '${inv2Id}')" style="padding:0.35rem 0.85rem; font-size:0.8rem; background:#0F766E; border:none; border-radius:6px; color:#FFF; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; box-shadow:0 2px 6px rgba(15,118,110,0.3);"><i class="fa-solid fa-credit-card"></i> Pay via Razorpay</button>`}
-              </td>
-            </tr>
-          `;
 
           const filesHtml = p.files && p.files.length > 0 ? p.files.map(f => `
             <div style="display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border:1px solid var(--border); border-radius:8px; margin-bottom:0.75rem; background:#FFF;">

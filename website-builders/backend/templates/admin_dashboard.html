@@ -374,7 +374,10 @@
               <h2 class="card-title"><i class="fa-solid fa-briefcase"></i> Projects Management</h2>
               <p style="color:var(--secondary-text); font-size:0.85rem; margin-top:0.25rem;">Create, track, and manage all client projects and milestones.</p>
             </div>
-            <button class="btn btn-primary" onclick="openCreateProjectModal()"><i class="fa-solid fa-plus"></i> Create Project</button>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <button class="btn btn-outline" onclick="openCreatePaymentModal()" style="color:var(--primary-dark-green); font-weight:700;"><i class="fa-solid fa-file-invoice-dollar"></i> Request Payment</button>
+              <button class="btn btn-primary" onclick="openCreateProjectModal()"><i class="fa-solid fa-plus"></i> Create Project</button>
+            </div>
           </div>
 
           <!-- Filters & Search -->
@@ -1241,6 +1244,7 @@
             <td>${delivery}</td>
             <td>
               <div style="display:flex; gap:0.35rem;">
+                <button class="btn btn-sm btn-outline" onclick="openCreatePaymentModal('${pid}', '${clientName.replace(/'/g, "\\'")}', '${(clientEmail || '').replace(/'/g, "\\'")}', '${p.customer_id || p.client_id || ''}', '${pname.replace(/'/g, "\\'")}')" title="Request Payment from Client" style="color:var(--primary-dark-green);"><i class="fa-solid fa-file-invoice-dollar"></i> Invoice</button>
                 <button class="btn btn-sm btn-outline" onclick="openProjectDetailsModal('${pid}')" title="View Details"><i class="fa-solid fa-eye"></i> Details</button>
                 <button class="btn btn-sm btn-outline" onclick="editProject('${pid}', '${pname.replace(/'/g, "\'")}', '${clientName}', '${p.stage || 'Planning'}', '${progress}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-sm btn-outline" onclick="archiveProject('${pid}')" style="color:var(--danger); border-color:rgba(239,68,68,0.3);" title="Archive"><i class="fa-solid fa-box-archive"></i></button>
@@ -2889,8 +2893,108 @@
         } else {
           alert(data.error || 'Invalid verification code.');
         }
+    // ─── Payment Request / Invoice Creation ──────────────────
+    function openCreatePaymentModal(prefillProjId, clientName, clientEmail, clientId, projectName) {
+      const form = document.getElementById('create-payment-request-form');
+      if (form) form.reset();
+      
+      const sel = document.getElementById('pay-req-project');
+      if (sel) {
+        sel.innerHTML = '<option value="">-- Select Project --</option>';
+        allProjectsData.forEach(p => {
+          const opt = document.createElement('option');
+          const pid = p.project_id || p.id;
+          opt.value = pid;
+          opt.innerText = `${pid}: ${p.name || p.project_name}`;
+          opt.dataset.client = p.customer_name || p.client_name || '';
+          opt.dataset.clientEmail = p.customer_email || p.client_email || '';
+          opt.dataset.clientId = p.customer_id || p.client_id || '';
+          opt.dataset.name = p.name || p.project_name || '';
+          sel.appendChild(opt);
+        });
+        if (prefillProjId) {
+          sel.value = prefillProjId;
+          onPaymentProjectSelected(sel);
+        }
+      }
+      
+      if (clientName) document.getElementById('pay-req-client-name').value = clientName;
+      if (clientEmail) document.getElementById('pay-req-client-email').value = clientEmail;
+      if (clientId) document.getElementById('pay-req-client-id').value = clientId;
+      if (projectName && !document.getElementById('pay-req-title').value) {
+        document.getElementById('pay-req-title').value = `${projectName} - Milestone Settlement`;
+      }
+      
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      const dueDateInput = document.getElementById('pay-req-due-date');
+      if (dueDateInput) dueDateInput.value = d.toISOString().split('T')[0];
+
+      document.getElementById('modal-create-payment-request').style.display = 'flex';
+    }
+
+    function onPaymentProjectSelected(sel) {
+      const opt = sel.options[sel.selectedIndex];
+      if (opt && opt.value) {
+        document.getElementById('pay-req-client-name').value = opt.dataset.client || '';
+        document.getElementById('pay-req-client-email').value = opt.dataset.clientEmail || '';
+        document.getElementById('pay-req-client-id').value = opt.dataset.clientId || '';
+        if (!document.getElementById('pay-req-title').value) {
+          document.getElementById('pay-req-title').value = `${opt.dataset.name || opt.value} - 50% Milestone Advance`;
+        }
+      }
+    }
+
+    async function handleCreatePaymentSubmit(e) {
+      if (e) e.preventDefault();
+      const projId = document.getElementById('pay-req-project').value;
+      const title = document.getElementById('pay-req-title').value.trim();
+      const amount = parseFloat(document.getElementById('pay-req-amount').value) || 0;
+      const milestone = document.getElementById('pay-req-milestone').value;
+      const dueDate = document.getElementById('pay-req-due-date').value;
+      const notes = document.getElementById('pay-req-notes').value.trim();
+      const clientName = document.getElementById('pay-req-client-name').value;
+      const clientEmail = document.getElementById('pay-req-client-email').value;
+      const clientId = document.getElementById('pay-req-client-id').value;
+
+      if (!projId || !title || amount <= 0) {
+        alert('Please select a project, enter a title, and provide a valid amount.');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-pay-req');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating Invoice...';
+
+      try {
+        const res = await fetch('/api/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: projId,
+            title: title,
+            amount: amount,
+            milestone: milestone,
+            due_date: dueDate,
+            notes: notes,
+            client_name: clientName,
+            client_email: clientEmail,
+            client_id: clientId
+          })
+        });
+        const data = await res.json();
+        if (res.ok && (data.success || data.status === 'success')) {
+          alert(`Payment request / Invoice generated successfully for ${clientName || 'Client'}! It is now visible in the Client's portal.`);
+          closeModal('modal-create-payment-request');
+        } else {
+          alert('Failed to create payment request: ' + (data.error || data.message || 'Unknown error'));
+        }
       } catch (err) {
-        alert('Server error verifying 2FA.');
+        console.error('Error creating invoice:', err);
+        alert('Server error creating payment request.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Generate & Send to Client';
       }
     }
 
@@ -2899,6 +3003,77 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- MODALS & DRAWERS -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- Modal: Create Payment Request / Invoice -->
+  <div class="modal-backdrop" id="modal-create-payment-request" style="display:none;">
+    <div class="modal-drawer" style="max-width:580px; max-height:90vh; overflow-y:auto;">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-file-invoice-dollar" style="color:var(--primary-green);"></i> Create Payment Request for Client</h2>
+        <button type="button" onclick="closeModal('modal-create-payment-request')" class="btn btn-outline btn-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="create-payment-request-form" onsubmit="handleCreatePaymentSubmit(event);">
+        <div style="background:#F8FAFC; border:1px solid var(--border-color); border-radius:8px; padding:1rem; margin-bottom:1.25rem;">
+          <label style="font-weight:700; color:var(--primary-dark-green); display:block; margin-bottom:0.4rem;">
+            Select Project <span style="color:var(--danger);">*</span>
+          </label>
+          <select id="pay-req-project" onchange="onPaymentProjectSelected(this)" required class="filter-input" style="margin-bottom:0.75rem;">
+            <option value="">-- Select Project --</option>
+          </select>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <div>
+              <label style="font-size:0.75rem; color:var(--secondary-text);">Client Name</label>
+              <input type="text" id="pay-req-client-name" readonly style="background:#E2E8F0 !important; cursor:not-allowed;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:var(--secondary-text);">Client Email</label>
+              <input type="text" id="pay-req-client-email" readonly style="background:#E2E8F0 !important; cursor:not-allowed;">
+            </div>
+            <input type="hidden" id="pay-req-client-id">
+          </div>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+          <label style="font-weight:600;">Payment Title / Milestone Description <span style="color:var(--danger);">*</span></label>
+          <input type="text" id="pay-req-title" placeholder="e.g. 50% Kickoff Advance / Phase 2 UI Approval" required class="filter-input">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+          <div>
+            <label style="font-weight:600;">Amount (₹ INR) <span style="color:var(--danger);">*</span></label>
+            <input type="number" id="pay-req-amount" placeholder="25000" min="1" step="any" required class="filter-input">
+          </div>
+          <div>
+            <label style="font-weight:600;">Milestone Category</label>
+            <select id="pay-req-milestone" class="filter-input">
+              <option value="Kickoff Milestone">Kickoff Milestone (50%)</option>
+              <option value="UI & Prototype Approval">UI & Prototype Approval</option>
+              <option value="Development Milestone">Development Milestone</option>
+              <option value="Final Launch & Delivery">Final Launch & Delivery</option>
+              <option value="Maintenance & AMC">Maintenance & AMC</option>
+              <option value="Custom Scope Settlement">Custom Scope Settlement</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+          <label style="font-weight:600;">Due Date</label>
+          <input type="date" id="pay-req-due-date" class="filter-input">
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+          <label style="font-weight:600;">Terms / Notes for Client (Optional)</label>
+          <textarea id="pay-req-notes" rows="2" placeholder="e.g. Settlement includes 18% GST invoice and official receipt." class="filter-input"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.5rem; border-top:1px solid var(--border-color); padding-top:1rem;">
+          <button type="button" onclick="closeModal('modal-create-payment-request')" class="btn btn-outline">Cancel</button>
+          <button type="submit" id="btn-submit-pay-req" class="btn btn-primary" style="background:var(--primary-dark-green); color:#FFF; font-weight:700;">
+            <i class="fa-solid fa-paper-plane"></i> Generate & Send to Client
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Modal: Create Project (Sections 5 & 6) -->
   <div class="modal-backdrop" id="modal-create-project" style="display:none;">
