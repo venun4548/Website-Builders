@@ -2497,7 +2497,15 @@ def api_staff_list():
     if result.get('status') == 'success':
         staff = result.get('data', [])
         return jsonify({'success': True, 'status': 'success', 'data': staff})
-    return jsonify({'success': False, 'status': 'error', 'data': [], 'error': result.get('message')}), 400
+    
+    all_users = gas_get('getUsers', {})
+    if all_users.get('status') == 'success':
+        staff = [u for u in all_users.get('data', []) if str(u.get('role', '')).strip().lower() == 'staff']
+        return jsonify({'success': True, 'status': 'success', 'data': staff})
+    
+    store = _load_work_store()
+    staff = store.get('staff', [])
+    return jsonify({'success': True, 'status': 'success', 'data': staff, 'warning': result.get('message', 'Fallback staff data')}), 200
 
 @app.route('/api/projects/<project_id>/archive', methods=['POST'])
 @login_required
