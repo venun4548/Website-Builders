@@ -3128,6 +3128,11 @@
         if (navLink) navLink.classList.add('active');
       }
 
+      if (secId === 'command-center') loadDashboardData();
+      if (secId === 'projects') loadProjectsData();
+      if (secId === 'clients') loadClientsData();
+      if (secId === 'websites') loadWebsitesData();
+      if (secId === 'tasks') loadTasksData();
       if (secId === 'enquiries') loadEnquiriesData();
       if (secId === 'messages') loadMessagesHub();
       if (secId === 'notifications') loadNotificationsSection();
@@ -3138,6 +3143,138 @@
       if (secId === 'pricing') loadPricingData();
       if (secId === 'brandinfo') loadBrandInfoData();
       if (secId === 'documents') loadDocumentsData();
+    }
+
+    async function loadProjectsData() {
+      const container = document.getElementById('tbl-projects');
+      if (container) {
+        container.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem; color:var(--primary-green);"></i> Loading projects...</td></tr>';
+      }
+      try {
+        const projRes = await fetch('/api/projects');
+        const projData = await projRes.json();
+        if (projRes.ok && (projData.status === 'success' || projData.success)) {
+          let rows = '';
+          let upcomingDue = 0;
+          const list = projData.data || [];
+          list.forEach(p => {
+            if (p.status !== 'Completed') upcomingDue++;
+            const cName = p.client_name || p.customer_name || 'Client';
+            const cEmail = p.client_email || p.customer_email || '';
+            const pId = p.project_id || p.id || '-';
+            const pName = p.name || p.project_name || 'Untitled Project';
+            rows += `<tr>
+              <td style="font-family:monospace; font-weight:700;">${pId}</td>
+              <td><strong>${pName}</strong></td>
+              <td>
+                <div style="font-weight:600;">${cName}</div>
+                ${cEmail ? `<div style="font-size:0.75rem; color:var(--secondary-text);">${cEmail}</div>` : ''}
+              </td>
+              <td><span class="badge badge-info">${p.stage || 'Requirement'}</span></td>
+              <td style="min-width:100px;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <div style="flex:1; background:var(--border-color); height:6px; border-radius:3px; overflow:hidden;">
+                    <div style="background:var(--primary-green); width:${p.progress || 0}%; height:100%;"></div>
+                  </div>
+                  <small style="font-weight:600;">${p.progress || 0}%</small>
+                </div>
+              </td>
+              <td><span class="badge ${p.status === 'Completed' ? 'badge-success' : 'badge-warning'}">${p.status || 'Active'}</span></td>
+            </tr>`;
+          });
+          setElementHTML('tbl-projects', rows || '<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--muted-text);">No projects available.</td></tr>');
+          setElementText('alert-due-projects', upcomingDue);
+          populateProjectSelects(list);
+        } else {
+          setElementHTML('tbl-projects', '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--danger);">Error loading projects.</td></tr>');
+        }
+      } catch (err) {
+        console.error(err);
+        setElementHTML('tbl-projects', '<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:var(--danger);">Failed to fetch projects.</td></tr>');
+      }
+    }
+
+    async function loadClientsData() {
+      const container = document.getElementById('tbl-clients');
+      if (container) {
+        container.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem; color:var(--primary-green);"></i> Loading clients...</td></tr>';
+      }
+      try {
+        const uRes = await fetch('/api/super-admin/users');
+        const uData = await uRes.json();
+        if (uRes.ok && (uData.status === 'success' || uData.success)) {
+          const clients = (uData.data || []).filter(u => u.role === 'User' || u.role === 'Customer' || u.role === 'Client');
+          let rows = '';
+          clients.forEach(c => {
+            rows += `<tr>
+              <td><strong>${c.full_name}</strong></td>
+              <td>${c.email}</td>
+              <td>${c.mobile || '-'}</td>
+              <td><span class="badge ${c.is_active ? 'badge-success' : 'badge-danger'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
+            </tr>`;
+          });
+          setElementHTML('tbl-clients', rows || '<tr><td colspan="4" style="text-align:center; padding:2rem; color:var(--muted-text);">No clients found.</td></tr>');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadWebsitesData() {
+      const container = document.getElementById('tbl-websites');
+      if (container) {
+        container.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1.5rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem; color:var(--primary-green);"></i> Loading websites...</td></tr>';
+      }
+      try {
+        const webRes = await fetch('/api/websites');
+        const webData = await webRes.json();
+        if (webRes.ok && (webData.status === 'success' || webData.success)) {
+          let rows = '';
+          (webData.data || []).forEach(w => {
+            rows += `<tr>
+              <td><strong>${w.name}</strong></td>
+              <td>${w.domain || '-'}</td>
+              <td><span class="badge badge-success">${w.status}</span></td>
+            </tr>`;
+          });
+          setElementHTML('tbl-websites', rows || '<tr><td colspan="3" style="text-align:center; padding:2rem; color:var(--muted-text);">No websites found.</td></tr>');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadTasksData() {
+      const container = document.getElementById('tbl-tasks');
+      if (container) {
+        container.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:1.5rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin" style="margin-right:0.5rem; color:var(--primary-green);"></i> Loading tasks...</td></tr>';
+      }
+      try {
+        const tasksRes = await fetch('/api/tasks');
+        const tasksData = await tasksRes.json();
+        if (tasksRes.ok && (tasksData.status === 'success' || tasksData.success)) {
+          let rows = '';
+          (tasksData.data || []).forEach(t => {
+            const pClass = t.priority === 'Urgent' ? 'badge-danger' : (t.priority === 'High' ? 'badge-warning' : 'badge-info');
+            const sClass = t.status === 'Completed' ? 'badge-success' : 'badge-info';
+            const clientName = t.client_name || t.customer_name || '';
+            const clientEmail = t.client_email || t.customer_email || '';
+            rows += `<tr>
+              <td>
+                <strong>${t.title}</strong>
+                ${clientName ? `<div style="font-size:0.75rem; color:var(--secondary-text);">${clientName}${clientEmail ? ` &bull; ${clientEmail}` : ''}</div>` : ''}
+              </td>
+              <td>${t.assigned_staff_name || 'Unassigned'}</td>
+              <td><span class="badge ${pClass}">${t.priority || 'Normal'}</span></td>
+              <td><span class="badge ${sClass}">${t.status || 'Pending'}</span></td>
+              <td>${t.due_date || 'N/A'}</td>
+            </tr>`;
+          });
+          setElementHTML('tbl-tasks', rows || '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--muted-text);">No tasks available.</td></tr>');
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     let rawPaymentsData = [];

@@ -1246,6 +1246,38 @@ def api_convert_enquiry(enquiry_id):
             'project_id': proj_id,
             'remarks': f'Converted to project {proj_id}'
         })
+
+        new_project_obj = {
+            'project_id': proj_id,
+            'id': proj_id,
+            'customer_name': cust_name,
+            'client_name': cust_name,
+            'customer_email': cust_email,
+            'client_email': cust_email,
+            'customer_id': cust_id,
+            'project_name': proj_name,
+            'name': proj_name,
+            'description': payload['description'],
+            'stage': payload['stage'],
+            'progress': payload['progress'],
+            'expected_delivery': payload['expected_delivery'],
+            'status': 'Active',
+            'created_by': str(current_user.id),
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M')
+        }
+        try:
+            store = _load_work_store()
+            projects = store.get('projects', [])
+            existing_p = next((p for p in projects if str(p.get('project_id') or p.get('id')) == str(proj_id)), None)
+            if existing_p:
+                existing_p.update(new_project_obj)
+            else:
+                projects.insert(0, new_project_obj)
+            store['projects'] = projects
+            _save_work_store(store)
+        except Exception as e_store:
+            logger.warning("Error saving converted project to work store: %s", e_store)
+
         return jsonify({
             'success': True,
             'status': 'success',
@@ -1387,35 +1419,45 @@ def api_get_projects():
         params['customer_id'] = str(current_user.id)
     elif current_user.is_staff():
         params.setdefault('staff_id', str(current_user.id))
+    
     result = gas_get('getProjects', params)
-    if result.get('status') == 'success':
+    projs = []
+    if result.get('status') == 'success' and isinstance(result.get('data'), list):
         projs = result.get('data', [])
-        
-        # Strict backend role enforcement
-        if current_user.is_user():
-            cid = str(current_user.id).strip().lower()
-            cmail = str(getattr(current_user, 'email', '')).strip().lower()
-            projs = [
-                p for p in projs 
-                if str(p.get('customer_id', '')).strip().lower() == cid 
-                or str(p.get('client_id', '')).strip().lower() == cid
-                or (cmail and str(p.get('client_email', '')).strip().lower() == cmail)
-                or (cmail and str(p.get('customer_email', '')).strip().lower() == cmail)
-            ]
-        elif current_user.is_staff():
-            sid = str(current_user.id).strip().lower()
-            # Fetch staff's tasks to identify all projects they work on
-            task_res = gas_get('getTasks', {'staff_id': sid})
-            assigned_pids = {str(t.get('project_id', '')).strip().lower() for t in task_res.get('data', [])}
-            projs = [
-                p for p in projs
-                if str(p.get('assigned_staff_id', '')).strip().lower() == sid
-                or str(p.get('project_id', '')).strip().lower() in assigned_pids
-            ]
-        return jsonify({'success': True, 'data': projs})
-    # Return empty array fallback — never return 400 on a GET list endpoint
-    logger.warning('getProjects GAS error: %s', result.get('message'))
-    return jsonify({'success': True, 'data': [], 'warning': result.get('message', 'Could not fetch from GAS')}), 200
+    
+    try:
+        store = _load_work_store()
+        local_projs = store.get('projects', [])
+        known_ids = {str(p.get('project_id') or p.get('id')) for p in projs if p.get('project_id') or p.get('id')}
+        for lp in local_projs:
+            lpid = str(lp.get('project_id') or lp.get('id'))
+            if lpid and lpid not in known_ids:
+                projs.insert(0, lp)
+                known_ids.add(lpid)
+    except Exception as e_merge:
+        logger.warning("Error merging local projects: %s", e_merge)
+
+    # Strict backend role enforcement
+    if current_user.is_user():
+        cid = str(current_user.id).strip().lower()
+        cmail = str(getattr(current_user, 'email', '')).strip().lower()
+        projs = [
+            p for p in projs 
+            if str(p.get('customer_id', '')).strip().lower() == cid 
+            or str(p.get('client_id', '')).strip().lower() == cid
+            or (cmail and str(p.get('client_email', '')).strip().lower() == cmail)
+            or (cmail and str(p.get('customer_email', '')).strip().lower() == cmail)
+        ]
+    elif current_user.is_staff():
+        sid = str(current_user.id).strip().lower()
+        task_res = gas_get('getTasks', {'staff_id': sid})
+        assigned_pids = {str(t.get('project_id', '')).strip().lower() for t in task_res.get('data', [])}
+        projs = [
+            p for p in projs
+            if str(p.get('assigned_staff_id', '')).strip().lower() == sid
+            or str(p.get('project_id', '')).strip().lower() in assigned_pids
+        ]
+    return jsonify({'success': True, 'status': 'success', 'data': projs})
 
 @app.route('/api/projects', methods=['POST'])
 @login_required
