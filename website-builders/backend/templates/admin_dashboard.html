@@ -2634,10 +2634,13 @@
               <td>${t.customer_name || t.client_name || '-'}</td>
               <td><span class="badge ${priBadge}">${t.priority || 'Normal'}</span></td>
               <td><span class="badge ${statusBadge}">${t.status || 'Open'}</span></td>
-              <td><button class="btn btn-outline btn-sm" onclick="alert('Ticket details: ' + JSON.stringify(${JSON.stringify(t)}, null, 2))"><i class="fa-solid fa-eye"></i> View</button></td>
+              <td><button class="btn btn-outline btn-sm" onclick="alert('Ticket: ' + (${JSON.stringify(t.subject || '')}))"><i class="fa-solid fa-eye"></i> View</button></td>
             </tr>`;
         }).join('');
       } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--danger);">Error loading tickets.</td></tr>';
+      }
+    }
     // ─── Conversion Funnel Analytics (Part 15) ───────────────
     async function loadFunnelData() {
       const container = document.getElementById('funnel-container');

@@ -279,6 +279,39 @@
 <body>
   {% block content %}{% endblock %}
   <script>
+    function togglePassword(inputId, iconEl) {
+      let input;
+      let icon = iconEl;
+      if (typeof inputId === 'string') {
+        input = document.getElementById(inputId);
+      } else if (inputId && inputId.tagName) {
+        input = inputId;
+      }
+      if (!input && iconEl) {
+        const wrap = iconEl.closest('.password-wrap');
+        if (wrap) input = wrap.querySelector('input');
+      }
+      if (!input) {
+        input = document.getElementById('password');
+      }
+      if (!icon && window.event && window.event.currentTarget) {
+        icon = window.event.currentTarget;
+      }
+      if (!icon) {
+        icon = document.querySelector('.password-toggle');
+      }
+      if (!input || !icon) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => {});

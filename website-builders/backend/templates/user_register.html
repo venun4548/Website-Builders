@@ -46,12 +46,18 @@
 
       <div class="form-group">
         <label class="form-label" for="password">Password</label>
-        <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required autocomplete="new-password">
+        <div class="password-wrap">
+          <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required autocomplete="new-password">
+          <i class="fa-regular fa-eye password-toggle" onclick="togglePasswordVisibility('password', this)"></i>
+        </div>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="confirm_password">Confirm Password</label>
-        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="••••••••" required autocomplete="new-password">
+        <div class="password-wrap">
+          <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="••••••••" required autocomplete="new-password">
+          <i class="fa-regular fa-eye password-toggle" onclick="togglePasswordVisibility('confirm_password', this)"></i>
+        </div>
       </div>
 
       <button type="submit" class="btn" style="background: linear-gradient(135deg, var(--success), var(--secondary));">
@@ -67,6 +73,20 @@
 </div>
 
 <script>
+  function togglePasswordVisibility(fieldId, icon) {
+    const pw = document.getElementById(fieldId);
+    if (!pw) return;
+    if (pw.type === 'password') {
+      pw.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      pw.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+
   function validatePasswords() {
     const pw = document.getElementById('password').value;
     const confirm = document.getElementById('confirm_password').value;

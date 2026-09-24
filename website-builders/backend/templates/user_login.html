@@ -139,6 +139,37 @@
       width: auto;
     }
 
+    .pwd-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .pwd-wrapper input {
+      padding-right: 2.75rem;
+    }
+
+    .toggle-pwd-btn {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .toggle-pwd-btn:hover {
+      color: #60A5FA;
+    }
+
     .forgot-link {
       color: #60A5FA;
       text-decoration: none;
@@ -224,7 +255,12 @@
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        <div class="pwd-wrapper">
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+          <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('password', this)" title="Toggle password visibility">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </div>
       </div>
 
       <div class="form-options">
@@ -247,5 +283,25 @@
     </div>
   </div>
 
+  <script>
+    function togglePasswordVisibility(fieldId, btn) {
+      const input = document.getElementById(fieldId);
+      if (!input) return;
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+          icon.classList.remove('fa-eye');
+          icon.classList.add('fa-eye-slash');
+        }
+      } else {
+        input.type = 'password';
+        if (icon) {
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
+        }
+      }
+    }
+  </script>
 </body>
 </html>

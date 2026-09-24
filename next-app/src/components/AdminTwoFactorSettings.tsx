@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShieldCheck, ShieldAlert, KeyRound, QrCode, X, Loader2 } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, KeyRound, QrCode, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 
 interface AdminTwoFactorSettingsProps {
@@ -22,6 +22,7 @@ export default function AdminTwoFactorSettings({
   } | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
   const [disablePassword, setDisablePassword] = useState('');
+  const [showDisablePassword, setShowDisablePassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -290,15 +291,25 @@ export default function AdminTwoFactorSettings({
               <label htmlFor="disablePasswordInput" className="block text-xs text-slate-300 mb-1">
                 Account Password
               </label>
-              <input
-                id="disablePasswordInput"
-                type="password"
-                value={disablePassword}
-                onChange={(e) => setDisablePassword(e.target.value)}
-                placeholder="Enter password"
-                autoFocus
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500 mb-4"
-              />
+              <div className="relative mb-4">
+                <input
+                  id="disablePasswordInput"
+                  type={showDisablePassword ? 'text' : 'password'}
+                  value={disablePassword}
+                  onChange={(e) => setDisablePassword(e.target.value)}
+                  placeholder="Enter password"
+                  autoFocus
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowDisablePassword(!showDisablePassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition p-1"
+                  aria-label="Toggle password visibility"
+                >
+                  {showDisablePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
 
               <div className="flex gap-2">
                 <button

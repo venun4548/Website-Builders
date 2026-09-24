@@ -804,7 +804,7 @@
           }
           let html = '';
           msgs.forEach(m => {
-            const isSentByMe = m.sender_id === {{ user.id }};
+            const isSentByMe = m.sender_id === '{{ user.id }}' || m.sender_email === '{{ user.email }}';
             const statusBadge = m.status === 'READ' ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at})</span>` : `<span style="color:#64748B; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
 
             html += `

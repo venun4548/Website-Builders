@@ -58,6 +58,10 @@
 
     .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
     .badge-success { background: var(--light-green); color: var(--primary-dark-green); border: 1px solid #A7F3D0; }
+    .pwd-field-wrap { position: relative; margin-bottom: 1.1rem; }
+    .pwd-field-wrap input { margin-bottom: 0 !important; padding-right: 2.75rem !important; }
+    .pwd-toggle-btn { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--secondary-text); cursor: pointer; padding: 0.4rem; font-size: 0.95rem; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .pwd-toggle-btn:hover { color: var(--primary-dark-green); }
   </style>
 </head>
 <body>
@@ -129,17 +133,45 @@
       
       <form action="/change-password" method="POST">
         <label>Current Password</label>
-        <input type="password" name="current_password" required placeholder="Enter current password">
+        <div class="pwd-field-wrap">
+          <input type="password" name="current_password" required placeholder="Enter current password">
+          <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+        </div>
 
         <label>New Password</label>
-        <input type="password" name="new_password" required placeholder="Enter new strong password">
+        <div class="pwd-field-wrap">
+          <input type="password" name="new_password" required placeholder="Enter new strong password">
+          <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+        </div>
 
         <label>Confirm New Password</label>
-        <input type="password" name="confirm_password" required placeholder="Confirm new password">
+        <div class="pwd-field-wrap">
+          <input type="password" name="confirm_password" required placeholder="Confirm new password">
+          <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+        </div>
 
         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key"></i> Update Security Password</button>
       </form>
     </div>
   </div>
+
+  <script>
+    function togglePasswordVisibility(btn) {
+      const wrap = btn.closest('.pwd-field-wrap');
+      if (!wrap) return;
+      const input = wrap.querySelector('input');
+      const icon = btn.querySelector('i');
+      if (!input || !icon) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+  </script>
 </body>
 </html>

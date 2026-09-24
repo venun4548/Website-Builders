@@ -269,6 +269,7 @@ function doPost(e){
       if(action==='loginUser')        return loginUser(data);
       if(action==='createEnquiry')    return createEnquiry(data);
       if(action==='updateEnquiry')    return updateEnquiry(data);
+      if(action==='deleteEnquiry')    return deleteEnquiry(data);
       if(action==='convertEnquiry')   return convertEnquiry(data);
       if(action==='createProject')    return createProject(data);
       if(action==='updateProject')    return updateProject(data);
@@ -799,6 +800,20 @@ function updateEnquiry(d){
   return jr('success',{message:'Enquiry updated.', enquiry_id: enqId});
 }
 
+function deleteEnquiry(d){
+  d = d || {};
+  const enqId = d.enquiry_id || d.id || d.submission_id;
+  if(!enqId) return jr('error','Enquiry ID required.');
+  const sheet=getOrCreateSheet(SHEETS.ENQUIRIES,HEADERS.Enquiries);
+  const colMap=getEnquiryColMap(sheet);
+  const subCol = colMap.SUBMISSION_ID || E.SUBMISSION_ID;
+  const row=findRowByValue(sheet,subCol,enqId);
+  if(row<0) return jr('error','Enquiry not found: '+enqId);
+  sheet.deleteRow(row);
+  logActivity({userId:d.deleted_by||d.user_id||'',userName:'',role:'Admin',action:'ENQUIRY_DELETED',relatedId:enqId,description:'Enquiry deleted: '+enqId,status:'SUCCESS'});
+  return jr('success',{message:'Enquiry deleted successfully.',enquiry_id:enqId});
+}
+
 function convertEnquiry(d){
   d = d || {};
   const enqId = d.enquiry_id || d.id || d.submission_id;
@@ -807,23 +822,45 @@ function convertEnquiry(d){
   const colMap=getEnquiryColMap(sheet);
   const subCol = colMap.SUBMISSION_ID || E.SUBMISSION_ID;
   const row=findRowByValue(sheet,subCol,enqId);
-  if(row<0) return jr('error','Enquiry not found.');
+  if(row<0) return jr('error','Enquiry not found: '+enqId);
   // Read enquiry data
   const totalCols=Math.max(sheet.getLastColumn(),colMap.TOTAL||E.TOTAL);
   const r=sheet.getRange(row,1,1,totalCols).getValues()[0];
   const getVal=(colIdx)=>(colIdx&&colIdx<=r.length)?String(r[colIdx-1]||''):'';
-  const custName=getVal(colMap.CUSTOMER_NAME);
-  const custEmail=getVal(colMap.EMAIL);
-  const custId=getVal(colMap.CUST_ID)||'';
-  const enqMessage=getVal(colMap.MESSAGE);
+  const custName=d.customer_name || d.name || d.client_name || getVal(colMap.CUSTOMER_NAME) || 'Customer';
+  const custEmail=d.customer_email || d.email || d.client_email || getVal(colMap.EMAIL) || '';
+  const custMobile=d.mobile || getVal(colMap.MOBILE_NUMBER) || '';
+  let custId=d.customer_id || getVal(colMap.CUST_ID) || '';
+  const enqMessage=d.description || getVal(colMap.MESSAGE) || '';
+
+  // Ensure customer account ID exists
+  if(!custId && custEmail){
+    const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+    const uRow=findRowByValue(uSheet,U.EMAIL,custEmail.toLowerCase());
+    if(uRow>0){
+      custId = String(uSheet.getRange(uRow,U.ID).getValue()||'');
+    } else {
+      custId = generateId('USR',SHEETS.USERS,U.ID);
+      const now=getNow();
+      uSheet.appendRow([custId,custName.trim(),custEmail.trim().toLowerCase(),custMobile.trim(),hashPassword('User@1234'),'User','ACTIVE',now.date,now.time,'','','','',now.date,now.time,d.assigned_staff_id||'']);
+    }
+    if(colMap.CUST_ID && custId) sheet.getRange(row,colMap.CUST_ID).setValue(custId);
+  }
+  if(!custId){
+    custId = generateId('USR',SHEETS.USERS,U.ID);
+  }
+
   // Create project
   var projResult=createProject({
     project_name: d.name||d.project_name||(custName+' Website Project'),
     customer_id: custId,
     customer_name: custName,
+    customer_email: custEmail,
+    client_name: custName,
+    client_email: custEmail,
     description: d.description||enqMessage,
-    stage: d.initial_stage||d.stage||'Planning',
-    progress: d.initial_progress||d.progress||0,
+    stage: d.initial_stage||d.stage||'Requirement',
+    progress: parseInt(d.initial_progress||d.progress||10),
     expected_delivery: d.expected_delivery||'',
     status: 'Active',
     staff_id: d.assigned_staff_id||'',
@@ -833,15 +870,21 @@ function convertEnquiry(d){
   // Parse response to get project_id
   var projData={};
   try{projData=JSON.parse(projResult.getContent());}catch(e){}
-  var projId=(projData.data&&projData.data.project_id)||'';
+  var projId=(projData.data&&(projData.data.project_id||projData.data.id))||'';
+  if(!projId){
+    projId = generateProjectId();
+    const pSheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
+    const now=getNow();
+    pSheet.appendRow([projId,custName,custEmail,custId,(d.name||d.project_name||(custName+' Website Project')).trim(),(d.description||enqMessage||'').trim(),d.initial_stage||d.stage||'Requirement',parseInt(d.initial_progress||d.progress||10),d.expected_delivery||'','Active',d.converted_by||'',now.date,now.time,'','','']);
+  }
   // Update enquiry as converted
   if(projId){
     if(colMap.TICKET_STATUS) sheet.getRange(row,colMap.TICKET_STATUS).setValue('Converted');
     if(colMap.PROJ_ID) sheet.getRange(row,colMap.PROJ_ID).setValue(projId);
     if(colMap.REMARKS) sheet.getRange(row,colMap.REMARKS).setValue('Converted to project '+projId);
   }
-  logActivity({userId:d.converted_by||'',userName:'',role:'',action:'ENQUIRY_CONVERTED',relatedId:enqId,description:'Enquiry converted to project '+projId,status:'SUCCESS'});
-  return jr('success',{message:'Enquiry converted to project.',project_id:projId,enquiry_id:enqId});
+  logActivity({userId:d.converted_by||'',userName:'',role:'Admin',action:'ENQUIRY_CONVERTED',relatedId:enqId,description:'Enquiry converted to project '+projId,status:'SUCCESS'});
+  return jr('success',{message:'Enquiry converted to project '+projId,project_id:projId,enquiry_id:enqId,id:projId});
 }
 
 function getEnquiries(p){
@@ -871,6 +914,8 @@ function getEnquiries(p){
     const custName = getVal(colMap.CUSTOMER_NAME);
     const assignedTo = getVal(colMap.ASSIGNED_TO);
     const assignedStaffName = nameMap[assignedTo] || (assignedTo.startsWith('USR-') ? '' : assignedTo);
+    const pId = getVal(colMap.PROJ_ID);
+    const statusVal = getVal(colMap.TICKET_STATUS) || 'New';
     return {
       enquiry_id: getVal(colMap.SUBMISSION_ID),
       id: getVal(colMap.SUBMISSION_ID),
@@ -882,8 +927,9 @@ function getEnquiries(p){
       mobile: getVal(colMap.MOBILE_NUMBER),
       address: getVal(colMap.ADDRESS),
       message: getVal(colMap.MESSAGE),
-      status: getVal(colMap.TICKET_STATUS) || 'New',
-      ticket_status: getVal(colMap.TICKET_STATUS) || 'New',
+      status: statusVal,
+      ticket_status: statusVal,
+      is_converted: statusVal.toUpperCase() === 'CONVERTED' || (pId && pId.trim() !== ''),
       assigned_to: assignedTo,
       assigned_staff_id: assignedTo,
       assigned_staff_name: assignedStaffName,
@@ -891,7 +937,7 @@ function getEnquiries(p){
       followup_status: getVal(colMap.FOLLOWUP_STATUS),
       source_page: getVal(colMap.SOURCE_PAGE),
       remarks: getVal(colMap.REMARKS),
-      project_id: getVal(colMap.PROJ_ID),
+      project_id: pId,
       created_at: getVal(colMap.TIMESTAMP)
     };
   }).filter(e=>e.enquiry_id || e.email);
@@ -903,25 +949,36 @@ function getEnquiries(p){
 // ─────────────── PROJECTS ─────────────────────────────────────
 function createProject(d){
   d = d || {};
-  if(!d.project_name||!d.customer_id) return jr('error','Project name and customer ID required.');
+  if(!d.project_name) return jr('error','Project name is required.');
   const lock=LockService.getScriptLock();lock.waitLock(15000);
   try{
     const sheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
     const now=getNow();const projId=generateProjectId();
     let custName = d.customer_name || d.client_name || '';
     let custEmail = d.customer_email || d.client_email || '';
-    if((!custName || !custEmail) && d.customer_id){
+    let custId = d.customer_id || '';
+    if((!custName || !custEmail) && custId){
       const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
-      const uRow=findRowByValue(uSheet,U.ID,d.customer_id);
+      const uRow=findRowByValue(uSheet,U.ID,custId);
       if(uRow>0){
         if(!custName) custName = String(uSheet.getRange(uRow,U.NAME).getValue()||'');
         if(!custEmail) custEmail = String(uSheet.getRange(uRow,U.EMAIL).getValue()||'');
       }
     }
-    sheet.appendRow([projId,custName,custEmail,d.customer_id,d.project_name.trim(),(d.description||'').trim(),d.stage||'Planning',parseInt(d.progress||0),d.expected_delivery||'',d.status||'Active',d.created_by||'',now.date,now.time,'','','']);
+    if(!custId && custEmail){
+      const uSheet=getOrCreateSheet(SHEETS.USERS,HEADERS.Users);
+      const uRow=findRowByValue(uSheet,U.EMAIL,custEmail.toLowerCase());
+      if(uRow>0){
+        custId = String(uSheet.getRange(uRow,U.ID).getValue()||'');
+      }
+    }
+    if(!custId){
+      custId = 'CUST-' + Utilities.getUuid().slice(0, 8).toUpperCase();
+    }
+    sheet.appendRow([projId,custName,custEmail,custId,d.project_name.trim(),(d.description||'').trim(),d.stage||'Requirement',parseInt(d.progress||10),d.expected_delivery||'',d.status||'Active',d.created_by||'',now.date,now.time,'','','']);
     if(d.staff_id) assignStaff({project_id:projId,staff_id:d.staff_id,staff_name:d.staff_name||'',assigned_by:d.created_by||''});
     logActivity({userId:d.created_by||'',userName:'',role:'',action:'PROJECT_CREATED',relatedId:projId,description:'Project created: '+projId,status:'SUCCESS'});
-    return jr('success',{id:projId,project_id:projId,message:'Project created.'});
+    return jr('success',{id:projId,project_id:projId,message:'Project created successfully.'});
   }finally{lock.releaseLock();}
 }
 

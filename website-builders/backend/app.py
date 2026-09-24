@@ -1165,20 +1165,57 @@ def api_create_enquiry():
 def api_convert_enquiry(enquiry_id):
     try:
         data = request.get_json(silent=True) or {}
+        
+        # Fetch enquiry details if name or email missing
+        cust_name = data.get('customer_name') or data.get('client_name') or data.get('name') or ''
+        cust_email = data.get('customer_email') or data.get('client_email') or data.get('email') or ''
+        cust_id = data.get('customer_id') or ''
+        enq_msg = data.get('description') or ''
+
+        if not cust_name or not cust_email:
+            try:
+                enq_res = gas_get('getEnquiries', {'enquiry_id': str(enquiry_id)})
+                if enq_res.get('status') == 'success' and isinstance(enq_res.get('data'), list):
+                    for e in enq_res.get('data', []):
+                        if str(e.get('id') or e.get('enquiry_id')) == str(enquiry_id):
+                            if not cust_name:
+                                cust_name = e.get('full_name') or e.get('customer_name') or e.get('name') or 'Customer'
+                            if not cust_email:
+                                cust_email = e.get('email') or ''
+                            if not cust_id:
+                                cust_id = e.get('customer_id') or ''
+                            if not enq_msg:
+                                enq_msg = e.get('message') or ''
+                            break
+            except Exception as ex:
+                logger.warning("Error looking up enquiry details: %s", ex)
+
+        if not cust_name:
+            cust_name = 'Customer'
+
+        proj_name = data.get('name') or data.get('project_name') or f"{cust_name} Website Project"
+
         payload = {
             'enquiry_id': str(enquiry_id),
             'id': str(enquiry_id),
-            'name': data.get('name') or data.get('project_name') or 'Client Website Project',
-            'project_name': data.get('name') or data.get('project_name') or 'Client Website Project',
-            'description': data.get('description', ''),
+            'name': proj_name,
+            'project_name': proj_name,
+            'customer_name': cust_name,
+            'client_name': cust_name,
+            'customer_email': cust_email,
+            'client_email': cust_email,
+            'customer_id': cust_id,
+            'description': enq_msg or data.get('description', ''),
             'stage': data.get('initial_stage') or data.get('stage', 'Requirement'),
+            'initial_stage': data.get('initial_stage') or data.get('stage', 'Requirement'),
             'progress': int(data.get('initial_progress') or data.get('progress', 10)),
+            'initial_progress': int(data.get('initial_progress') or data.get('progress', 10)),
             'expected_delivery': data.get('expected_delivery', ''),
             'assigned_staff_id': data.get('assigned_staff_id'),
             'converted_by': str(current_user.id)
         }
         result = call_gas('convertEnquiry', payload)
-        if result.get('status') == 'success' or result.get('success'):
+        if (result.get('status') == 'success' or result.get('success')) and result.get('data', {}).get('project_id'):
             return jsonify({'success': True, 'status': 'success', 'data': result.get('data', {})}), 200
         
         # Fallback: create project and mark enquiry converted
@@ -1187,16 +1224,57 @@ def api_convert_enquiry(enquiry_id):
         if isinstance(proj_res.get('data'), dict):
             proj_id = proj_res.get('data', {}).get('project_id') or proj_res.get('data', {}).get('id') or ""
         if not proj_id:
-            proj_id = f"PRJ-{datetime.now().year}-{datetime.now().strftime('%m%d%H%M')}"
+            proj_id = f"WB-{datetime.now().year}-{datetime.now().strftime('%m%d%H%M')}"
+            call_gas('sync_project', {
+                'project_id': proj_id,
+                'customer_name': cust_name,
+                'customer_email': cust_email,
+                'customer_id': cust_id,
+                'project_name': proj_name,
+                'description': payload['description'],
+                'stage': payload['stage'],
+                'progress': payload['progress'],
+                'expected_delivery': payload['expected_delivery'],
+                'status': 'Active'
+            })
         
-        call_gas('updateEnquiry', {'enquiry_id': str(enquiry_id), 'id': str(enquiry_id), 'status': 'CONVERTED', 'project_id': proj_id})
+        call_gas('updateEnquiry', {
+            'enquiry_id': str(enquiry_id),
+            'id': str(enquiry_id),
+            'status': 'CONVERTED',
+            'ticket_status': 'Converted',
+            'project_id': proj_id,
+            'remarks': f'Converted to project {proj_id}'
+        })
         return jsonify({
             'success': True,
             'status': 'success',
             'message': f'Successfully converted enquiry into Project {proj_id}',
-            'data': {'project_id': proj_id, 'enquiry_id': enquiry_id}
+            'data': {'project_id': proj_id, 'enquiry_id': enquiry_id, 'id': proj_id}
         }), 200
     except Exception as e:
+        logger.error("Error in api_convert_enquiry: %s", e)
+        return jsonify({'success': False, 'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/enquiries/<enquiry_id>', methods=['DELETE'])
+@login_required
+@role_required('Super Admin', 'Admin')
+def api_delete_enquiry(enquiry_id):
+    try:
+        result = call_gas('deleteEnquiry', {
+            'enquiry_id': str(enquiry_id),
+            'id': str(enquiry_id),
+            'deleted_by': str(current_user.id)
+        })
+        if result.get('status') == 'error':
+            return jsonify({'success': False, 'status': 'error', 'message': result.get('message')}), 400
+        return jsonify({
+            'success': True,
+            'status': 'success',
+            'message': f'Enquiry {enquiry_id} deleted successfully.'
+        }), 200
+    except Exception as e:
+        logger.error("Error deleting enquiry: %s", e)
         return jsonify({'success': False, 'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/enquiries/<enquiry_id>', methods=['PUT', 'PATCH'])

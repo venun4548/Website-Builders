@@ -609,6 +609,36 @@
 
     .modal-card-lg { max-width: 850px; }
 
+    .pwd-field-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .pwd-field-wrap input {
+      width: 100%;
+      padding-right: 2.5rem !important;
+    }
+    .pwd-toggle-btn {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--secondary-text);
+      font-size: 0.95rem;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    .pwd-toggle-btn:hover {
+      color: var(--primary-green);
+    }
+
     /* Responsive */
     @media (max-width: 1024px) {
       .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -1791,11 +1821,17 @@
         </div>
         <div style="margin-bottom:1rem;">
           <label>Password</label>
-          <input type="password" name="password" required placeholder="Set strong password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="password" required placeholder="Set strong password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <div style="margin-bottom:1.5rem;">
           <label>Confirm Password</label>
-          <input type="password" name="confirm_password" required placeholder="Confirm password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="confirm_password" required placeholder="Confirm password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-check"></i> Create Administrator Account</button>
       </form>
@@ -1824,11 +1860,17 @@
         </div>
         <div style="margin-bottom:1rem;">
           <label>Password</label>
-          <input type="password" name="password" required placeholder="Set password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="password" required placeholder="Set password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <div style="margin-bottom:1.5rem;">
           <label>Confirm Password</label>
-          <input type="password" name="confirm_password" required placeholder="Confirm password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="confirm_password" required placeholder="Confirm password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-check"></i> Create Staff Account</button>
       </form>
@@ -1857,11 +1899,17 @@
         </div>
         <div style="margin-bottom:1rem;">
           <label>Password</label>
-          <input type="password" name="password" required placeholder="Set password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="password" required placeholder="Set password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <div style="margin-bottom:1.5rem;">
           <label>Confirm Password</label>
-          <input type="password" name="confirm_password" required placeholder="Confirm password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="confirm_password" required placeholder="Confirm password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%; background:var(--emerald);"><i class="fa-solid fa-check"></i> Create Customer Account</button>
       </form>
@@ -1924,11 +1972,17 @@
         </div>
         <div style="margin-bottom:1rem;">
           <label>New Password</label>
-          <input type="password" name="password" required placeholder="Enter new password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="password" required placeholder="Enter new password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <div style="margin-bottom:1.5rem;">
           <label>Confirm Password</label>
-          <input type="password" name="confirm_password" required placeholder="Confirm new password">
+          <div class="pwd-field-wrap">
+            <input type="password" name="confirm_password" required placeholder="Confirm new password">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(null, this)" title="Toggle password visibility"><i class="fa-solid fa-eye"></i></button>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fa-solid fa-shield-halved"></i> Update Password</button>
       </form>
@@ -2135,8 +2189,11 @@
           </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
-          <button type="button" class="btn btn-primary" onclick="triggerConvertFromDetail()"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert to Project</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+          <div style="display:flex; gap:0.5rem;">
+            <button type="button" class="btn btn-primary" onclick="triggerConvertFromDetail()"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert to Project</button>
+            <button type="button" class="btn btn-outline" style="color:var(--danger); border-color:rgba(239, 68, 68, 0.4);" onclick="deleteEnquiryFromModal()"><i class="fa-solid fa-trash-can"></i> Delete</button>
+          </div>
           <div style="display:flex; gap:0.5rem;">
             <button type="button" class="btn btn-outline" onclick="closeModal('modal-enquiry-details')">Cancel</button>
             <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Update Enquiry</button>
@@ -3555,12 +3612,14 @@
         if (!e.id && !e.enquiry_id) {
           e.id = 'TMP-' + index;
         }
-        const statusBadgeClass = e.status === 'NEW' ? 'badge-info' : (e.status === 'CONVERTED' ? 'badge-success' : (e.status === 'REJECTED' || e.status === 'CLOSED' ? 'badge-danger' : 'badge-warning'));
-        const convertedBadge = e.is_converted ? `<span class="badge badge-success"><i class="fa-solid fa-check"></i> ${e.project_id || 'Converted'}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">No</span>';
+        const isConverted = (e.status === 'CONVERTED' || e.status === 'Converted' || e.is_converted || (e.project_id && String(e.project_id).trim() !== ''));
+        const statusBadgeClass = isConverted ? 'badge-success' : (e.status === 'NEW' ? 'badge-info' : (e.status === 'REJECTED' || e.status === 'CLOSED' ? 'badge-danger' : 'badge-warning'));
+        const convertedBadge = (isConverted || e.project_id) ? `<span class="badge badge-success"><i class="fa-solid fa-check"></i> ${e.project_id || 'Converted'}</span>` : '<span style="color:var(--muted-text); font-size:0.85rem;">No</span>';
+        const displayId = e.enquiry_id || (String(e.id).startsWith('#ENQ-') ? e.id : '#ENQ-' + e.id);
         
         html += `
         <tr>
-          <td style="font-family:monospace; font-weight:700; color:var(--primary-dark-green);">${e.enquiry_id || ('#ENQ-' + e.id)}</td>
+          <td style="font-family:monospace; font-weight:700; color:var(--primary-dark-green);">${displayId}</td>
           <td><strong>${e.full_name || e.customer_name || e.name || 'N/A'}</strong></td>
           <td>
             <div style="font-size:0.85rem; font-weight:600;">${e.email || 'N/A'}</div>
@@ -3578,12 +3637,66 @@
               <button class="btn-icon" onclick="viewEnquiryDetails('${e.id || e.enquiry_id || ''}')" title="View Enquiry Details">
                 <i class="fa-solid fa-eye"></i>
               </button>
-              ${!e.is_converted ? `<button class="btn btn-primary btn-sm" onclick="openConvertEnquiryModal('${e.id || e.enquiry_id || ''}')" title="Convert to Project"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert</button>` : ''}
+              ${!isConverted && !e.project_id ? `<button class="btn btn-primary btn-sm" onclick="openConvertEnquiryModal('${e.id || e.enquiry_id || ''}')" title="Convert to Project"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert</button>` : ''}
+              <button class="btn-icon btn-danger" onclick="deleteEnquiryRecord('${e.id || e.enquiry_id || ''}')" title="Delete Enquiry" style="color:var(--danger); border-color:rgba(239, 68, 68, 0.35);">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
             </div>
           </td>
         </tr>`;
       });
       container.innerHTML = html;
+    }
+
+    async function deleteEnquiryRecord(enquiryId) {
+      if (!enquiryId) return;
+      if (!confirm(`Are you sure you want to permanently delete enquiry ${enquiryId}? This action cannot be undone.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/enquiries/${encodeURIComponent(enquiryId)}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && (data.status === 'success' || data.success)) {
+          alert('Enquiry deleted successfully.');
+          await loadEnquiriesData();
+        } else {
+          alert(data.message || data.error || 'Error deleting enquiry.');
+        }
+      } catch (err) {
+        console.error('Error deleting enquiry:', err);
+        alert('Server error deleting enquiry.');
+      }
+    }
+
+    async function deleteEnquiryFromModal() {
+      const enquiryId = document.getElementById('enquiry-detail-id').value;
+      if (!enquiryId) return;
+      closeModal('modal-enquiry-details');
+      await deleteEnquiryRecord(enquiryId);
+    }
+
+    function togglePasswordVisibility(inputSelectorOrEl, btnEl) {
+      let input = typeof inputSelectorOrEl === 'string' ? document.querySelector(inputSelectorOrEl) : inputSelectorOrEl;
+      if (!input && btnEl) {
+        input = btnEl.parentElement.querySelector('input');
+      }
+      if (!input) return;
+      const icon = btnEl ? (btnEl.tagName === 'I' ? btnEl : btnEl.querySelector('i')) : null;
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+          icon.classList.remove('fa-eye');
+          icon.classList.add('fa-eye-slash');
+        }
+      } else {
+        input.type = 'password';
+        if (icon) {
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
+        }
+      }
     }
 
     function filterEnquiriesTable() {
@@ -3631,7 +3744,7 @@
 
         const clientName = enq.full_name || enq.customer_name || enq.name || 'Customer';
         const elId = document.getElementById('enquiry-detail-id');
-        if (elId) elId.value = enq.id || enq.enquiry_id;
+        if (elId) elId.value = enq.enquiry_id || enq.id;
         const elCode = document.getElementById('enquiry-detail-code');
         if (elCode) elCode.innerText = enq.enquiry_id || ('#ENQ-' + enq.id);
         
@@ -3640,7 +3753,7 @@
           badge.className = 'badge ' + (
             enq.status === 'NEW' ? 'badge-primary' :
             enq.status === 'IN_PROGRESS' ? 'badge-warning' :
-            enq.status === 'CONVERTED' ? 'badge-success' : 'badge-neutral'
+            (enq.status === 'CONVERTED' || enq.is_converted) ? 'badge-success' : 'badge-neutral'
           );
           badge.innerText = (enq.status || 'NEW').replace('_', ' ');
         }
@@ -3677,7 +3790,7 @@
       const staffId = document.getElementById('enquiry-detail-staff-select').value;
 
       try {
-        const res = await fetch(`/api/enquiries/${enquiryId}`, {
+        const res = await fetch(`/api/enquiries/${encodeURIComponent(enquiryId)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: status, assigned_staff_id: staffId || null })
@@ -3719,7 +3832,7 @@
         if (!enq) { alert('Enquiry not found: ' + enquiryId); return; }
 
         const elId = document.getElementById('convert-enquiry-id');
-        if (elId) elId.value = enq.id || enq.enquiry_id;
+        if (elId) elId.value = enq.enquiry_id || enq.id;
         const elLbl = document.getElementById('convert-enquiry-code-label');
         if (elLbl) elLbl.innerText = `Enquiry: ${enq.enquiry_id || ('#ENQ-' + enq.id)}`;
         const elInfo = document.getElementById('convert-customer-info');
@@ -3760,29 +3873,40 @@
     async function handleConvertEnquirySubmit(e) {
       e.preventDefault();
       const enquiryId = document.getElementById('convert-enquiry-id').value;
+      const enq = (rawEnquiryData || []).find(x => 
+        String(x.id) === String(enquiryId) || 
+        String(x.enquiry_id) === String(enquiryId) ||
+        String(x.submission_id) === String(enquiryId)
+      );
       const payload = {
         name: document.getElementById('convert-project-name').value.trim(),
+        project_name: document.getElementById('convert-project-name').value.trim(),
         description: document.getElementById('convert-project-desc').value.trim(),
         initial_stage: document.getElementById('convert-project-stage').value,
         initial_progress: document.getElementById('convert-project-progress').value,
         expected_delivery: document.getElementById('convert-project-delivery').value,
-        assigned_staff_id: document.getElementById('convert-project-staff').value || null
+        assigned_staff_id: document.getElementById('convert-project-staff').value || null,
+        customer_name: enq ? (enq.full_name || enq.customer_name || enq.name || '') : '',
+        customer_email: enq ? (enq.email || '') : '',
+        customer_id: enq ? (enq.customer_id || '') : ''
       };
 
       try {
-        const res = await fetch(`/api/enquiries/${enquiryId}/convert`, {
+        const res = await fetch(`/api/enquiries/${encodeURIComponent(enquiryId)}/convert`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (res.ok && (data.status === 'success' || data.success)) {
-          alert(`Successfully converted enquiry into Project ${data.data ? data.data.project_id : ''}!`);
+          const pId = (data.data && (data.data.project_id || data.data.id)) || '';
+          alert(`Successfully converted enquiry into Project ${pId}!`);
           closeModal('modal-convert-enquiry');
-          loadEnquiriesData();
-          loadDashboardData();
+          await loadEnquiriesData();
+          if (typeof loadProjectsData === 'function') await loadProjectsData();
+          if (typeof loadDashboardData === 'function') await loadDashboardData();
         } else {
-          alert(data.message || 'Error converting enquiry to project.');
+          alert(data.message || data.error || 'Error converting enquiry to project.');
         }
       } catch (err) {
         console.error(err);
