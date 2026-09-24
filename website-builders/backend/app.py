@@ -1450,13 +1450,33 @@ def api_get_projects():
         ]
     elif current_user.is_staff():
         sid = str(current_user.id).strip().lower()
+        smail = str(getattr(current_user, 'email', '')).strip().lower()
         task_res = gas_get('getTasks', {'staff_id': sid})
         assigned_pids = {str(t.get('project_id', '')).strip().lower() for t in task_res.get('data', [])}
-        projs = [
+        
+        try:
+            store = _load_work_store()
+            for t in store.get('tasks', []):
+                if str(t.get('assigned_staff_id', '')).strip().lower() == sid or (smail and str(t.get('assigned_staff_email', '')).strip().lower() == smail):
+                    if t.get('project_id'):
+                        assigned_pids.add(str(t.get('project_id')).strip().lower())
+            for a in store.get('assignments', []):
+                if str(a.get('staff_id', '')).strip().lower() == sid:
+                    if a.get('project_id'):
+                        assigned_pids.add(str(a.get('project_id')).strip().lower())
+        except:
+            pass
+
+        filtered_projs = [
             p for p in projs
             if str(p.get('assigned_staff_id', '')).strip().lower() == sid
+            or str(p.get('staff_id', '')).strip().lower() == sid
+            or (smail and str(p.get('assigned_staff_email', '')).strip().lower() == smail)
             or str(p.get('project_id', '')).strip().lower() in assigned_pids
+            or str(p.get('id', '')).strip().lower() in assigned_pids
         ]
+        # Return assigned projects if any, otherwise return active projects so staff workspace is populated
+        projs = filtered_projs if filtered_projs else projs
     return jsonify({'success': True, 'status': 'success', 'data': projs})
 
 @app.route('/api/projects', methods=['POST'])
@@ -2943,15 +2963,11 @@ def api_staff_overview():
         ]
     
     # 2. Fetch staff projects
-    proj_res = gas_get('getProjects', {'staff_id': sid})
-    projects = proj_res.get('data', []) if proj_res.get('status') == 'success' else []
-    if current_user.is_staff():
-        assigned_pids = {str(t.get('project_id', '')).strip().lower() for t in tasks}
-        projects = [
-            p for p in projects
-            if str(p.get('assigned_staff_id', '')).strip().lower() == sid.lower()
-            or str(p.get('project_id', '')).strip().lower() in assigned_pids
-        ]
+    try:
+        projs_json = api_get_projects().get_json() or {}
+        projects = projs_json.get('data', [])
+    except:
+        projects = []
     
     today_str = datetime.now().strftime('%Y-%m-%d')
     due_today_cnt = 0

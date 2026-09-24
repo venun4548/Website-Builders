@@ -1819,6 +1819,7 @@
       document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
       if(evt && evt.currentTarget) evt.currentTarget.classList.add('active');
 
+      if (secId === 'projects' || secId === 'overview' || secId === 'tasks') loadData();
       if (secId === 'messages') loadStaffMessagesHub();
       if (secId === 'notifications') loadStaffNotifications();
       if (secId === 'meetings') loadStaffMeetings();
