@@ -1,3 +1,4 @@
+
 /* css/style.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
@@ -521,11 +522,11 @@ img {
 
 /* Hero Section */
 .hero {
-  min-height: 100vh;
+  min-height: 90vh;
   display: flex;
   align-items: center;
   position: relative;
-  overflow: hidden;
+  padding: 8rem 0 6rem;
 }
 
 .hero::before {
@@ -659,7 +660,7 @@ img {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
-  margin-top: -4rem;
+  margin-top: 1rem;
   position: relative;
   z-index: 10;
 }
