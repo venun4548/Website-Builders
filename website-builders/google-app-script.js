@@ -982,77 +982,211 @@ function createProject(d){
   }finally{lock.releaseLock();}
 }
 
+function getProjectColMap(sheet){
+  const fallback = Object.assign({}, P);
+  const lastCol = sheet.getLastColumn();
+  if (sheet.getLastRow() < 1 || lastCol < 1) return fallback;
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const colMap = {};
+  headers.forEach((h, idx) => {
+    const raw = String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!raw) return;
+    const col1 = idx + 1;
+    if (['projectid', 'id', 'projid'].includes(raw)) colMap.ID = col1;
+    else if (['clientname', 'customername', 'name', 'client', 'customer'].includes(raw)) colMap.CUST_NAME = col1;
+    else if (['clientemail', 'customeremail', 'email', 'mail'].includes(raw)) colMap.CUST_EMAIL = col1;
+    else if (['customerid', 'clientid', 'custid', 'userid'].includes(raw)) colMap.CUST_ID = col1;
+    else if (['projectname', 'projname', 'title'].includes(raw)) colMap.PROJ_NAME = col1;
+    else if (['description', 'desc', 'details'].includes(raw)) colMap.DESC = col1;
+    else if (['currentstage', 'stage', 'projectstage'].includes(raw)) colMap.STAGE = col1;
+    else if (['progress', 'percentage', 'prog'].includes(raw)) colMap.PROGRESS = col1;
+    else if (['expecteddeliverydate', 'expecteddelivery', 'deliverydate', 'targetenddate', 'targetdate', 'duedate', 'deadline', 'delivery'].includes(raw)) colMap.DELIVERY = col1;
+    else if (['status', 'projectstatus'].includes(raw)) colMap.STATUS = col1;
+    else if (['createdby', 'author'].includes(raw)) colMap.CREATED_BY = col1;
+    else if (['createddate', 'createdat', 'created'].includes(raw)) colMap.CREATED_DATE = col1;
+    else if (['createdtime'].includes(raw)) colMap.CREATED_TIME = col1;
+    else if (['updateddate', 'upddate', 'updatedat', 'updated'].includes(raw)) colMap.UPD_DATE = col1;
+    else if (['updatedtime', 'updtime'].includes(raw)) colMap.UPD_TIME = col1;
+    else if (['latestupdate', 'latestupdatetext', 'lastupdate', 'update', 'notes', 'latestnote'].includes(raw)) colMap.LATEST_UPDATE = col1;
+  });
+  return Object.assign({}, fallback, colMap, { TOTAL: Math.max(lastCol, P.TOTAL) });
+}
+
 function updateProject(d){
   d = d || {};
-  if(!d.project_id) return jr('error','Project ID required.');
+  const projId = d.project_id || d.id;
+  if(!projId) return jr('error','Project ID required.');
   const sheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
-  const row=findRowByValue(sheet,P.ID,d.project_id);
+  const colMap=getProjectColMap(sheet);
+  const idCol = colMap.ID || P.ID;
+  const row=findRowByValue(sheet,idCol,projId);
   if(row<0) return jr('error','Project not found.');
   const now=getNow();
-  if(d.client_name || d.customer_name) sheet.getRange(row,P.CUST_NAME).setValue(d.client_name || d.customer_name);
-  if(d.client_email || d.customer_email) sheet.getRange(row,P.CUST_EMAIL).setValue(d.client_email || d.customer_email);
-  if(d.project_name)  sheet.getRange(row,P.PROJ_NAME).setValue(d.project_name);
-  if(d.description)   sheet.getRange(row,P.DESC).setValue(d.description);
-  if(d.stage)         sheet.getRange(row,P.STAGE).setValue(d.stage);
-  if(d.progress!==undefined) sheet.getRange(row,P.PROGRESS).setValue(parseInt(d.progress));
-  if(d.expected_delivery) sheet.getRange(row,P.DELIVERY).setValue(d.expected_delivery);
-  if(d.status)        sheet.getRange(row,P.STATUS).setValue(d.status);
-  if(d.latest_update) sheet.getRange(row,P.LATEST_UPDATE).setValue(d.latest_update);
-  sheet.getRange(row,P.UPD_DATE).setValue(now.date);
-  sheet.getRange(row,P.UPD_TIME).setValue(now.time);
-  return jr('success',{message:'Project updated.',id:d.project_id});
+  if((d.client_name || d.customer_name) && colMap.CUST_NAME) sheet.getRange(row,colMap.CUST_NAME).setValue(d.client_name || d.customer_name);
+  if((d.client_email || d.customer_email) && colMap.CUST_EMAIL) sheet.getRange(row,colMap.CUST_EMAIL).setValue(d.client_email || d.customer_email);
+  if(d.project_name && colMap.PROJ_NAME)  sheet.getRange(row,colMap.PROJ_NAME).setValue(d.project_name);
+  if(d.description!==undefined && colMap.DESC)   sheet.getRange(row,colMap.DESC).setValue(d.description);
+  if(d.stage && colMap.STAGE)         sheet.getRange(row,colMap.STAGE).setValue(d.stage);
+  if(d.progress!==undefined && colMap.PROGRESS) sheet.getRange(row,colMap.PROGRESS).setValue(parseInt(d.progress));
+  
+  const expDel = d.expected_delivery || d.expected_delivery_date || d.delivery_date || d.target_end_date || d.due_date;
+  if(expDel!==undefined && colMap.DELIVERY) sheet.getRange(row,colMap.DELIVERY).setValue(expDel);
+  
+  if(d.status && colMap.STATUS)        sheet.getRange(row,colMap.STATUS).setValue(d.status);
+  
+  const latUpd = d.latest_update || d.latest_update_text || d.last_update || d.update_text || d.notes;
+  if(latUpd!==undefined && colMap.LATEST_UPDATE) sheet.getRange(row,colMap.LATEST_UPDATE).setValue(latUpd);
+  
+  if(colMap.UPD_DATE) sheet.getRange(row,colMap.UPD_DATE).setValue(now.date);
+  if(colMap.UPD_TIME) sheet.getRange(row,colMap.UPD_TIME).setValue(now.time);
+
+  if(d.staff_id || d.assigned_staff_id){
+    try {
+      assignStaff({
+        project_id: projId,
+        staff_id: d.staff_id || d.assigned_staff_id,
+        staff_name: d.staff_name || d.assigned_staff_name || '',
+        assigned_by: d.updated_by || d.user_id || ''
+      });
+    } catch(e_asg){}
+  }
+
+  return jr('success',{message:'Project updated.',id:projId,project_id:projId});
 }
 
 function getProjects(p){
   p = p || {};
   const sheet=getOrCreateSheet(SHEETS.PROJECTS,HEADERS.Projects);
+  const colMap=getProjectColMap(sheet);
   const last=sheet.getLastRow();
   if(last<2) return jr('success',[]);
 
-  // Get active assignments to populate assigned_staff_name & assigned_staff_id
+  // 1. Get active assignments to populate assigned_staff_name & assigned_staff_id
   const as=getOrCreateSheet(SHEETS.ASSIGNMENTS,HEADERS.ProjectAssignments);
   const aLast=as.getLastRow();
   const assignMap={};
   if(aLast>=2){
     as.getRange(2,1,aLast-1,A.TOTAL).getValues().forEach(r=>{
       if(String(r[A.STATUS-1]).toUpperCase()==='ACTIVE'){
-        const pid=String(r[A.PROJ_ID-1]);
+        const pid=String(r[A.PROJ_ID-1]).trim();
         if(pid && !assignMap[pid]){
           assignMap[pid]={
-            staff_id:String(r[A.STAFF_ID-1]),
-            staff_name:String(r[A.STAFF_NAME-1])
+            staff_id:String(r[A.STAFF_ID-1]||'').trim(),
+            staff_name:String(r[A.STAFF_NAME-1]||'').trim()
           };
         }
       }
     });
   }
 
-  let list=sheet.getRange(2,1,last-1,P.TOTAL).getValues().map(r=>{
-    const pid=String(r[P.ID-1]);
-    const asg=assignMap[pid] || {};
-    return {
-      project_id:pid,
-      id:pid,
-      customer_name:String(r[P.CUST_NAME-1]),
-      client_name:String(r[P.CUST_NAME-1]),
-      customer_email:String(r[P.CUST_EMAIL-1]),
-      client_email:String(r[P.CUST_EMAIL-1]),
-      customer_id:String(r[P.CUST_ID-1]),
-      project_name:String(r[P.PROJ_NAME-1]),
-      name:String(r[P.PROJ_NAME-1]),
-      description:String(r[P.DESC-1]),
-      stage:String(r[P.STAGE-1]),
-      progress:parseInt(r[P.PROGRESS-1])||0,
-      expected_delivery:String(r[P.DELIVERY-1]),
-      status:String(r[P.STATUS-1]),
-      created_by:String(r[P.CREATED_BY-1]),
-      created_at:String(r[P.CREATED_DATE-1])+' '+String(r[P.CREATED_TIME-1]),
-      updated_at:String(r[P.UPD_DATE-1])+' '+String(r[P.UPD_TIME-1]),
-      latest_update:String(r[P.LATEST_UPDATE-1]),
-      assigned_staff_id:asg.staff_id || '',
-      assigned_staff_name:asg.staff_name || ''
+  // 2. Fallback staff assignments from Tasks sheet
+  try {
+    const tSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.TASKS || 'Tasks');
+    if (tSheet && tSheet.getLastRow() >= 2) {
+      const tRows = tSheet.getRange(2, 1, tSheet.getLastRow() - 1, T.TOTAL).getValues();
+      for (let i = 0; i < tRows.length; i++) {
+        const pid = String(tRows[i][T.PROJ_ID - 1] || '').trim();
+        const sid = String(tRows[i][T.STAFF_ID - 1] || '').trim();
+        const sname = String(tRows[i][T.STAFF_NAME - 1] || '').trim();
+        if (pid && sid && !assignMap[pid]) {
+          assignMap[pid] = { staff_id: sid, staff_name: sname };
+        }
+      }
+    }
+  } catch(e_t) {}
+
+  // 3. Fallback latest updates from ProjectUpdates sheet
+  const latestUpdatesMap = {};
+  try {
+    const uSheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(SHEETS.UPDATES || 'ProjectUpdates');
+    if (uSheet && uSheet.getLastRow() >= 2) {
+      const uRows = uSheet.getRange(2, 1, uSheet.getLastRow() - 1, PU.TOTAL).getValues();
+      for (let i = 0; i < uRows.length; i++) {
+        const pid = String(uRows[i][PU.PROJ_ID - 1] || '').trim();
+        const utext = String(uRows[i][PU.TEXT - 1] || uRows[i][PU.REMARK - 1] || '').trim();
+        if (pid && utext) {
+          latestUpdatesMap[pid] = utext;
+        }
+      }
+    }
+  } catch(e_u) {}
+
+  // 4. User lookup for customer's assigned staff
+  const userStaffMap = {};
+  try {
+    const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+    const uLast = uSheet.getLastRow();
+    if (uLast >= 2) {
+      const uRows = uSheet.getRange(2, 1, uLast - 1, U.TOTAL).getValues();
+      const userNameMap = {};
+      uRows.forEach(r => {
+        const uid = String(r[U.ID - 1] || '').trim();
+        const uname = String(r[U.NAME - 1] || '').trim();
+        if (uid) userNameMap[uid] = uname;
+      });
+      uRows.forEach(r => {
+        const uid = String(r[U.ID - 1] || '').trim();
+        const assignedStaffId = String(r[U.ASSIGNED_STAFF - 1] || '').trim();
+        if (uid && assignedStaffId) {
+          userStaffMap[uid] = {
+            staff_id: assignedStaffId,
+            staff_name: userNameMap[assignedStaffId] || ''
+          };
+        }
+      });
+    }
+  } catch(e_usr) {}
+
+  const totalCols = Math.max(sheet.getLastColumn(), colMap.TOTAL || P.TOTAL);
+  let list = sheet.getRange(2, 1, last - 1, totalCols).getValues().map(r => {
+    const getVal = (colIdx) => {
+      if (!colIdx || colIdx > r.length) return '';
+      const v = r[colIdx - 1];
+      if (v instanceof Date) {
+        return Utilities.formatDate(v, CONFIG.TIMEZONE, 'dd-MMM-yyyy');
+      }
+      return v !== null && v !== undefined ? String(v).trim() : '';
     };
-  }).filter(pr=>pr.project_id);
+
+    const pid = getVal(colMap.ID);
+    const cid = getVal(colMap.CUST_ID);
+    const asg = assignMap[pid] || (cid ? userStaffMap[cid] : null) || {};
+
+    const expDel = getVal(colMap.DELIVERY) || 'To be determined';
+    const rawUpdate = getVal(colMap.LATEST_UPDATE);
+    const latUpdate = rawUpdate || latestUpdatesMap[pid] || 'Project in progress.';
+    const staffName = asg.staff_name || 'Team Assigned';
+
+    return {
+      project_id: pid,
+      id: pid,
+      customer_name: getVal(colMap.CUST_NAME),
+      client_name: getVal(colMap.CUST_NAME),
+      customer_email: getVal(colMap.CUST_EMAIL),
+      client_email: getVal(colMap.CUST_EMAIL),
+      customer_id: cid,
+      project_name: getVal(colMap.PROJ_NAME),
+      name: getVal(colMap.PROJ_NAME),
+      description: getVal(colMap.DESC),
+      stage: getVal(colMap.STAGE) || 'Requirement',
+      progress: parseInt(getVal(colMap.PROGRESS)) || 0,
+      expected_delivery: expDel,
+      expected_delivery_date: expDel,
+      delivery_date: expDel,
+      target_end_date: expDel,
+      status: getVal(colMap.STATUS) || 'Active',
+      created_by: getVal(colMap.CREATED_BY),
+      created_at: getVal(colMap.CREATED_DATE) + ' ' + getVal(colMap.CREATED_TIME),
+      created_date: getVal(colMap.CREATED_DATE),
+      created_time: getVal(colMap.CREATED_TIME),
+      updated_at: getVal(colMap.UPD_DATE) + ' ' + getVal(colMap.UPD_TIME),
+      latest_update: latUpdate,
+      latest_update_text: latUpdate,
+      assigned_staff_id: asg.staff_id || '',
+      assigned_staff_name: staffName,
+      staff_name: staffName
+    };
+  }).filter(pr => pr.project_id);
 
   if(p.customer_id || p.client_id) {
     const cid = String(p.customer_id || p.client_id).trim().toLowerCase();

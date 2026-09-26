@@ -1011,6 +1011,10 @@
 
         // 2. Render Project Milestone Invoices
         projects.forEach(p => {
+          const staffName = p.assigned_staff_name || p.staff_name || p.assigned_staff || p.assigned_to || p.team_lead_name || p.team_name || (p.team && (p.team.team_lead_name || p.team.team_name)) || 'Team Assigned';
+          const deliveryDate = p.expected_delivery || p.expected_delivery_date || p.delivery_date || p.target_end_date || p.target_delivery_date || p.due_date || p.end_date || 'To be determined';
+          const latestUpdate = p.latest_update || p.latest_update_text || p.last_update || p.update_text || p.notes || (p.description ? (p.description.length > 90 ? p.description.substring(0, 90) + '...' : p.description) : 'Project in progress.');
+
           const card = `
             <div class="project-card" style="background:#FFF; border:1px solid var(--border); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:var(--shadow-subtle);">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
@@ -1040,9 +1044,9 @@
               </div>
 
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; background:#F1F5F9; padding:0.85rem; border-radius:8px; font-size:0.85rem; margin-bottom:1rem;">
-                <div><strong style="color:var(--text-main);">Assigned Staff:</strong> ${p.assigned_staff_name || 'Team Assigned'}</div>
-                <div><strong style="color:var(--text-main);">Expected Delivery:</strong> ${p.expected_delivery || 'To be determined'}</div>
-                <div style="grid-column:1/-1;"><strong style="color:var(--text-main);">Latest Update:</strong> ${p.latest_update}</div>
+                <div><strong style="color:var(--text-main);"><i class="fa-solid fa-user-tie" style="color:var(--primary); margin-right:4px;"></i> Assigned Staff:</strong> ${staffName}</div>
+                <div><strong style="color:var(--text-main);"><i class="fa-regular fa-calendar-check" style="color:var(--primary); margin-right:4px;"></i> Expected Delivery:</strong> ${deliveryDate}</div>
+                <div style="grid-column:1/-1;"><strong style="color:var(--text-main);"><i class="fa-solid fa-bullhorn" style="color:var(--primary); margin-right:4px;"></i> Latest Update:</strong> ${latestUpdate}</div>
               </div>
               
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">

@@ -1477,6 +1477,123 @@ def api_get_projects():
         ]
         # Return assigned projects if any, otherwise return active projects so staff workspace is populated
         projs = filtered_projs if filtered_projs else projs
+
+    # Enrich and standardize fields for all returned projects
+    store_tasks = []
+    store_assignments = []
+    store_users = []
+    store_updates = []
+    try:
+        store = _load_work_store()
+        store_tasks = store.get('tasks', [])
+        store_assignments = store.get('assignments', [])
+        store_users = store.get('users', [])
+        store_updates = store.get('updates', []) or store.get('project_updates', [])
+    except Exception:
+        pass
+
+    for p in projs:
+        pid = str(p.get('project_id') or p.get('id') or '').strip()
+        cid = str(p.get('customer_id') or p.get('client_id') or '').strip()
+        
+        # 1. Staff Name & ID resolution
+        staff_name = (
+            p.get('assigned_staff_name') or 
+            p.get('staff_name') or 
+            p.get('assigned_staff') or 
+            p.get('assigned_to') or 
+            p.get('team_lead_name') or 
+            p.get('team_name') or 
+            ''
+        )
+        staff_id = p.get('assigned_staff_id') or p.get('staff_id') or ''
+        
+        # Cross-reference assignments if empty
+        if not staff_name and pid:
+            for a in store_assignments:
+                if str(a.get('project_id', '')).strip().lower() == pid.lower() and str(a.get('status', 'ACTIVE')).upper() == 'ACTIVE':
+                    staff_name = a.get('staff_name') or a.get('name') or ''
+                    staff_id = staff_id or a.get('staff_id') or ''
+                    if staff_name:
+                        break
+        
+        # Cross-reference tasks if still empty
+        if not staff_name and pid:
+            for t in store_tasks:
+                if str(t.get('project_id', '')).strip().lower() == pid.lower():
+                    t_sname = t.get('assigned_staff_name') or t.get('staff_name') or ''
+                    t_sid = t.get('assigned_staff_id') or t.get('staff_id') or ''
+                    if t_sname:
+                        staff_name = t_sname
+                        staff_id = staff_id or t_sid
+                        break
+        
+        # Cross-reference client's assigned staff in users store
+        if not staff_name and cid:
+            for u in store_users:
+                if str(u.get('user_id') or u.get('id', '')).strip().lower() == cid.lower():
+                    u_sid = u.get('assigned_staff_id')
+                    if u_sid:
+                        staff_id = staff_id or u_sid
+                        for su in store_users:
+                            if str(su.get('user_id') or su.get('id', '')).strip().lower() == str(u_sid).strip().lower():
+                                staff_name = su.get('full_name') or su.get('name') or ''
+                                break
+                    break
+                    
+        p['assigned_staff_name'] = staff_name or 'Team Assigned'
+        p['staff_name'] = staff_name or 'Team Assigned'
+        if staff_id:
+            p['assigned_staff_id'] = staff_id
+            p['staff_id'] = staff_id
+
+        # 2. Expected Delivery resolution
+        exp_del = (
+            p.get('expected_delivery') or 
+            p.get('expected_delivery_date') or 
+            p.get('delivery_date') or 
+            p.get('target_end_date') or 
+            p.get('target_delivery_date') or 
+            p.get('due_date') or 
+            p.get('end_date') or 
+            p.get('deadline') or 
+            ''
+        )
+        if exp_del:
+            exp_del_str = str(exp_del).strip()
+            p['expected_delivery'] = exp_del_str
+            p['expected_delivery_date'] = exp_del_str
+            p['delivery_date'] = exp_del_str
+            p['target_end_date'] = exp_del_str
+        else:
+            p['expected_delivery'] = 'To be determined'
+            p['expected_delivery_date'] = 'To be determined'
+
+        # 3. Latest Update resolution
+        latest_upd = (
+            p.get('latest_update') or 
+            p.get('latest_update_text') or 
+            p.get('last_update') or 
+            p.get('update_text') or 
+            p.get('status_update') or 
+            p.get('notes') or 
+            ''
+        )
+        if not latest_upd and pid:
+            for up in reversed(store_updates):
+                if str(up.get('project_id', '')).strip().lower() == pid.lower():
+                    latest_upd = up.get('update_text') or up.get('message') or up.get('notes') or up.get('title') or ''
+                    if latest_upd:
+                        break
+        if not latest_upd:
+            desc = p.get('description') or ''
+            stage = p.get('stage') or 'Requirement'
+            latest_upd = f"Currently in {stage} stage. Work in progress." if stage else (desc[:80] + '...' if len(desc) > 80 else desc or "Project in progress.")
+
+        p['latest_update'] = latest_upd
+        p['latest_update_text'] = latest_upd
+        p['last_update'] = latest_upd
+
     return jsonify({'success': True, 'status': 'success', 'data': projs})
 
 @app.route('/api/projects', methods=['POST'])
@@ -3408,12 +3525,27 @@ def api_client_project_details(project_id):
             'index': idx + 1
         })
         
-    task_res = gas_get('getTasks', {'project_id': project_id, 'client_view': 'true'})
+    task_res = gas_get('getTasks', {'project_id': project_id})
     raw_tasks = task_res.get('data', []) if task_res.get('status') == 'success' else []
+    
+    # Also check local work store for tasks
+    try:
+        store = _load_work_store()
+        known_tids = {str(t.get('task_id') or t.get('id')) for t in raw_tasks}
+        for lt in store.get('tasks', []):
+            if str(lt.get('project_id', '')).strip().lower() == str(project_id).strip().lower():
+                ltid = str(lt.get('task_id') or lt.get('id'))
+                if ltid and ltid not in known_tids:
+                    raw_tasks.append(lt)
+                    known_tids.add(ltid)
+    except:
+        pass
+
     client_tasks = []
     completed_task_cnt = 0
     for t in raw_tasks:
-        vis = str(t.get('client_visible', '')).strip().lower() in ('true', '1', 'yes')
+        vis_str = str(t.get('client_visible', '')).strip().lower()
+        vis = vis_str not in ('false', '0', 'no')
         if vis:
             st = str(t.get('status', '')).strip().upper()
             if st in ('COMPLETED', 'DONE'):
@@ -3422,10 +3554,10 @@ def api_client_project_details(project_id):
                 'task_id': t.get('task_id') or t.get('id'),
                 'title': t.get('title') or t.get('task_name'),
                 'description': t.get('description'),
-                'status': st,
+                'status': st or 'IN_PROGRESS',
                 'progress': t.get('progress', 0),
-                'due_date': t.get('due_date'),
-                'stage': t.get('stage', ''),
+                'due_date': t.get('due_date') or t.get('expected_delivery'),
+                'stage': t.get('stage', current_stage),
                 'priority': t.get('priority', 'MEDIUM')
             })
             
@@ -3445,30 +3577,72 @@ def api_client_project_details(project_id):
                         'members': [{'name': m.get('staff_name'), 'role': m.get('role', 'Specialist')} for m in mems]
                     }
                     break
-    if not team_info and (proj.get('assigned_staff_name') or proj.get('staff_name')):
+    if not team_info:
+        staff_name = proj.get('assigned_staff_name') or proj.get('staff_name') or proj.get('assigned_staff') or proj.get('assigned_to')
+        if not staff_name and client_tasks:
+            for ct in raw_tasks:
+                if ct.get('assigned_staff_name') or ct.get('staff_name'):
+                    staff_name = ct.get('assigned_staff_name') or ct.get('staff_name')
+                    break
         team_info = {
-            'team_name': 'Project Delivery Team',
-            'team_lead_name': proj.get('assigned_staff_name') or proj.get('staff_name'),
-            'members': []
+            'team_name': 'Design & Engineering Team',
+            'team_lead_name': staff_name or 'Project Lead',
+            'members': [{'name': staff_name or 'Lead Specialist', 'role': 'Full-Stack Developer'}] if staff_name else []
         }
         
     upd_res = gas_get('getProjectUpdates', {'project_id': project_id})
     raw_upds = upd_res.get('data', []) if upd_res.get('status') == 'success' else []
+    
+    # Also check local work store for updates
+    try:
+        store = _load_work_store()
+        known_uids = {str(u.get('update_id') or u.get('id')) for u in raw_upds}
+        for lu in store.get('updates', []) or store.get('project_updates', []):
+            if str(lu.get('project_id', '')).strip().lower() == str(project_id).strip().lower():
+                luid = str(lu.get('update_id') or lu.get('id'))
+                if luid and luid not in known_uids:
+                    raw_upds.append(lu)
+                    known_uids.add(luid)
+    except:
+        pass
+
     client_updates = []
     for u in raw_upds:
         vis = str(u.get('visibility', '')).strip().upper()
-        if vis == 'CLIENT_VISIBLE' or u.get('is_client_update'):
-            client_updates.append({
-                'update_id': u.get('update_id'),
-                'title': u.get('title') or u.get('update_type') or 'Update',
-                'message': u.get('message') or u.get('update_text') or u.get('notes'),
-                'author': u.get('staff_name') or u.get('client_name') or 'Team',
-                'date': u.get('created_date') or u.get('date'),
-                'time': u.get('created_time') or u.get('time')
-            })
+        if vis != 'INTERNAL_ONLY' and vis != 'PRIVATE':
+            msg = u.get('message') or u.get('update_text') or u.get('notes') or u.get('remark') or ''
+            if msg:
+                client_updates.append({
+                    'update_id': u.get('update_id') or u.get('id'),
+                    'title': u.get('title') or u.get('update_type') or u.get('stage') or 'Progress Note',
+                    'message': msg,
+                    'author': u.get('staff_name') or u.get('author') or u.get('client_name') or 'Project Team',
+                    'date': u.get('created_date') or u.get('date') or (u.get('created_at', '').split(' ')[0] if u.get('created_at') else 'Recent'),
+                    'time': u.get('created_time') or u.get('time') or ''
+                })
+
+    if not client_updates and (proj.get('latest_update') or proj.get('latest_update_text')):
+        lat_text = proj.get('latest_update') or proj.get('latest_update_text')
+        client_updates.append({
+            'update_id': 'UPD-INIT',
+            'title': 'Latest Project Milestone Note',
+            'message': lat_text,
+            'author': team_info.get('team_lead_name') or 'Project Team',
+            'date': proj.get('updated_date') or proj.get('created_date') or 'Recent',
+            'time': proj.get('updated_time') or proj.get('created_time') or ''
+        })
             
     total_tasks = len(client_tasks)
     computed_progress = int((completed_task_cnt / total_tasks * 100)) if total_tasks > 0 else int(proj.get('progress') or 0)
+    target_delivery = (
+        proj.get('expected_delivery') or 
+        proj.get('expected_delivery_date') or 
+        proj.get('delivery_date') or 
+        proj.get('target_end_date') or 
+        proj.get('end_date') or 
+        proj.get('due_date') or 
+        'To be determined'
+    )
     
     return jsonify({
         'success': True,
@@ -3480,11 +3654,12 @@ def api_client_project_details(project_id):
                 'status': proj.get('status'),
                 'stage': current_stage,
                 'progress': computed_progress,
-                'start_date': proj.get('start_date'),
-                'target_end_date': proj.get('target_end_date') or proj.get('end_date'),
+                'start_date': proj.get('start_date') or proj.get('created_date'),
+                'target_end_date': target_delivery,
+                'expected_delivery': target_delivery,
                 'tier': proj.get('tier'),
-                'client_name': proj.get('client_name'),
-                'client_email': proj.get('client_email')
+                'client_name': proj.get('client_name') or proj.get('customer_name'),
+                'client_email': proj.get('client_email') or proj.get('customer_email')
             },
             'timeline': timeline,
             'tasks': client_tasks,
