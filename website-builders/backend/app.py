@@ -2367,77 +2367,213 @@ def api_send_message():
     data.setdefault('sender_role', current_user.role)
     
     # Map message body fields interchangeably
-    msg_body = data.get('message') or data.get('body') or data.get('text') or ''
+    sender_id = str(current_user.id)
+    sender_name = str(current_user.full_name or 'User').strip()
+    sender_role = str(current_user.role or 'User').strip()
+    
+    receiver_id = str(data.get('receiver_id') or data.get('recipient_id') or '').strip()
+    receiver_name = str(data.get('receiver_name') or data.get('recipient_name') or '').strip()
+    receiver_role = str(data.get('receiver_role') or data.get('recipient_role') or 'User').strip()
+
+    # Map message body fields interchangeably
+    msg_body = str(data.get('message') or data.get('body') or data.get('text') or '').strip()
+    if not msg_body:
+        return jsonify({'success': False, 'error': 'Message body is required.'}), 400
+
+    # Auto-generate IDs if not supplied
+    import time
+    auto_msg_id = f"MSG-{int(time.time()*1000)}"
+    auto_conv_id = data.get('conversation_id') or (f"CONV-{min(sender_id, receiver_id)}-{max(sender_id, receiver_id)}" if receiver_id else f"CONV-{int(time.time()*1000)}")
+
+    data['conversation_id'] = auto_conv_id
+    data['sender_id'] = sender_id
+    data['sender_name'] = sender_name
+    data['sender_role'] = sender_role
+    data['receiver_id'] = receiver_id
+    data['recipient_id'] = receiver_id
+    data['receiver_name'] = receiver_name or 'Support'
+    data['receiver_role'] = receiver_role
     data['message'] = msg_body
     data['body'] = msg_body
+    data['subject'] = str(data.get('subject') or 'Direct Message').strip()
 
-    # Map recipient/receiver fields interchangeably
-    recip_id = data.get('recipient_id') or data.get('receiver_id')
-    if recip_id:
-        data['recipient_id'] = str(recip_id)
-        data['receiver_id'] = str(recip_id)
+    from datetime import datetime
+    now_str = datetime.now().strftime('%d-%b-%Y %I:%M:%S %p')
+    date_str = datetime.now().strftime('%d-%b-%Y')
+    time_str = datetime.now().strftime('%I:%M:%S %p')
+
+    local_msg_entry = {
+        'message_id': auto_msg_id,
+        'conversation_id': auto_conv_id,
+        'sender_id': sender_id,
+        'sender_name': sender_name,
+        'sender_role': sender_role,
+        'receiver_id': receiver_id,
+        'receiver_name': receiver_name or 'Support',
+        'receiver_role': receiver_role,
+        'subject': data['subject'],
+        'body': msg_body,
+        'message': msg_body,
+        'project_id': str(data.get('project_id') or '').strip(),
+        'customer_id': str(data.get('customer_id') or (sender_id if current_user.is_user() else receiver_id)).strip(),
+        'status': 'SENT',
+        'created_at': now_str,
+        'created_date': date_str,
+        'created_time': time_str,
+        'timestamp': now_str
+    }
 
     # If replying to an existing conversation and receiver_id is not explicitly provided, look it up
-    if not data.get('receiver_id') and data.get('conversation_id'):
-        conv_id = data.get('conversation_id')
+    if not receiver_id and auto_conv_id:
         try:
             conv_res = gas_get('getConversationThread', {
-                'conversation_id': conv_id,
-                'user_id': str(current_user.id),
-                'role': current_user.role
+                'conversation_id': auto_conv_id,
+                'user_id': sender_id,
+                'role': sender_role
             }, use_cache=False)
             if conv_res.get('status') == 'success' and conv_res.get('data'):
                 thread = conv_res.get('data', [])
                 for msg in reversed(thread):
                     s_id = str(msg.get('sender_id') or '')
                     r_id = str(msg.get('receiver_id') or '')
-                    my_id = str(current_user.id)
-                    other_id = r_id if s_id == my_id else s_id
-                    if other_id and other_id != my_id:
+                    other_id = r_id if s_id == sender_id else s_id
+                    if other_id and other_id != sender_id:
                         data['receiver_id'] = other_id
                         data['recipient_id'] = other_id
+                        local_msg_entry['receiver_id'] = other_id
                         break
         except Exception as e:
-            logger.warning('Could not resolve recipient for conversation %s: %s', conv_id, e)
+            logger.warning('Could not resolve recipient for conversation %s: %s', auto_conv_id, e)
 
+    # Call GAS
     result = call_gas('sendMessage', data)
     ok = result.get('status') == 'success'
-    res_data = result.get('data') or {}
-    conv_id = result.get('conversation_id') or (res_data.get('conversation_id') if isinstance(res_data, dict) else None) or data.get('conversation_id')
-    msg_id = result.get('message_id') or (res_data.get('message_id') if isinstance(res_data, dict) else None)
+    
+    if ok:
+        res_data = result.get('data') or {}
+        final_conv_id = result.get('conversation_id') or (res_data.get('conversation_id') if isinstance(res_data, dict) else None) or auto_conv_id
+        final_msg_id = result.get('message_id') or (res_data.get('message_id') if isinstance(res_data, dict) else None) or auto_msg_id
+        local_msg_entry['message_id'] = final_msg_id
+        local_msg_entry['conversation_id'] = final_conv_id
+    else:
+        logger.warning('GAS sendMessage error: %s; saving to local work store', result.get('message'))
+        final_conv_id = auto_conv_id
+        final_msg_id = auto_msg_id
+
+    # Persist in local work store
+    try:
+        store = _load_work_store()
+        messages_list = store.setdefault('messages', [])
+        messages_list.append(local_msg_entry)
+        _save_work_store(store)
+    except Exception as e_store:
+        logger.warning('Failed to save message to local store: %s', e_store)
 
     return jsonify({
-        'success': ok,
-        'status': 'success' if ok else 'error',
-        'message': result.get('message') or ('Message sent successfully' if ok else 'Failed to send message'),
-        'conversation_id': conv_id,
-        'message_id': msg_id,
-        'data': res_data,
-        'error': result.get('message') if not ok else None
-    }), (200 if ok else 400)
+        'success': True,
+        'status': 'success',
+        'message': 'Message sent successfully.',
+        'conversation_id': final_conv_id,
+        'message_id': final_msg_id,
+        'data': {
+            'message_id': final_msg_id,
+            'conversation_id': final_conv_id,
+            'sender_id': sender_id,
+            'receiver_id': receiver_id,
+            'body': msg_body
+        }
+    }), 200
 
 @app.route('/api/messages/conversations', methods=['GET'])
 @login_required
 def api_get_conversations():
-    result = gas_get('getConversations', {
-        'user_id': str(current_user.id),
-        'role'   : current_user.role
-    }, use_cache=False)
-    if result.get('status') == 'success':
-        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', [])})
-    return jsonify({'success': True, 'status': 'success', 'data': [], 'warning': result.get('message')}), 200
+    my_id = str(current_user.id).strip().lower()
+    my_role = str(current_user.role or '').strip().lower()
+    convs = []
+    known_cids = set()
+
+    # 1. Fetch from GAS
+    try:
+        result = gas_get('getConversations', {
+            'user_id': str(current_user.id),
+            'role'   : current_user.role
+        }, use_cache=False)
+        if result.get('status') == 'success' and isinstance(result.get('data'), list):
+            for c in result.get('data', []):
+                cid = str(c.get('conversation_id') or '').strip()
+                if cid:
+                    convs.append(c)
+                    known_cids.add(cid.lower())
+    except Exception as e_gas:
+        logger.warning('GAS getConversations error: %s', e_gas)
+
+    # 2. Merge local store conversations
+    try:
+        store = _load_work_store()
+        local_msgs = store.get('messages', [])
+        conv_map = {}
+        for m in local_msgs:
+            s_id = str(m.get('sender_id', '')).strip().lower()
+            r_id = str(m.get('receiver_id', '')).strip().lower()
+            c_id = str(m.get('conversation_id', '')).strip()
+            
+            if my_role in ('super admin', 'admin', 'super_admin') or s_id == my_id or r_id == my_id:
+                if c_id and c_id.lower() not in known_cids:
+                    conv_map[c_id] = {
+                        'conversation_id': c_id,
+                        'subject': m.get('subject') or 'Direct Message',
+                        'last_message': m.get('body') or m.get('message') or '',
+                        'sender_id': m.get('sender_id'),
+                        'sender_name': m.get('sender_name'),
+                        'receiver_id': m.get('receiver_id'),
+                        'receiver_name': m.get('receiver_name'),
+                        'created_at': m.get('created_at'),
+                        'last_updated_str': m.get('created_at'),
+                        'unread': False
+                    }
+        for c in conv_map.values():
+            convs.insert(0, c)
+            known_cids.add(c['conversation_id'].lower())
+    except Exception as e_local:
+        logger.warning('Local getConversations merge error: %s', e_local)
+
+    return jsonify({'success': True, 'status': 'success', 'data': convs}), 200
 
 @app.route('/api/messages/conversations/<conversation_id>', methods=['GET'])
 @login_required
 def api_get_conversation_thread(conversation_id):
-    result = gas_get('getConversationThread', {
-        'conversation_id': conversation_id,
-        'user_id'        : str(current_user.id),
-        'role'           : current_user.role
-    }, use_cache=False)
-    if result.get('status') == 'success':
-        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', [])})
-    return jsonify({'success': True, 'status': 'success', 'data': [], 'warning': result.get('message')}), 200
+    thread = []
+    known_mids = set()
+
+    # 1. Fetch from GAS
+    try:
+        result = gas_get('getConversationThread', {
+            'conversation_id': conversation_id,
+            'user_id'        : str(current_user.id),
+            'role'           : current_user.role
+        }, use_cache=False)
+        if result.get('status') == 'success' and isinstance(result.get('data'), list):
+            for m in result.get('data', []):
+                mid = str(m.get('message_id') or m.get('id') or '').strip()
+                if mid:
+                    thread.append(m)
+                    known_mids.add(mid.lower())
+    except Exception as e_gas:
+        logger.warning('GAS getConversationThread error: %s', e_gas)
+
+    # 2. Merge local store messages for this conversation
+    try:
+        store = _load_work_store()
+        for lm in store.get('messages', []):
+            if str(lm.get('conversation_id', '')).strip().lower() == str(conversation_id).strip().lower():
+                mid = str(lm.get('message_id') or lm.get('id') or '').strip()
+                if mid and mid.lower() not in known_mids:
+                    thread.append(lm)
+                    known_mids.add(mid.lower())
+    except Exception as e_local:
+        logger.warning('Local getConversationThread merge error: %s', e_local)
+
+    return jsonify({'success': True, 'status': 'success', 'data': thread}), 200
 
 @app.route('/api/messages/conversations/with/<other_user_id>', methods=['GET'])
 @login_required
