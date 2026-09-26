@@ -4500,6 +4500,93 @@
       }
     }
 
+    async function loadComposeRecipients() {
+      const select = document.getElementById('compose-recipient');
+      if (!select) return;
+      try {
+        const res = await fetch('/api/messages/recipients');
+        const data = await res.json();
+        const recipients = (data.status === 'success' || data.success) && Array.isArray(data.data) ? data.data : [];
+        if (recipients.length === 0) {
+          select.innerHTML = '<option value="">No authorized recipients found</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">-- Select Recipient --</option>' + recipients.map(r => {
+          const rId = r.id || r.user_id;
+          const rName = r.name || r.full_name || 'User';
+          const rRole = r.role || 'User';
+          return `<option value="${rId}">${rName} (${rRole})</option>`;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to load compose recipients:', err);
+        select.innerHTML = '<option value="">Error loading recipients</option>';
+      }
+    }
+
+    function openNewMessageModal() {
+      const modal = document.getElementById('compose-modal');
+      if (modal) {
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+      }
+      loadComposeRecipients();
+    }
+
+    function closeNewMessageModal() {
+      const modal = document.getElementById('compose-modal');
+      if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+      }
+      const form = document.getElementById('form-compose');
+      if (form) form.reset();
+    }
+
+    async function sendNewMessage(e) {
+      if (e) e.preventDefault();
+      const recipient = document.getElementById('compose-recipient').value;
+      const project = document.getElementById('compose-project') ? document.getElementById('compose-project').value.trim() : '';
+      const subject = document.getElementById('compose-subject').value.trim();
+      const message = document.getElementById('compose-message').value.trim();
+
+      if (!recipient) {
+        alert('Please select a recipient.');
+        return;
+      }
+      if (!subject || !message) {
+        alert('Please enter a subject and message.');
+        return;
+      }
+
+      const payload = {
+        recipient_id: recipient,
+        receiver_id: recipient,
+        project_id: project,
+        subject: subject,
+        body: message,
+        message: message
+      };
+
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && (data.status === 'success' || data.success)) {
+          alert('Message sent successfully!');
+          closeNewMessageModal();
+          loadMessagesHub();
+        } else {
+          alert(data.message || data.error || 'Failed to send message.');
+        }
+      } catch (err) {
+        console.error('Error sending message from modal:', err);
+        alert('Error sending message. Please try again.');
+      }
+    }
+
     async function loadNotificationsSection() {
       const container = document.getElementById('tbl-notifications-list');
       if (!container) return;

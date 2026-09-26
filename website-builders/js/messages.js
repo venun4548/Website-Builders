@@ -427,40 +427,52 @@ function closeNewMessageModal() {
 }
 
 function loadRecipients() {
-  const user = getCurrentUser();
-  const myId = user.user_id || user.id || user.client_id;
   const select = document.getElementById('compose-recipient');
-  
   if (!select) return;
   select.innerHTML = '<option value="">Loading...</option>';
-  
-  google.script.run.withSuccessHandler(res => {
-    try {
-      const parsed = typeof res === 'string' ? JSON.parse(res) : res;
-      if (parsed.status === 'success' || parsed.success) {
-        const recipients = parsed.data || [];
-        if (recipients.length === 0) {
-          select.innerHTML = '<option value="">No authorized contacts found</option>';
-          return;
-        }
-        select.innerHTML = '<option value="">Select a recipient...</option>' + recipients.map(r => 
-          `<option value="${r.id || r.user_id}">${r.name || r.full_name || 'User'} (${r.role || 'User'})</option>`
-        ).join('');
-      } else {
-        select.innerHTML = `<option value="">Error: ${parsed.message || 'Could not load'}</option>`;
+
+  fetch('/api/messages/recipients')
+    .then(r => r.json())
+    .then(data => {
+      const recipients = (data.status === 'success' || data.success) && Array.isArray(data.data) ? data.data : [];
+      if (recipients.length === 0) {
+        select.innerHTML = '<option value="">No authorized contacts found</option>';
+        return;
       }
-    } catch(e) {
-      console.error(e);
-      select.innerHTML = '<option value="">Failed to parse response</option>';
-    }
-  }).withFailureHandler(err => {
-    console.error("Backend error:", err);
-    select.innerHTML = `<option value="">Script Error: ${err.message || err}</option>`;
-  }).doGet({
-    action: 'getRecipients',
-    token: 'sec_wb_crm_77c4e569bbd18f0a1c6a58',
-    user_id: myId
-  });
+      select.innerHTML = '<option value="">Select a recipient...</option>' + recipients.map(r => 
+        `<option value="${r.id || r.user_id}">${r.name || r.full_name || 'User'} (${r.role || 'Staff'})</option>`
+      ).join('');
+    })
+    .catch(err => {
+      console.warn("Direct fetch failed, trying google.script.run:", err);
+      if (window.google && window.google.script && window.google.script.run) {
+        const user = getCurrentUser();
+        const myId = user.user_id || user.id || user.client_id;
+        google.script.run.withSuccessHandler(res => {
+          try {
+            const parsed = typeof res === 'string' ? JSON.parse(res) : res;
+            const recipients = parsed.data || [];
+            if (recipients.length === 0) {
+              select.innerHTML = '<option value="">No authorized contacts found</option>';
+              return;
+            }
+            select.innerHTML = '<option value="">Select a recipient...</option>' + recipients.map(r => 
+              `<option value="${r.id || r.user_id}">${r.name || r.full_name || 'User'} (${r.role || 'User'})</option>`
+            ).join('');
+          } catch(e) {
+            select.innerHTML = '<option value="">Failed to parse response</option>';
+          }
+        }).withFailureHandler(e => {
+          select.innerHTML = '<option value="">Error loading recipients</option>';
+        }).doGet({
+          action: 'getRecipients',
+          token: 'sec_wb_crm_77c4e569bbd18f0a1c6a58',
+          user_id: myId
+        });
+      } else {
+        select.innerHTML = '<option value="">Error loading recipients</option>';
+      }
+    });
 }
 
 function sendNewMessage(event) {

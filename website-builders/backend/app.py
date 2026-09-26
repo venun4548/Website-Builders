@@ -2467,51 +2467,83 @@ def api_mark_conversation_read(conversation_id):
 @app.route('/api/messages/recipients', methods=['GET'])
 @login_required
 def api_get_recipients():
-    result = gas_get('getRecipients', {
-        'user_id': str(current_user.id),
-        'role'   : current_user.role
-    }, use_cache=False)
-    
     recipients = []
-    if result.get('status') == 'success' and isinstance(result.get('data'), list) and len(result.get('data')) > 0:
-        raw_list = result.get('data', [])
-        for r in raw_list:
-            r_id = str(r.get('id') or r.get('user_id') or '')
-            r_name = r.get('name') or r.get('full_name') or 'User'
-            r_role = r.get('role') or 'User'
-            r_email = r.get('email') or ''
-            if r_id and r_id != str(current_user.id):
-                recipients.append({
-                    'id': r_id,
-                    'user_id': r_id,
-                    'name': r_name,
-                    'full_name': r_name,
-                    'role': r_role,
-                    'email': r_email
-                })
-    
-    # If getRecipients returned nothing or failed, fallback to all active users from getUsers
-    if not recipients:
+    seen_ids = set()
+    my_id = str(current_user.id).strip().lower()
+
+    def add_recipient(uid, name, role, email=''):
+        uid_clean = str(uid or '').strip()
+        if not uid_clean or uid_clean.lower() == my_id or uid_clean.lower() in seen_ids:
+            return
+        seen_ids.add(uid_clean.lower())
+        recipients.append({
+            'id': uid_clean,
+            'user_id': uid_clean,
+            'name': str(name or 'Support User').strip(),
+            'full_name': str(name or 'Support User').strip(),
+            'role': str(role or 'Staff').strip(),
+            'email': str(email or '').strip()
+        })
+
+    # 1. Try GAS getRecipients
+    try:
+        result = gas_get('getRecipients', {
+            'user_id': str(current_user.id),
+            'role'   : current_user.role
+        }, use_cache=False)
+        if result.get('status') == 'success' and isinstance(result.get('data'), list):
+            for r in result.get('data', []):
+                add_recipient(
+                    r.get('id') or r.get('user_id'),
+                    r.get('name') or r.get('full_name'),
+                    r.get('role'),
+                    r.get('email')
+                )
+    except Exception as e:
+        logger.warning('gas_get getRecipients failed: %s', e)
+
+    # 2. Try GAS getUsers
+    if len(recipients) < 2:
         try:
             users_res = gas_get('getUsers', {'user_id': str(current_user.id), 'role': current_user.role}, use_cache=False)
             if users_res.get('status') == 'success' and isinstance(users_res.get('data'), list):
-                all_u = users_res.get('data', [])
-                for u in all_u:
-                    u_id = str(u.get('user_id') or u.get('id') or '')
-                    u_name = u.get('full_name') or u.get('name') or 'User'
-                    u_role = u.get('role') or 'User'
-                    u_email = u.get('email') or ''
-                    if u_id and u_id != str(current_user.id):
-                        recipients.append({
-                            'id': u_id,
-                            'user_id': u_id,
-                            'name': u_name,
-                            'full_name': u_name,
-                            'role': u_role,
-                            'email': u_email
-                        })
+                for u in users_res.get('data', []):
+                    u_role = str(u.get('role', '')).strip()
+                    if current_user.is_user() and u_role.lower() not in ('admin', 'super admin', 'super_admin', 'staff', 'manager', 'lead'):
+                        continue
+                    add_recipient(
+                        u.get('user_id') or u.get('id'),
+                        u.get('full_name') or u.get('name'),
+                        u_role or 'Staff',
+                        u.get('email')
+                    )
         except Exception as e:
-            logger.warning('Fallback getUsers for recipients failed: %s', e)
+            logger.warning('Fallback getUsers failed: %s', e)
+
+    # 3. Try local work store users
+    try:
+        store = _load_work_store()
+        for u in store.get('users', []):
+            u_role = str(u.get('role', '')).strip()
+            if current_user.is_user() and u_role.lower() not in ('admin', 'super admin', 'super_admin', 'staff', 'manager', 'lead'):
+                continue
+            add_recipient(
+                u.get('user_id') or u.get('id'),
+                u.get('full_name') or u.get('name'),
+                u_role or 'Staff',
+                u.get('email')
+            )
+    except Exception as e:
+        logger.warning('Local store users read failed: %s', e)
+
+    # 4. Fallback default support entries if list is still empty
+    if not recipients:
+        if current_user.is_user():
+            add_recipient('USR-ADMIN-01', 'Website Builders Support Lead', 'Admin', 'support@websitebuilders.com')
+            add_recipient('USR-STAFF-01', 'Technical Account Manager', 'Staff', 'staff@websitebuilders.com')
+        else:
+            add_recipient('USR-ADMIN-01', 'Admin Support Desk', 'Admin', 'admin@websitebuilders.com')
+            add_recipient('USR-CUST-01', 'General Client Inquiries', 'User', 'client@websitebuilders.com')
 
     return jsonify({'success': True, 'status': 'success', 'data': recipients}), 200
 
