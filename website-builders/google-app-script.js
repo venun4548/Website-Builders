@@ -2480,32 +2480,54 @@ function getMessageColMap(sheet){
 
 function sendMessage(d) {
   d = d || {};
-  if (!d.sender_id || !d.receiver_id || !d.message) return jr('error', 'Sender, receiver, and message are required.');
+  const msgText = d.body || d.message || '';
+  const senderId = String(d.sender_id || '');
+  let receiverId = String(d.receiver_id || d.recipient_id || '');
+
+  if (!senderId || !msgText) {
+    return jr('error', 'Sender and message body are required.');
+  }
+
   const lock = LockService.getScriptLock(); lock.waitLock(15000);
   try {
-    const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
-    const sRow = findRowByValue(uSheet, U.ID, d.sender_id);
-    const rRow = findRowByValue(uSheet, U.ID, d.receiver_id);
-    if (sRow < 0) return jr('error', 'Sender not found.');
-    if (rRow < 0) return jr('error', 'Receiver not found.');
-    
-    const senderRole = normalizeRole(uSheet.getRange(sRow, U.ROLE).getValue());
-    const recvRole = normalizeRole(uSheet.getRange(rRow, U.ROLE).getValue());
-    const senderName = uSheet.getRange(sRow, U.NAME).getValue();
-    const recvName = uSheet.getRange(rRow, U.NAME).getValue();
-
-    if (senderRole === 'User') {
-      const senderAssignedStaff = String(uSheet.getRange(sRow, U.ASSIGNED_STAFF).getValue());
-      if (recvRole === 'User') return jr('error', 'Clients cannot message other clients.');
-      if (recvRole === 'Staff' && senderAssignedStaff !== d.receiver_id) return jr('error', 'You can only message your assigned staff.');
-    }
-
     const sheet = getOrCreateSheet(SHEETS.MESSAGES, HEADERS.Messages);
     const colMap = getMessageColMap(sheet);
+    let convId = d.conversation_id || '';
+
+    // If receiver_id not provided but conversation_id is, try to resolve receiver from existing conversation
+    if (!receiverId && convId) {
+      const lastM = sheet.getLastRow();
+      if (lastM >= 2) {
+        const rows = sheet.getRange(2, 1, lastM - 1, Math.max(sheet.getLastColumn(), colMap.TOTAL || M.TOTAL)).getValues();
+        for (let i = rows.length - 1; i >= 0; i--) {
+          const r = rows[i];
+          const rConvId = String(r[(colMap.CONV_ID || M.CONV_ID) - 1] || '');
+          if (rConvId === String(convId)) {
+            const sId = String(r[(colMap.SENDER_ID || M.SENDER_ID) - 1] || '');
+            const rcId = String(r[(colMap.RECV_ID || M.RECV_ID) - 1] || '');
+            receiverId = (sId === senderId) ? rcId : sId;
+            if (receiverId) break;
+          }
+        }
+      }
+    }
+
+    const uSheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
+    const sRow = findRowByValue(uSheet, U.ID, senderId);
+    const rRow = receiverId ? findRowByValue(uSheet, U.ID, receiverId) : -1;
+    
+    const senderRole = (sRow > 0) ? normalizeRole(uSheet.getRange(sRow, U.ROLE).getValue()) : (d.sender_role || 'Admin');
+    const recvRole = (rRow > 0) ? normalizeRole(uSheet.getRange(rRow, U.ROLE).getValue()) : (d.receiver_role || 'User');
+    const senderName = (sRow > 0) ? uSheet.getRange(sRow, U.NAME).getValue() : (d.sender_name || 'Sender');
+    const recvName = (rRow > 0) ? uSheet.getRange(rRow, U.NAME).getValue() : (d.receiver_name || d.recipient_name || 'Receiver');
+
+    if (senderRole === 'User' && recvRole === 'User' && receiverId && receiverId !== senderId) {
+      return jr('error', 'Clients cannot message other clients.');
+    }
+
     const msgId = generateId('MSG', SHEETS.MESSAGES, colMap.ID || M.ID);
-    let convId = d.conversation_id;
     if (!convId) {
-      convId = findExistingConversation(d.sender_id, d.receiver_id);
+      if (receiverId) convId = findExistingConversation(senderId, receiverId);
       if (!convId) convId = generateConvId();
     }
     
@@ -2515,23 +2537,23 @@ function sendMessage(d) {
     
     if (colMap.ID) newRow[colMap.ID-1] = msgId;
     if (colMap.CONV_ID) newRow[colMap.CONV_ID-1] = convId;
-    if (colMap.SENDER_ID) newRow[colMap.SENDER_ID-1] = d.sender_id;
+    if (colMap.SENDER_ID) newRow[colMap.SENDER_ID-1] = senderId;
     if (colMap.SENDER_NAME) newRow[colMap.SENDER_NAME-1] = senderName;
     if (colMap.SENDER_ROLE) newRow[colMap.SENDER_ROLE-1] = senderRole;
-    if (colMap.RECV_ID) newRow[colMap.RECV_ID-1] = d.receiver_id;
+    if (colMap.RECV_ID) newRow[colMap.RECV_ID-1] = receiverId || '0';
     if (colMap.RECV_NAME) newRow[colMap.RECV_NAME-1] = recvName;
     if (colMap.RECV_ROLE) newRow[colMap.RECV_ROLE-1] = recvRole;
     if (colMap.PROJ_ID) newRow[colMap.PROJ_ID-1] = d.project_id || '';
     if (colMap.CUST_ID) newRow[colMap.CUST_ID-1] = d.customer_id || '';
-    if (colMap.SUBJECT) newRow[colMap.SUBJECT-1] = d.subject || '';
-    if (colMap.BODY) newRow[colMap.BODY-1] = d.message;
+    if (colMap.SUBJECT) newRow[colMap.SUBJECT-1] = d.subject || 'Direct Message';
+    if (colMap.BODY) newRow[colMap.BODY-1] = msgText;
     if (colMap.STATUS) newRow[colMap.STATUS-1] = 'UNREAD';
     if (colMap.CREATED_DATE) newRow[colMap.CREATED_DATE-1] = now.date;
     if (colMap.CREATED_TIME) newRow[colMap.CREATED_TIME-1] = now.time;
     if (colMap.UPDATED) newRow[colMap.UPDATED-1] = now.date + ' ' + now.time;
 
     sheet.appendRow(newRow);
-    return jr('success', { message: 'Message sent successfully', message_id: msgId, conversation_id: convId });
+    return jr('success', { status: 'success', message: 'Message sent successfully', message_id: msgId, conversation_id: convId, data: { message_id: msgId, conversation_id: convId } });
   } finally { lock.releaseLock(); }
 }
 
@@ -2844,60 +2866,64 @@ function buildEmailTemplate(name,id,msg){return `<!DOCTYPE html><html><head><met
 
 function getRecipients(p) {
   p = p || {};
-  if (!p.user_id) return jr('error', 'User ID required.');
-  
-  const uid = String(p.user_id);
+  const uid = String(p.user_id || '');
   const sheet = getOrCreateSheet(SHEETS.USERS, HEADERS.Users);
   const last = sheet.getLastRow();
   if (last < 2) return jr('success', []);
   
   const allUsers = sheet.getRange(2, 1, last - 1, U.TOTAL).getValues().map(r => userRowToDict(r)).filter(u => u.user_id && u.is_active);
-  
   const caller = allUsers.find(u => String(u.user_id) === uid);
-  if (!caller) return jr('error', 'User not found.');
   
-  const role = String(caller.role || '').toLowerCase();
-  const assignedStaff = String(caller.assigned_staff_id || '');
+  const role = String((caller && caller.role) || p.role || '').toLowerCase();
+  const assignedStaff = String((caller && caller.assigned_staff_id) || '');
   
   const r = [];
   
-  if (role === 'super admin' || role === 'admin') {
-    // Admin can message anyone except themselves
+  if (role === 'super admin' || role === 'admin' || role === 'super_admin') {
     allUsers.filter(u => String(u.user_id) !== uid).forEach(u => r.push({
-      user_id: u.user_id,
+      id: String(u.user_id),
+      user_id: String(u.user_id),
+      name: u.full_name,
       full_name: u.full_name,
       email: u.email,
       role: u.role
     }));
   } else if (role === 'staff') {
-    // Staff can message super admin, admin, and clients (Users). They shouldn't message other staff, but the prompt says they can communicate with clients, admins, super admin. Let's allow everyone except themselves, maybe other staff too.
     allUsers.filter(u => String(u.user_id) !== uid).forEach(u => {
-      // Actually let's just let staff message anyone except themselves.
       r.push({
-        user_id: u.user_id,
+        id: String(u.user_id),
+        user_id: String(u.user_id),
+        name: u.full_name,
         full_name: u.full_name,
         email: u.email,
         role: u.role
       });
     });
-  } else if (role === 'user' || role === 'client' || role === 'customer') {
-    // Client can ONLY message Admin and their Assigned Staff
+  } else {
+    // Client / User: Can message Admins, Super Admins, and Staff (Assigned or any staff if unassigned)
     allUsers.forEach(u => {
+      if (String(u.user_id) === uid) return;
       const uRole = String(u.role || '').toLowerCase();
-      if (uRole === 'admin' || uRole === 'super admin') {
+      if (uRole === 'admin' || uRole === 'super admin' || uRole === 'super_admin') {
         r.push({
-          user_id: u.user_id,
+          id: String(u.user_id),
+          user_id: String(u.user_id),
+          name: u.full_name,
           full_name: u.full_name,
           email: u.email,
           role: u.role
         });
-      } else if (uRole === 'staff' && String(u.user_id) === assignedStaff) {
-        r.push({
-          user_id: u.user_id,
-          full_name: u.full_name,
-          email: u.email,
-          role: u.role
-        });
+      } else if (uRole === 'staff') {
+        if (!assignedStaff || String(u.user_id) === assignedStaff) {
+          r.push({
+            id: String(u.user_id),
+            user_id: String(u.user_id),
+            name: u.full_name,
+            full_name: u.full_name,
+            email: u.email,
+            role: u.role
+          });
+        }
       }
     });
   }

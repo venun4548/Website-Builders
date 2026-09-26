@@ -2771,11 +2771,12 @@
         const convs = data.data || [];
         if (convs.length === 0) {
           convList.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted-text);">No conversations yet. Start a new message.</p>';
+          loadRecipients();
           return;
         }
         convList.innerHTML = convs.map(c => {
-          const name = c.other_name || c.other_user_name || 'Unknown';
-          const subject = c.subject || c.last_message || 'No subject';
+          const name = c.participant_name || c.other_name || c.other_user_name || c.receiver_name || c.sender_name || 'User';
+          const subject = c.subject || (c.latest_message && (c.latest_message.body || c.latest_message.message)) || 'Direct Message';
           const unread = c.unread_count || 0;
           return `
             <div class="conversation-item ${unread > 0 ? 'unread' : ''}" onclick="openConversation('${c.conversation_id}')" style="padding:0.85rem 1rem;border-bottom:1px solid var(--border-color);cursor:pointer;">
@@ -2827,15 +2828,16 @@
         const msgs = data.data || [];
         if (msgs.length === 0) {
           chatHistory.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted-text);">No messages in this conversation.</p>';
+          window._currentConvId = convId;
           return;
         }
         const currentUserId = '{{ user.id }}';
         chatHistory.innerHTML = msgs.map(m => {
           const isMine = String(m.sender_id) === String(currentUserId);
           return `<div class="chat-bubble ${isMine ? 'sent' : 'received'}" style="max-width:80%;padding:0.75rem 1rem;margin:0.5rem ${isMine ? '0 0.5rem auto' : 'auto 0.5rem 0'};background:${isMine ? 'var(--light-green)' : '#f3f4f6'};border-radius:12px;">
-            <div style="font-size:0.75rem;color:var(--secondary-text);margin-bottom:0.25rem;">${m.sender_name || 'Unknown'}</div>
+            <div style="font-size:0.75rem;color:var(--secondary-text);margin-bottom:0.25rem;">${m.sender_name || 'User'}</div>
             <div style="font-size:0.88rem;">${m.message || m.body || ''}</div>
-            <div style="font-size:0.7rem;color:var(--muted-text);text-align:right;margin-top:0.25rem;">${m.sent_at || m.created_at || ''}</div>
+            <div style="font-size:0.7rem;color:var(--muted-text);text-align:right;margin-top:0.25rem;">${m.sent_at || m.created_at || m.timestamp || ''}</div>
           </div>`;
         }).join('');
         chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -2848,16 +2850,31 @@
     async function sendReply() {
       const input = document.getElementById('msg-input');
       if (!input || !input.value.trim() || !window._currentConvId) return;
+      const text = input.value.trim();
+      const btn = document.getElementById('btn-send');
+      if (btn) btn.disabled = true;
       try {
-        await fetch('/api/messages', {
+        const res = await fetch('/api/messages', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({conversation_id: window._currentConvId, message: input.value.trim()})
+          body: JSON.stringify({
+            conversation_id: window._currentConvId,
+            message: text,
+            body: text
+          })
         });
-        input.value = '';
-        openConversation(window._currentConvId);
+        const data = await res.json();
+        if (res.ok && (data.success || data.status === 'success')) {
+          input.value = '';
+          openConversation(window._currentConvId);
+          loadAdminMessagesHub();
+        } else {
+          alert(data.message || data.error || 'Failed to send message.');
+        }
       } catch (e) {
         alert('Error sending message.');
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -2886,12 +2903,21 @@
         const res = await fetch('/api/messages', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({recipient_id: recipient, subject, message, project_id: projectId})
+          body: JSON.stringify({
+            recipient_id: recipient,
+            receiver_id: recipient,
+            subject: subject,
+            message: message,
+            body: message,
+            project_id: projectId
+          })
         });
         const data = await res.json();
         if (res.ok && (data.success || data.status === 'success')) {
           closeNewMessageModal();
           alert('Message sent!');
+          document.getElementById('compose-subject').value = '';
+          document.getElementById('compose-message').value = '';
           loadAdminMessagesHub();
         } else {
           alert(data.message || data.error || 'Failed to send message.');

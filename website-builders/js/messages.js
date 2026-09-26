@@ -357,39 +357,53 @@ function deleteMessage(msgId) {
   });
 }
 
+function getCurrentUser() {
+  try {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : {};
+  } catch(e) {
+    return {};
+  }
+}
+
 function sendReply() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text) return;
   if (!currentConversationId || !currentRecipientId) return;
   
-  const userStr = localStorage.getItem('user');
-  const user = JSON.parse(userStr);
+  const user = getCurrentUser();
   const myId = user.user_id || user.id || user.client_id;
   const btn = document.getElementById('btn-send');
   
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  }
   
   const payload = {
     sender_id: myId,
     receiver_id: currentRecipientId,
+    recipient_id: currentRecipientId,
     conversation_id: currentConversationId,
-    message: text
+    message: text,
+    body: text
   };
   
   google.script.run.withSuccessHandler(res => {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    }
     input.value = '';
     
     try {
-      const parsed = JSON.parse(res);
-      if (parsed.status === 'success') {
+      const parsed = typeof res === 'string' ? JSON.parse(res) : res;
+      if (parsed.status === 'success' || parsed.success) {
         loadConversationThread(currentConversationId);
         loadConversations(true);
       } else {
-        alert('Error: ' + parsed.message);
+        alert('Error: ' + (parsed.message || parsed.error || 'Failed to send'));
       }
     } catch(e) {
       console.error(e);
@@ -413,8 +427,7 @@ function closeNewMessageModal() {
 }
 
 function loadRecipients() {
-  const userStr = localStorage.getItem('user');
-  const user = JSON.parse(userStr);
+  const user = getCurrentUser();
   const myId = user.user_id || user.id || user.client_id;
   const select = document.getElementById('compose-recipient');
   
@@ -423,18 +436,18 @@ function loadRecipients() {
   
   google.script.run.withSuccessHandler(res => {
     try {
-      const parsed = JSON.parse(res);
-      if (parsed.status === 'success') {
-        const recipients = parsed.data;
+      const parsed = typeof res === 'string' ? JSON.parse(res) : res;
+      if (parsed.status === 'success' || parsed.success) {
+        const recipients = parsed.data || [];
         if (recipients.length === 0) {
           select.innerHTML = '<option value="">No authorized contacts found</option>';
           return;
         }
         select.innerHTML = '<option value="">Select a recipient...</option>' + recipients.map(r => 
-          `<option value="${r.user_id}">${r.full_name} (${r.role})</option>`
+          `<option value="${r.id || r.user_id}">${r.name || r.full_name || 'User'} (${r.role || 'User'})</option>`
         ).join('');
       } else {
-        select.innerHTML = `<option value="">Error: ${parsed.message}</option>`;
+        select.innerHTML = `<option value="">Error: ${parsed.message || 'Could not load'}</option>`;
       }
     } catch(e) {
       console.error(e);
@@ -451,7 +464,7 @@ function loadRecipients() {
 }
 
 function sendNewMessage(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
   const recipient = document.getElementById('compose-recipient').value;
   const subject = document.getElementById('compose-subject').value;
   const message = document.getElementById('compose-message').value;
@@ -462,35 +475,42 @@ function sendNewMessage(event) {
     return;
   }
   
-  const userStr = localStorage.getItem('user');
-  const user = JSON.parse(userStr);
+  const user = getCurrentUser();
   const myId = user.user_id || user.id || user.client_id;
   const btn = document.getElementById('btn-send-new');
   
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+  }
   
   const payload = {
     sender_id: myId,
     receiver_id: recipient,
+    recipient_id: recipient,
     subject: subject,
     message: message,
+    body: message,
     project_id: projectId
   };
   
   google.script.run.withSuccessHandler(res => {
-    btn.disabled = false;
-    btn.textContent = 'Send Message';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+    }
     
     try {
-      const parsed = JSON.parse(res);
-      if (parsed.status === 'success') {
+      const parsed = typeof res === 'string' ? JSON.parse(res) : res;
+      if (parsed.status === 'success' || parsed.success) {
         closeNewMessageModal();
-        document.getElementById('form-compose').reset();
+        const composeForm = document.getElementById('form-compose');
+        if (composeForm) composeForm.reset();
         loadConversations();
-        openConversation(parsed.data.conversation_id);
+        const convId = (parsed.data && parsed.data.conversation_id) || parsed.conversation_id;
+        if (convId) openConversation(convId);
       } else {
-        alert('Error: ' + parsed.message);
+        alert('Error: ' + (parsed.message || parsed.error || 'Failed to send message'));
       }
     } catch(e) {
       console.error(e);
@@ -502,12 +522,9 @@ function sendNewMessage(event) {
   });
 }
 
-// Add these actions to the missing doPost backend mapping via a separate run
-// I'll fix deleteMessageForMe in the JS code by calling a generic update route if needed, or I'll patch GAS.
 function deleteConversation() {
   if (!confirm('Delete this conversation for you?')) return;
-  const userStr = localStorage.getItem('user');
-  const user = JSON.parse(userStr);
+  const user = getCurrentUser();
   const myId = user.user_id || user.id || user.client_id;
   
   google.script.run.withSuccessHandler(() => {
@@ -524,11 +541,9 @@ function deleteConversation() {
   });
 }
 
-// override deleteMessage
 function deleteMessage(msgId) {
   if (!confirm('Delete this message for you?')) return;
-  const userStr = localStorage.getItem('user');
-  const user = JSON.parse(userStr);
+  const user = getCurrentUser();
   const myId = user.user_id || user.id || user.client_id;
   
   google.script.run.withSuccessHandler(() => {

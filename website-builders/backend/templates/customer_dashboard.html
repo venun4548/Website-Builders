@@ -735,31 +735,38 @@
 
         let html = '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--text-secondary); background:#F1F5F9;">Authorized Support Team</div>';
 
-        if ((recipData.status === 'success' || recipData.success) && recipData.data) {
+        if ((recipData.status === 'success' || recipData.success) && recipData.data && recipData.data.length > 0) {
           recipData.data.forEach(r => {
-            const initials = (r.name || 'U').substring(0, 2).toUpperCase();
+            const rId = r.id || r.user_id;
+            const rName = r.name || r.full_name || 'Support Staff';
+            const rRole = r.role || 'Staff';
+            const initials = rName.substring(0, 2).toUpperCase();
+            const safeName = rName.replace(/'/g, "\\'");
             html += `
-            <div class="contact-item ${activeCustChatRecipientId === r.id ? 'active' : ''}" onclick="selectCustChatRecipient('${r.id}', '${r.name.replace(/'/g, "\'")}', '${r.role}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
+            <div class="contact-item ${activeCustChatRecipientId === rId ? 'active' : ''}" onclick="selectCustChatRecipient('${rId}', '${safeName}', '${rRole}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
               <div style="width:34px; height:34px; border-radius:50%; background:var(--primary); color:#FFF; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">${initials}</div>
               <div style="flex:1; overflow:hidden;">
-                <div style="font-weight:700; font-size:0.85rem; color:var(--text-main); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${r.name}</div>
-                <div style="font-size:0.75rem; color:var(--text-secondary);">${r.role}</div>
+                <div style="font-weight:700; font-size:0.85rem; color:var(--text-main); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${rName}</div>
+                <div style="font-size:0.75rem; color:var(--text-secondary);">${rRole}</div>
               </div>
             </div>`;
           });
+        } else {
+          html += '<div style="padding:0.75rem 1rem; font-size:0.8rem; color:var(--text-secondary);">No direct contacts found.</div>';
         }
 
         if ((convData.status === 'success' || convData.success) && convData.data && convData.data.length > 0) {
           html += '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--text-secondary); background:#F1F5F9;">My Conversations</div>';
           convData.data.forEach(c => {
+            const cSub = (c.subject || 'Direct Message').replace(/'/g, "\\'");
             html += `
-            <div class="contact-item ${activeCustChatConvId === c.conversation_id ? 'active' : ''}" onclick="openCustConversationThread('${c.conversation_id}', '${c.subject.replace(/'/g, "\'")}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
+            <div class="contact-item ${activeCustChatConvId === c.conversation_id ? 'active' : ''}" onclick="openCustConversationThread('${c.conversation_id}', '${cSub}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <strong style="font-size:0.85rem; color:var(--primary); font-family:monospace;">${c.conversation_id}</strong>
                 ${c.unread ? '<span style="background:#D97706; color:#FFF; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.65rem; font-weight:700;">NEW</span>' : ''}
               </div>
-              <div style="font-size:0.8rem; color:var(--text-secondary); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${c.sender_name} → ${c.receiver_name}</div>
-              <div style="font-size:0.75rem; color:var(--text-secondary);">${c.last_updated_str}</div>
+              <div style="font-size:0.8rem; color:var(--text-secondary); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${c.sender_name || 'User'} → ${c.receiver_name || 'Staff'}</div>
+              <div style="font-size:0.75rem; color:var(--text-secondary);">${c.last_updated_str || c.created_at || ''}</div>
             </div>`;
           });
         }
@@ -767,16 +774,19 @@
         container.innerHTML = html;
 
         if (!activeCustChatConvId && !activeCustChatRecipientId && recipData.data && recipData.data.length > 0) {
-          selectCustChatRecipient(recipData.data[0].id, recipData.data[0].name, recipData.data[0].role);
+          const firstR = recipData.data[0];
+          selectCustChatRecipient(firstR.id || firstR.user_id, firstR.name || firstR.full_name || 'Support Staff', firstR.role || 'Staff');
         }
       } catch (err) {
         console.error('Error loading customer messages:', err);
+        container.innerHTML = '<p style="color:var(--status-failed); padding:1rem;">Failed to load messages. Please refresh.</p>';
       }
     }
 
     async function selectCustChatRecipient(recipId, fullName, role) {
       activeCustChatRecipientId = recipId;
       activeCustChatConvId = null;
+      document.querySelectorAll('#cust-chat-contacts-list .contact-item').forEach(el => el.classList.remove('active'));
       const header = document.getElementById('cust-chat-target-name');
       if (header) header.innerText = `New Message to: ${fullName} (${role})`;
       const container = document.getElementById('cust-chat-messages-body');
@@ -786,12 +796,13 @@
     async function openCustConversationThread(convId, subject) {
       activeCustChatConvId = convId;
       activeCustChatRecipientId = null;
+      document.querySelectorAll('#cust-chat-contacts-list .contact-item').forEach(el => el.classList.remove('active'));
       const header = document.getElementById('cust-chat-target-name');
       if (header) header.innerText = `Conversation: ${convId} (${subject})`;
       
       const container = document.getElementById('cust-chat-messages-body');
       if (!container) return;
-      container.innerHTML = '<p style="text-align:center; padding:1.5rem; color:var(--text-secondary);">Loading thread...</p>';
+      container.innerHTML = '<p style="text-align:center; padding:1.5rem; color:var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Loading thread...</p>';
 
       try {
         const res = await fetch(`/api/messages/conversations/${convId}`);
@@ -804,16 +815,16 @@
           }
           let html = '';
           msgs.forEach(m => {
-            const isSentByMe = m.sender_id === '{{ user.id }}' || m.sender_email === '{{ user.email }}';
-            const statusBadge = m.status === 'READ' ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at})</span>` : `<span style="color:#64748B; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
+            const isSentByMe = String(m.sender_id) === String('{{ user.id }}') || String(m.sender_id) === String('{{ current_user.id }}');
+            const statusBadge = m.status === 'READ' ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at || ''})</span>` : `<span style="color:#64748B; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
 
             html += `
             <div style="display:flex; flex-direction:column; align-items:${isSentByMe ? 'flex-end' : 'flex-start'}; margin-bottom:1rem;">
               <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:0.25rem;">
-                <strong>${m.sender_name}</strong> (${m.sender_role}) • <span style="font-family:monospace; font-weight:700;">${m.message_id}</span> • ${m.timestamp}
+                <strong>${m.sender_name || 'User'}</strong> (${m.sender_role || 'User'}) • <span style="font-family:monospace; font-weight:700;">${m.message_id || ''}</span> • ${m.timestamp || m.created_at || ''}
               </div>
               <div style="max-width:70%; background:${isSentByMe ? 'var(--primary)' : '#E2E8F0'}; color:${isSentByMe ? '#FFF' : '#0F172A'}; padding:0.75rem 1rem; border-radius:12px; font-size:0.9rem; line-height:1.4;">
-                ${m.body}
+                ${m.body || m.message || ''}
                 <div style="margin-top:0.4rem; text-align:right;">${statusBadge}</div>
               </div>
             </div>`;
@@ -841,9 +852,11 @@
 
       const payload = {
         recipient_id: activeCustChatRecipientId,
+        receiver_id: activeCustChatRecipientId,
         conversation_id: activeCustChatConvId,
         subject: 'Direct Message',
-        body: body
+        body: body,
+        message: body
       };
 
       try {
@@ -855,12 +868,13 @@
         const data = await res.json();
         if (res.ok && (data.status === 'success' || data.success)) {
           input.value = '';
-          if (data.conversation_id) {
-            openCustConversationThread(data.conversation_id, 'Direct Message');
+          const targetConvId = data.conversation_id || activeCustChatConvId || (data.data && data.data.conversation_id);
+          if (targetConvId) {
+            openCustConversationThread(targetConvId, 'Direct Message');
           }
           loadCustMessagesHub();
         } else {
-          alert(data.message || 'Error sending message.');
+          alert(data.message || data.error || 'Error sending message.');
         }
       } catch (err) {
         console.error(err);

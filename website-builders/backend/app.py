@@ -2229,6 +2229,7 @@ def api_delete_invoice(invoice_id):
 
 
 # ─── API: Messages ────────────────────────────────────────────
+# ─── API: Messages ────────────────────────────────────────────
 @app.route('/api/messages', methods=['GET'])
 @login_required
 def api_get_messages():
@@ -2237,8 +2238,8 @@ def api_get_messages():
     params['role']    = current_user.role
     result = gas_get('getMessages', params)
     if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': False, 'error': result.get('message')}), 400
+        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', [])})
+    return jsonify({'success': False, 'status': 'error', 'error': result.get('message')}), 400
 
 @app.route('/api/messages', methods=['POST'])
 @login_required
@@ -2247,12 +2248,56 @@ def api_send_message():
     data.setdefault('sender_id',   str(current_user.id))
     data.setdefault('sender_name', current_user.full_name)
     data.setdefault('sender_role', current_user.role)
-    # Map frontend field names to GAS field names
-    if 'recipient_id' in data and 'receiver_id' not in data:
-        data['receiver_id'] = data.pop('recipient_id')
+    
+    # Map message body fields interchangeably
+    msg_body = data.get('message') or data.get('body') or data.get('text') or ''
+    data['message'] = msg_body
+    data['body'] = msg_body
+
+    # Map recipient/receiver fields interchangeably
+    recip_id = data.get('recipient_id') or data.get('receiver_id')
+    if recip_id:
+        data['recipient_id'] = str(recip_id)
+        data['receiver_id'] = str(recip_id)
+
+    # If replying to an existing conversation and receiver_id is not explicitly provided, look it up
+    if not data.get('receiver_id') and data.get('conversation_id'):
+        conv_id = data.get('conversation_id')
+        try:
+            conv_res = gas_get('getConversationThread', {
+                'conversation_id': conv_id,
+                'user_id': str(current_user.id),
+                'role': current_user.role
+            }, use_cache=False)
+            if conv_res.get('status') == 'success' and conv_res.get('data'):
+                thread = conv_res.get('data', [])
+                for msg in reversed(thread):
+                    s_id = str(msg.get('sender_id') or '')
+                    r_id = str(msg.get('receiver_id') or '')
+                    my_id = str(current_user.id)
+                    other_id = r_id if s_id == my_id else s_id
+                    if other_id and other_id != my_id:
+                        data['receiver_id'] = other_id
+                        data['recipient_id'] = other_id
+                        break
+        except Exception as e:
+            logger.warning('Could not resolve recipient for conversation %s: %s', conv_id, e)
+
     result = call_gas('sendMessage', data)
     ok = result.get('status') == 'success'
-    return jsonify({'success': ok, 'data': result.get('data'), 'error': result.get('message')}), (200 if ok else 400)
+    res_data = result.get('data') or {}
+    conv_id = result.get('conversation_id') or (res_data.get('conversation_id') if isinstance(res_data, dict) else None) or data.get('conversation_id')
+    msg_id = result.get('message_id') or (res_data.get('message_id') if isinstance(res_data, dict) else None)
+
+    return jsonify({
+        'success': ok,
+        'status': 'success' if ok else 'error',
+        'message': result.get('message') or ('Message sent successfully' if ok else 'Failed to send message'),
+        'conversation_id': conv_id,
+        'message_id': msg_id,
+        'data': res_data,
+        'error': result.get('message') if not ok else None
+    }), (200 if ok else 400)
 
 @app.route('/api/messages/conversations', methods=['GET'])
 @login_required
@@ -2260,10 +2305,10 @@ def api_get_conversations():
     result = gas_get('getConversations', {
         'user_id': str(current_user.id),
         'role'   : current_user.role
-    })
+    }, use_cache=False)
     if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': True, 'data': [], 'warning': result.get('message')}), 200
+        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', [])})
+    return jsonify({'success': True, 'status': 'success', 'data': [], 'warning': result.get('message')}), 200
 
 @app.route('/api/messages/conversations/<conversation_id>', methods=['GET'])
 @login_required
@@ -2272,10 +2317,10 @@ def api_get_conversation_thread(conversation_id):
         'conversation_id': conversation_id,
         'user_id'        : str(current_user.id),
         'role'           : current_user.role
-    })
+    }, use_cache=False)
     if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': True, 'data': [], 'warning': result.get('message')}), 200
+        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', [])})
+    return jsonify({'success': True, 'status': 'success', 'data': [], 'warning': result.get('message')}), 200
 
 @app.route('/api/messages/conversations/with/<other_user_id>', methods=['GET'])
 @login_required
@@ -2283,24 +2328,24 @@ def api_get_conv_with_user(other_user_id):
     result = gas_get('getConvWithUser', {
         'user_id'      : str(current_user.id),
         'other_user_id': str(other_user_id)
-    })
+    }, use_cache=False)
     if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', {})})
-    return jsonify({'success': True, 'data': {'conversation_id': None}, 'warning': result.get('message')}), 200
+        return jsonify({'success': True, 'status': 'success', 'data': result.get('data', {})})
+    return jsonify({'success': True, 'status': 'success', 'data': {'conversation_id': None}, 'warning': result.get('message')}), 200
 
 @app.route('/api/messages/<message_id>/read', methods=['POST'])
 @login_required
 def api_mark_read(message_id):
     result = call_gas('markMessageRead', {'message_id': message_id})
     ok = result.get('status') == 'success'
-    return jsonify({'success': ok}), (200 if ok else 400)
+    return jsonify({'success': ok, 'status': 'success' if ok else 'error'}), (200 if ok else 400)
 
 @app.route('/api/messages/conversation/<conversation_id>/read', methods=['POST'])
 @login_required
 def api_mark_conversation_read(conversation_id):
     result = call_gas('markMessageRead', {'conversation_id': conversation_id})
     ok = result.get('status') == 'success'
-    return jsonify({'success': ok}), (200 if ok else 400)
+    return jsonify({'success': ok, 'status': 'success' if ok else 'error'}), (200 if ok else 400)
 
 @app.route('/api/messages/recipients', methods=['GET'])
 @login_required
@@ -2308,10 +2353,50 @@ def api_get_recipients():
     result = gas_get('getRecipients', {
         'user_id': str(current_user.id),
         'role'   : current_user.role
-    })
-    if result.get('status') == 'success':
-        return jsonify({'success': True, 'data': result.get('data', [])})
-    return jsonify({'success': True, 'data': [], 'warning': result.get('message')}), 200
+    }, use_cache=False)
+    
+    recipients = []
+    if result.get('status') == 'success' and isinstance(result.get('data'), list) and len(result.get('data')) > 0:
+        raw_list = result.get('data', [])
+        for r in raw_list:
+            r_id = str(r.get('id') or r.get('user_id') or '')
+            r_name = r.get('name') or r.get('full_name') or 'User'
+            r_role = r.get('role') or 'User'
+            r_email = r.get('email') or ''
+            if r_id and r_id != str(current_user.id):
+                recipients.append({
+                    'id': r_id,
+                    'user_id': r_id,
+                    'name': r_name,
+                    'full_name': r_name,
+                    'role': r_role,
+                    'email': r_email
+                })
+    
+    # If getRecipients returned nothing or failed, fallback to all active users from getUsers
+    if not recipients:
+        try:
+            users_res = gas_get('getUsers', {'user_id': str(current_user.id), 'role': current_user.role}, use_cache=False)
+            if users_res.get('status') == 'success' and isinstance(users_res.get('data'), list):
+                all_u = users_res.get('data', [])
+                for u in all_u:
+                    u_id = str(u.get('user_id') or u.get('id') or '')
+                    u_name = u.get('full_name') or u.get('name') or 'User'
+                    u_role = u.get('role') or 'User'
+                    u_email = u.get('email') or ''
+                    if u_id and u_id != str(current_user.id):
+                        recipients.append({
+                            'id': u_id,
+                            'user_id': u_id,
+                            'name': u_name,
+                            'full_name': u_name,
+                            'role': u_role,
+                            'email': u_email
+                        })
+        except Exception as e:
+            logger.warning('Fallback getUsers for recipients failed: %s', e)
+
+    return jsonify({'success': True, 'status': 'success', 'data': recipients}), 200
 
 # ─── API: Activity Logs ───────────────────────────────────────
 @app.route('/api/activity', methods=['GET'])

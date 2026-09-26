@@ -4334,31 +4334,39 @@
 
         let html = '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--secondary-text); background:var(--pale-mint);">Authorized Contacts & Teams</div>';
         
-        if ((recipData.status === 'success' || recipData.success) && recipData.data) {
+        if ((recipData.status === 'success' || recipData.success) && recipData.data && recipData.data.length > 0) {
           recipData.data.forEach(r => {
-            const initials = (r.name || 'U').substring(0, 2).toUpperCase();
+            const rId = r.id || r.user_id;
+            const rName = r.name || r.full_name || 'User';
+            const rRole = r.role || 'User';
+            const rType = r.type || 'INDIVIDUAL';
+            const initials = rName.substring(0, 2).toUpperCase();
+            const safeName = rName.replace(/'/g, "\\'");
             html += `
-            <div class="contact-item ${activeMessageRecipientId === r.id ? 'active' : ''}" onclick="selectChatRecipient('${r.id}', '${r.name.replace(/'/g, "\'")}', '${r.role}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
-              <div class="user-avatar-circle" style="width:34px; height:34px; font-size:0.8rem; background:${r.type === 'TEAM' ? 'var(--emerald)' : 'var(--primary-dark-green)'}; color:#FFF;">${initials}</div>
+            <div class="contact-item ${activeMessageRecipientId === rId ? 'active' : ''}" onclick="selectChatRecipient('${rId}', '${safeName}', '${rRole}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; align-items:center; gap:0.75rem;">
+              <div class="user-avatar-circle" style="width:34px; height:34px; font-size:0.8rem; background:${rType === 'TEAM' ? 'var(--emerald)' : 'var(--primary-dark-green)'}; color:#FFF;">${initials}</div>
               <div style="flex:1; overflow:hidden;">
-                <div style="font-weight:700; font-size:0.85rem; color:var(--primary-dark-green); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${r.name}</div>
-                <div style="font-size:0.75rem; color:var(--secondary-text);">${r.role} • ${r.type}</div>
+                <div style="font-weight:700; font-size:0.85rem; color:var(--primary-dark-green); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${rName}</div>
+                <div style="font-size:0.75rem; color:var(--secondary-text);">${rRole}</div>
               </div>
             </div>`;
           });
+        } else {
+          html += '<div style="padding:0.75rem 1rem; font-size:0.8rem; color:var(--muted-text);">No contacts found.</div>';
         }
 
         if ((convData.status === 'success' || convData.success) && convData.data && convData.data.length > 0) {
           html += '<div style="padding:0.5rem 1rem; font-weight:800; font-size:0.75rem; text-transform:uppercase; color:var(--secondary-text); background:#F1F5F9;">Active Conversations</div>';
           convData.data.forEach(c => {
+            const cSub = (c.subject || 'Direct Message').replace(/'/g, "\\'");
             html += `
-            <div class="contact-item ${activeMessageConvId === c.conversation_id ? 'active' : ''}" onclick="openConversationThread('${c.conversation_id}', '${c.subject.replace(/'/g, "\'")}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
+            <div class="contact-item ${activeMessageConvId === c.conversation_id ? 'active' : ''}" onclick="openConversationThread('${c.conversation_id}', '${cSub}')" style="padding:0.75rem 1rem; border-bottom:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; gap:0.25rem; background:${c.unread ? '#FEF3C7' : 'transparent'};">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <strong style="font-size:0.85rem; color:var(--primary-dark-green); font-family:monospace;">${c.conversation_id}</strong>
                 ${c.unread ? '<span class="badge badge-warning" style="font-size:0.7rem;">NEW</span>' : ''}
               </div>
-              <div style="font-size:0.8rem; color:var(--secondary-text); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${c.sender_name} → ${c.receiver_name}</div>
-              <div style="font-size:0.75rem; color:var(--muted-text);">${c.last_updated_str}</div>
+              <div style="font-size:0.8rem; color:var(--secondary-text); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${c.sender_name || 'User'} → ${c.receiver_name || 'User'}</div>
+              <div style="font-size:0.75rem; color:var(--muted-text);">${c.last_updated_str || c.created_at || ''}</div>
             </div>`;
           });
         }
@@ -4366,26 +4374,28 @@
         container.innerHTML = html;
 
         if (!activeMessageConvId && !activeMessageRecipientId && recipData.data && recipData.data.length > 0) {
-          selectChatRecipient(recipData.data[0].id, recipData.data[0].name, recipData.data[0].role);
+          const firstR = recipData.data[0];
+          selectChatRecipient(firstR.id || firstR.user_id, firstR.name || firstR.full_name || 'User', firstR.role || 'User');
         }
       } catch (err) {
         console.error('Error loading messages hub:', err);
+        container.innerHTML = '<p style="color:var(--danger); padding:1rem;">Error loading messages.</p>';
       }
     }
 
     async function selectChatRecipient(recipId, name, role) {
       activeMessageRecipientId = recipId;
       activeMessageConvId = null;
-      document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('#chat-contacts-list .contact-item').forEach(el => el.classList.remove('active'));
       const header = document.getElementById('chat-target-name');
       if (header) header.innerText = `Messaging: ${name} (${role})`;
 
-      if (recipId && !isNaN(recipId)) {
+      if (recipId) {
         try {
           const convRes = await fetch(`/api/messages/conversations/with/${recipId}`);
           const convData = await convRes.json();
-          if (convRes.ok && (convData.status === 'success' || convData.success) && convData.conversation_id) {
-            openConversationThread(convData.conversation_id, `Direct with ${name}`);
+          if (convRes.ok && (convData.status === 'success' || convData.success) && convData.data && convData.data.conversation_id) {
+            openConversationThread(convData.data.conversation_id, `Direct with ${name}`);
             return;
           }
         } catch (err) {
@@ -4400,13 +4410,13 @@
     async function openConversationThread(convId, subject) {
       activeMessageConvId = convId;
       activeMessageRecipientId = null;
-      document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('#chat-contacts-list .contact-item').forEach(el => el.classList.remove('active'));
       const header = document.getElementById('chat-target-name');
       if (header) header.innerText = `Conversation: ${convId} (${subject})`;
       
       const container = document.getElementById('chat-messages-body');
       if (!container) return;
-      container.innerHTML = '<p style="text-align:center; padding:1.5rem; color:var(--muted-text);">Loading conversation thread...</p>';
+      container.innerHTML = '<p style="text-align:center; padding:1.5rem; color:var(--muted-text);"><i class="fa-solid fa-spinner fa-spin"></i> Loading conversation thread...</p>';
 
       try {
         const res = await fetch(`/api/messages/conversations/${convId}`);
@@ -4421,17 +4431,17 @@
           msgs.forEach(m => {
             const isSentByMe = String(m.sender_id) === String('{{ current_user.id }}');
             const statusBadge = m.status === 'READ' 
-              ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at})</span>` 
+              ? `<span style="color:#10B981; font-size:0.75rem;"><i class="fa-solid fa-check-double"></i> Read (${m.read_at || ''})</span>` 
               : `<span style="color:${isSentByMe ? 'rgba(255,255,255,0.85)' : '#64748B'}; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Sent</span>`;
 
             html += `
             <div style="display:flex; flex-direction:column; align-items:${isSentByMe ? 'flex-end' : 'flex-start'}; margin-bottom:1rem;">
               <div style="font-size:0.75rem; color:var(--secondary-text); margin-bottom:0.25rem;">
-                <strong>${m.sender_name}</strong> (${m.sender_role}) • <span style="font-family:monospace; font-weight:700;">${m.message_id}</span> • ${m.timestamp}
+                <strong>${m.sender_name || 'User'}</strong> (${m.sender_role || 'User'}) • <span style="font-family:monospace; font-weight:700;">${m.message_id || ''}</span> • ${m.timestamp || m.created_at || ''}
               </div>
               <div style="max-width:70%; background:${isSentByMe ? 'var(--deep-forest)' : '#F1F5F9'}; color:${isSentByMe ? '#FFF' : '#0F172A'}; padding:0.75rem 1rem; border-radius:12px; font-size:0.9rem; line-height:1.4;">
                 ${m.subject ? `<strong style="display:block; margin-bottom:0.25rem; font-size:0.85rem;">${m.subject}</strong>` : ''}
-                ${m.message || m.body}
+                ${m.body || m.message || ''}
                 <div style="margin-top:0.4rem; text-align:right;">${statusBadge}</div>
               </div>
             </div>`;
@@ -4460,9 +4470,11 @@
 
       const payload = {
         recipient_id: activeMessageRecipientId,
+        receiver_id: activeMessageRecipientId,
         conversation_id: activeMessageConvId,
         subject: 'Direct Message',
-        body: body
+        body: body,
+        message: body
       };
 
       try {
@@ -4474,13 +4486,13 @@
         const data = await res.json();
         if (res.ok && (data.status === 'success' || data.success)) {
           input.value = '';
-          const targetConvId = (data.data && data.data.conversation_id) ? data.data.conversation_id : (data.conversation_id || activeMessageConvId);
+          const targetConvId = data.conversation_id || (data.data && data.data.conversation_id) || activeMessageConvId;
           if (targetConvId) {
             openConversationThread(targetConvId, 'Direct Message');
           }
           await loadMessagesHub();
         } else {
-          alert(data.message || 'Error sending message.');
+          alert(data.message || data.error || 'Error sending message.');
         }
       } catch (err) {
         console.error(err);
