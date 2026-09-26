@@ -874,6 +874,10 @@
           if (targetConvId) {
             openCustConversationThread(targetConvId, 'Direct Message');
           }
+          loadCustMessagesHub();
+        } else {
+          alert(data.message || data.error || 'Error sending message.');
+        }
       } catch (err) {
         console.error(err);
         alert('Server error sending message.');
