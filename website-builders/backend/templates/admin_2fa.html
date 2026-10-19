@@ -3,163 +3,724 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Two-Factor Authentication — Website Builders</title>
-  <link rel="stylesheet" href="/css/fontawesome.min.css">
+  <title>2FA Authorization — Website Builders Executive Gate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/style.css">
+  
   <style>
     :root {
-      --primary: #0f172a;
-      --accent: #10b981;
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --border: #e2e8f0;
+      --primary: #8b5cf6;
+      --primary-hover: #7c3aed;
+      --accent: #c084fc;
+      --highlight: #e9d5ff;
+      --page-bg: #0b0716;
+      --card-bg: rgba(19, 13, 36, 0.90);
+      --border-color: rgba(139, 92, 246, 0.32);
+      --border-glow: rgba(139, 92, 246, 0.45);
+      --text-main: #f8fafc;
+      --text-muted: #a78bfa;
+      --input-bg: rgba(29, 21, 54, 0.88);
+      --success: #10B981;
+      --danger: #F43F5E;
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: #334155;
-      margin: 0;
-      padding: 1.5rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      background-color: var(--page-bg);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.16), transparent 50%),
+        radial-gradient(circle at 85% 80%, rgba(109, 40, 217, 0.18), transparent 50%);
+      color: var(--text-main);
       min-height: 100vh;
-      box-sizing: border-box;
-    }
-    .auth-card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      max-width: 440px;
-      width: 100%;
-      padding: 2.5rem;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-      border: 1px solid var(--border);
-      text-align: center;
-    }
-    .auth-icon {
-      width: 56px;
-      height: 56px;
-      background: #ecfdf5;
-      color: var(--accent);
-      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.75rem;
-      margin: 0 auto 1.25rem;
+      padding: 1.5rem;
+      overflow-x: hidden;
+      position: relative;
     }
-    .auth-card h1 {
-      font-size: 1.5rem;
-      color: var(--primary);
-      margin: 0 0 0.5rem;
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(110px);
+      pointer-events: none;
+      opacity: 0.32;
+      z-index: 0;
     }
-    .auth-card p {
-      color: #64748b;
-      font-size: 0.95rem;
-      margin: 0 0 1.75rem;
+    .ambient-orb-1 {
+      width: 440px;
+      height: 440px;
+      background: #8b5cf6;
+      top: 5%;
+      left: 12%;
     }
-    .code-inputs {
+    .ambient-orb-2 {
+      width: 360px;
+      height: 360px;
+      background: #6d28d9;
+      bottom: 5%;
+      right: 12%;
+    }
+
+    .verify-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 28px;
+      padding: 2.5rem 2rem;
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.85),
+        0 0 50px -5px var(--border-glow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .verify-card.shake {
+      animation: cardShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @keyframes cardShake {
+      10%, 90% { transform: translate3d(-3px, 0, 0); }
+      20%, 80% { transform: translate3d(5px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    .card-top-glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, #7c3aed 30%, #a855f7 50%, #c084fc 70%, transparent 100%);
+      border-radius: 28px 28px 0 0;
+    }
+
+    .brand-logo {
+      margin-bottom: 1.25rem;
+    }
+
+    .brand-logo img {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .security-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(139, 92, 246, 0.14);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 9999px;
+      font-size: 0.725rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #c084fc;
+      margin-bottom: 1.5rem;
+    }
+
+    .verify-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 0.35rem;
+      letter-spacing: -0.01em;
+    }
+
+    .verify-subtitle {
+      font-size: 0.875rem;
+      color: #cbd5e1;
+      margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+
+    /* ─── LIQUID OTP V2 CHAMBER (Royal Violet Aurora) ─── */
+    .liquid-chamber {
+      position: relative;
+      width: 108px;
+      height: 108px;
+      margin: 0 auto 1.75rem;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(139, 92, 246, 0.15), rgba(15, 10, 30, 0.95));
+      border: 2px solid rgba(139, 92, 246, 0.4);
+      box-shadow: 
+        0 10px 30px -5px rgba(139, 92, 246, 0.35),
+        inset 0 0 20px rgba(168, 85, 247, 0.2);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .water-body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, #c084fc 0%, #8b5cf6 45%, #6d28d9 100%);
+      transition: height 0.45s cubic-bezier(0.16, 1, 0.3, 1), background 0.35s ease;
+      height: 15%;
+      box-shadow: 0 -4px 18px rgba(192, 132, 252, 0.55);
+    }
+
+    .water-body.water-success {
+      background: linear-gradient(180deg, #34d399 0%, #10b981 45%, #047857 100%) !important;
+      box-shadow: 0 -4px 20px rgba(52, 211, 153, 0.7) !important;
+    }
+
+    .water-body.water-error {
+      background: linear-gradient(180deg, #fb7185 0%, #f43f5e 45%, #be123c 100%) !important;
+      box-shadow: 0 -4px 20px rgba(244, 63, 94, 0.7) !important;
+    }
+
+    .wave-svg {
+      position: absolute;
+      top: -18px;
+      left: 0;
+      width: 200%;
+      height: 24px;
+      animation: waveMove 3.2s linear infinite;
+      transform: translate3d(0, 0, 0);
+      opacity: 0.85;
+      fill: #c084fc;
+    }
+
+    .wave-svg-2 {
+      position: absolute;
+      top: -14px;
+      left: 0;
+      width: 200%;
+      height: 20px;
+      animation: waveMoveReverse 4.8s linear infinite;
+      opacity: 0.55;
+      fill: #7c3aed;
+    }
+
+    @keyframes waveMove {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    @keyframes waveMoveReverse {
+      0% { transform: translateX(-50%); }
+      100% { transform: translateX(0); }
+    }
+
+    /* Floating Micro Bubbles */
+    .bubble {
+      position: absolute;
+      bottom: 0;
+      background: rgba(233, 213, 255, 0.7);
+      border-radius: 50%;
+      animation: riseBubble 2.5s infinite ease-in;
+      pointer-events: none;
+    }
+    .b1 { left: 25%; width: 5px; height: 5px; animation-duration: 2.2s; animation-delay: 0.2s; }
+    .b2 { left: 55%; width: 7px; height: 7px; animation-duration: 3s; animation-delay: 0.8s; }
+    .b3 { left: 75%; width: 4px; height: 4px; animation-duration: 2.6s; animation-delay: 1.4s; }
+
+    @keyframes riseBubble {
+      0% { transform: translateY(0) scale(0.6); opacity: 0; }
+      30% { opacity: 0.8; }
+      100% { transform: translateY(-70px) scale(1.1); opacity: 0; }
+    }
+
+    .chamber-content {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .chamber-percent {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+    }
+
+    .chamber-icon {
+      font-size: 1.35rem;
+      color: #FFFFFF;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+    }
+
+    /* Droplet Indicator Bar */
+    .droplet-bar {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.75rem;
     }
-    .code-input {
-      width: 48px;
-      height: 56px;
-      font-size: 1.5rem;
-      font-weight: 700;
+
+    .droplet {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.25);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .droplet.filled {
+      background: #c084fc;
+      border-color: #e9d5ff;
+      box-shadow: 0 0 10px #c084fc;
+      transform: scale(1.15);
+    }
+
+    .droplet.active {
+      border-color: #f8fafc;
+      animation: pulseDroplet 1.4s infinite ease-in-out;
+    }
+
+    @keyframes pulseDroplet {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.4); }
+      50% { transform: scale(1.2); box-shadow: 0 0 10px 2px rgba(192, 132, 252, 0.6); }
+    }
+
+    /* ─── 6-DIGIT OTP INPUTS ─── */
+    .otp-inputs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .otp-field {
+      width: 50px;
+      height: 60px;
+      background: var(--input-bg);
+      border: 1.5px solid rgba(139, 92, 246, 0.3);
+      border-radius: 12px;
       text-align: center;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      background: #f8fafc;
-      color: var(--primary);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .code-input:focus {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
       outline: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .otp-field:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
-      background: #ffffff;
+      background: rgba(39, 28, 72, 0.95);
+      box-shadow: 
+        0 0 0 3px rgba(192, 132, 252, 0.25),
+        0 4px 16px rgba(139, 92, 246, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
     }
-    .btn-verify {
-      width: 100%;
-      background: var(--primary);
-      color: #ffffff;
-      border: none;
-      padding: 0.85rem;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
+
+    .otp-field.error {
+      border-color: var(--danger);
+      background: rgba(76, 5, 25, 0.4);
+      color: #fca5a5;
+      box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.25);
     }
-    .btn-verify:hover {
-      background: #1e293b;
+
+    .otp-field.success {
+      border-color: var(--success);
+      background: rgba(6, 78, 59, 0.4);
+      color: #6ee7b7;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
     }
-    .error-msg {
-      color: #ef4444;
-      font-size: 0.85rem;
-      margin-top: 1rem;
+
+    /* Verification Status Banner */
+    .status-banner {
       display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-banner.error {
+      display: flex;
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #fda4af;
+    }
+
+    .status-banner.success {
+      display: flex;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 12px;
+      padding: 0.95rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 10px 24px -6px rgba(139, 92, 246, 0.45);
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, #9061f9 0%, #7c3aed 100%);
+      box-shadow: 0 14px 28px -6px rgba(139, 92, 246, 0.6);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .footer-links {
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .footer-links a {
+      color: #c084fc;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #e9d5ff;
+      text-decoration: underline;
+    }
+
+    .btn-clear {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.825rem;
+      cursor: pointer;
+      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn-clear:hover {
+      color: #f8fafc;
+    }
+
+    @media (max-width: 480px) {
+      .verify-card {
+        padding: 2rem 1.25rem;
+      }
+      .otp-field {
+        width: 42px;
+        height: 52px;
+        font-size: 1.4rem;
+        gap: 0.35rem;
+      }
+      .liquid-chamber {
+        width: 96px;
+        height: 96px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="auth-card">
-    <div style="margin-bottom: 1.25rem;">
+  <!-- Ambient Light Orbs -->
+  <div class="ambient-orb ambient-orb-1"></div>
+  <div class="ambient-orb ambient-orb-2"></div>
+
+  <div class="verify-card" id="card">
+    <div class="card-top-glow"></div>
+
+    <div class="brand-logo">
       <a href="/">
-        <img src="/images/logo.png" alt="Website Builders Logo" style="height: 40px; width: auto; object-fit: contain;">
+        <img src="/images/logo.png" alt="Website Builders Logo" onerror="this.style.display='none'">
       </a>
     </div>
-    <div class="auth-icon"><i class="fas fa-shield-alt"></i></div>
-    <h1>Two-Factor Authentication</h1>
-    <p>Enter the 6-digit verification code from your Google Authenticator or TOTP app.</p>
 
-    <form id="form-2fa" onsubmit="handleVerify(event)">
-      <div class="code-inputs">
-        <input type="text" maxlength="1" class="code-input" autofocus oninput="moveNext(this, 0)" onkeydown="handleBack(this, 0, event)">
-        <input type="text" maxlength="1" class="code-input" oninput="moveNext(this, 1)" onkeydown="handleBack(this, 1, event)">
-        <input type="text" maxlength="1" class="code-input" oninput="moveNext(this, 2)" onkeydown="handleBack(this, 2, event)">
-        <input type="text" maxlength="1" class="code-input" oninput="moveNext(this, 3)" onkeydown="handleBack(this, 3, event)">
-        <input type="text" maxlength="1" class="code-input" oninput="moveNext(this, 4)" onkeydown="handleBack(this, 4, event)">
-        <input type="text" maxlength="1" class="code-input" oninput="moveNext(this, 5)" onkeydown="handleBack(this, 5, event)">
+    <div class="security-badge">
+      <i class="fas fa-shield-alt"></i> Executive 2FA Authorization
+    </div>
+
+    <h1 class="verify-title">Two-Factor Authentication</h1>
+    <p class="verify-subtitle">Enter the 6-digit TOTP code from your Google Authenticator or authorized authenticator app.</p>
+
+    <!-- 💧 Liquid OTP V2 Chamber -->
+    <div class="liquid-chamber" id="chamber">
+      <div class="water-body" id="water">
+        <!-- SVG Waves -->
+        <svg class="wave-svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 C150,90 350,-40 500,45 C650,130 900,10 1200,50 L1200,120 L0,120 Z"></path>
+        </svg>
+        <svg class="wave-svg-2" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,40 C300,100 500,0 750,70 C1000,140 1100,20 1200,60 L1200,120 L0,120 Z"></path>
+        </svg>
+
+        <!-- Floating Bubbles -->
+        <div class="bubble b1"></div>
+        <div class="bubble b2"></div>
+        <div class="bubble b3"></div>
       </div>
 
-      <button type="submit" id="btn-submit" class="btn-verify">Verify & Sign In</button>
-      <div id="error-box" class="error-msg">Invalid verification code. Please try again.</div>
+      <div class="chamber-content">
+        <span class="chamber-percent" id="chamber-percent">0%</span>
+        <i class="fas fa-shield-halved chamber-icon" id="chamber-icon" style="display:none;"></i>
+      </div>
+    </div>
+
+    <!-- Droplet Fill Tracker -->
+    <div class="droplet-bar">
+      <div class="droplet active" id="drop-0"></div>
+      <div class="droplet" id="drop-1"></div>
+      <div class="droplet" id="drop-2"></div>
+      <div class="droplet" id="drop-3"></div>
+      <div class="droplet" id="drop-4"></div>
+      <div class="droplet" id="drop-5"></div>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="status-banner" id="status-banner">
+      <i class="fas fa-exclamation-circle" id="status-icon"></i>
+      <span id="status-text">Invalid verification code.</span>
+    </div>
+
+    <!-- Form for 6-digit TOTP -->
+    <form id="form-2fa" onsubmit="handleSubmit(event)">
+      <div class="otp-inputs">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-field" id="otp-0" autofocus autocomplete="one-time-code">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-field" id="otp-1" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-field" id="otp-2" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-field" id="otp-3" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-field" id="otp-4" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-field" id="otp-5" autocomplete="off">
+      </div>
+
+      <button type="submit" id="btn-submit" class="btn-submit" disabled>
+        <span>Verify & Authorize</span>
+        <i class="fas fa-arrow-right"></i>
+      </button>
     </form>
+
+    <div class="footer-links">
+      <button type="button" class="btn-clear" onclick="resetForm()">
+        <i class="fas fa-rotate-left"></i> Reset
+      </button>
+      <span>•</span>
+      <a href="/admin/login">Back to Sign In</a>
+    </div>
   </div>
 
   <script>
-    const inputs = document.querySelectorAll('.code-input');
+    const inputs = [
+      document.getElementById('otp-0'),
+      document.getElementById('otp-1'),
+      document.getElementById('otp-2'),
+      document.getElementById('otp-3'),
+      document.getElementById('otp-4'),
+      document.getElementById('otp-5')
+    ];
+    const droplets = [
+      document.getElementById('drop-0'),
+      document.getElementById('drop-1'),
+      document.getElementById('drop-2'),
+      document.getElementById('drop-3'),
+      document.getElementById('drop-4'),
+      document.getElementById('drop-5')
+    ];
+    const water = document.getElementById('water');
+    const chamberPercent = document.getElementById('chamber-percent');
+    const chamberIcon = document.getElementById('chamber-icon');
+    const btnSubmit = document.getElementById('btn-submit');
+    const statusBanner = document.getElementById('status-banner');
+    const statusText = document.getElementById('status-text');
+    const statusIcon = document.getElementById('status-icon');
+    const card = document.getElementById('card');
 
-    function moveNext(el, idx) {
-      if (el.value.length === 1 && idx < inputs.length - 1) {
-        inputs[idx + 1].focus();
+    let isVerifying = false;
+
+    // Update chamber fill & droplet state
+    function updateState() {
+      const filled = inputs.filter(i => i.value !== '').length;
+      const percent = Math.round((filled / 6) * 100);
+
+      // Water height (min 15% for wave visibility)
+      const height = filled === 0 ? 15 : Math.max(15, percent);
+      water.style.height = height + '%';
+      chamberPercent.textContent = percent + '%';
+
+      // Update droplets
+      droplets.forEach((drop, idx) => {
+        drop.classList.remove('filled', 'active');
+        if (idx < filled) {
+          drop.classList.add('filled');
+        } else if (idx === filled) {
+          drop.classList.add('active');
+        }
+      });
+
+      // Submit button state
+      btnSubmit.disabled = filled !== 6 || isVerifying;
+
+      // Auto-submit on 6th digit
+      if (filled === 6 && !isVerifying) {
+        handleSubmit();
       }
     }
 
-    function handleBack(el, idx, e) {
-      if (e.key === 'Backspace' && !el.value && idx > 0) {
-        inputs[idx - 1].focus();
-      }
+    // Input handlers
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        // Clean numeric
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val ? val[0] : '';
+        
+        clearError();
+
+        if (e.target.value && index < 5) {
+          inputs[index + 1].focus();
+        }
+        updateState();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          if (!input.value && index > 0) {
+            inputs[index - 1].value = '';
+            inputs[index - 1].focus();
+          } else {
+            input.value = '';
+          }
+          clearError();
+          updateState();
+        } else if (e.key === 'ArrowLeft' && index > 0) {
+          inputs[index - 1].focus();
+        } else if (e.key === 'ArrowRight' && index < 5) {
+          inputs[index + 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim().replace(/[^0-9]/g, '');
+        if (!pasteData) return;
+
+        pasteData.slice(0, 6).split('').forEach((char, i) => {
+          if (inputs[i]) inputs[i].value = char;
+        });
+
+        const nextFocus = Math.min(pasteData.length, 5);
+        inputs[nextFocus].focus();
+        clearError();
+        updateState();
+      });
+    });
+
+    function clearError() {
+      statusBanner.className = 'status-banner';
+      inputs.forEach(i => i.classList.remove('error'));
+      water.classList.remove('water-error');
     }
 
-    async function handleVerify(e) {
-      e.preventDefault();
-      const code = Array.from(inputs).map(i => i.value).join('');
+    function showError(msg) {
+      statusBanner.className = 'status-banner error';
+      statusIcon.className = 'fas fa-exclamation-circle';
+      statusText.textContent = msg;
+
+      inputs.forEach(i => i.classList.add('error'));
+      water.classList.add('water-error');
+
+      // Trigger card shake
+      card.classList.remove('shake');
+      void card.offsetWidth; // reflow
+      card.classList.add('shake');
+    }
+
+    function showSuccess(msg) {
+      statusBanner.className = 'status-banner success';
+      statusIcon.className = 'fas fa-check-circle';
+      statusText.textContent = msg;
+
+      inputs.forEach(i => {
+        i.classList.remove('error');
+        i.classList.add('success');
+      });
+
+      water.classList.remove('water-error');
+      water.classList.add('water-success');
+      water.style.height = '100%';
+
+      chamberPercent.style.display = 'none';
+      chamberIcon.style.display = 'block';
+    }
+
+    function resetForm() {
+      inputs.forEach(i => {
+        i.value = '';
+        i.classList.remove('error', 'success');
+      });
+      clearError();
+      updateState();
+      inputs[0].focus();
+    }
+
+    async function handleSubmit(e) {
+      if (e) e.preventDefault();
+      if (isVerifying) return;
+
+      const code = inputs.map(i => i.value).join('');
       if (code.length !== 6) {
         showError('Please enter all 6 digits.');
         return;
       }
 
-      const btn = document.getElementById('btn-submit');
-      btn.disabled = true;
-      btn.textContent = 'Verifying...';
-      document.getElementById('error-box').style.display = 'none';
+      isVerifying = true;
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Authorizing...</span>';
+      clearError();
 
       try {
         const res = await fetch('/api/admin/2fa/verify-login', {
@@ -168,24 +729,25 @@
           body: JSON.stringify({ token: code })
         });
         const data = await res.json();
+
         if (data.success) {
-          window.location.href = data.redirect || '/admin/dashboard';
+          showSuccess('Authorization confirmed! Redirecting...');
+          btnSubmit.innerHTML = '<i class="fas fa-check"></i><span>Authorized</span>';
+          setTimeout(() => {
+            window.location.href = data.redirect || '/admin/dashboard';
+          }, 850);
         } else {
           showError(data.error || 'Invalid 6-digit code. Please try again.');
-          btn.disabled = false;
-          btn.textContent = 'Verify & Sign In';
+          isVerifying = false;
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<span>Verify & Authorize</span><i class="fas fa-arrow-right"></i>';
         }
       } catch (err) {
         showError('Network error. Please try again.');
-        btn.disabled = false;
-        btn.textContent = 'Verify & Sign In';
+        isVerifying = false;
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>Verify & Authorize</span><i class="fas fa-arrow-right"></i>';
       }
-    }
-
-    function showError(msg) {
-      const box = document.getElementById('error-box');
-      box.textContent = msg;
-      box.style.display = 'block';
     }
   </script>
 </body>
