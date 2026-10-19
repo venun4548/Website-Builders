@@ -6,22 +6,23 @@
   <title>Admin Portal Access Verification - Website Builders</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
     :root {
-      --primary: #10B981;
-      --primary-hover: #059669;
-      --page-bg: #060b09;
-      --card-bg: rgba(11, 22, 20, 0.85);
-      --border-color: rgba(16, 185, 129, 0.28);
-      --border-glow: rgba(16, 185, 129, 0.45);
-      --text-main: #F8FAFC;
-      --text-muted: #94A3B8;
-      --input-bg: rgba(15, 23, 42, 0.88);
-      --success: #10B981;
-      --danger: #F43F5E;
+      --deep-forest: #14532D;
+      --primary-green: #15803D;
+      --fresh-green: #22C55E;
+      --light-green: #DCFCE7;
+      --page-bg: #F3FAF5;
+      --card-bg: #FFFFFF;
+      --main-text: #183024;
+      --secondary-text: #52635A;
+      --muted-text: #748178;
+      --border-color: #D6E7DB;
+      --input-border: #B8CDBE;
+      --danger: #DC2626;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
@@ -29,39 +30,14 @@
     body {
       background-color: var(--page-bg);
       background-image: 
-        radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.15), transparent 45%),
-        radial-gradient(circle at 90% 80%, rgba(5, 150, 105, 0.12), transparent 45%);
-      color: var(--text-main);
+        radial-gradient(circle at 10% 20%, rgba(34, 197, 94, 0.08), transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(20, 83, 45, 0.08), transparent 45%);
+      color: var(--main-text);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1.5rem;
-      overflow-x: hidden;
-      position: relative;
-    }
-
-    .ambient-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(100px);
-      pointer-events: none;
-      opacity: 0.35;
-      z-index: 0;
-    }
-    .ambient-orb-1 {
-      width: 420px;
-      height: 420px;
-      background: #10b981;
-      top: 5%;
-      left: 15%;
-    }
-    .ambient-orb-2 {
-      width: 320px;
-      height: 320px;
-      background: #047857;
-      bottom: 5%;
-      right: 15%;
     }
 
     .verify-card {
@@ -69,27 +45,10 @@
       max-width: 440px;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 28px;
+      border-radius: 16px;
       padding: 2.5rem 2rem;
-      backdrop-filter: blur(28px) saturate(190%);
-      -webkit-backdrop-filter: blur(28px) saturate(190%);
-      box-shadow: 
-        0 25px 60px -15px rgba(0, 0, 0, 0.8),
-        0 0 45px -5px var(--border-glow),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      position: relative;
-      z-index: 10;
+      box-shadow: 0 10px 30px rgba(20, 83, 45, 0.08);
       text-align: center;
-    }
-
-    .card-top-glow {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent 0%, #059669 30%, #10b981 50%, #34d399 70%, transparent 100%);
-      border-radius: 28px 28px 0 0;
     }
 
     .brand-logo {
@@ -97,254 +56,111 @@
     }
 
     .brand-logo img {
-      height: 46px;
+      height: 52px;
       width: auto;
       object-fit: contain;
-    }
-
-    .security-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.35rem 0.85rem;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      border-radius: 9999px;
-      font-size: 0.725rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #34d399;
-      margin-bottom: 1.5rem;
     }
 
     .verify-title {
       font-size: 1.5rem;
       font-weight: 800;
-      color: #FFFFFF;
+      color: var(--deep-forest);
       margin-bottom: 0.35rem;
       letter-spacing: -0.01em;
     }
 
     .verify-subtitle {
-      font-size: 0.875rem;
-      color: var(--text-muted);
+      font-size: 0.9rem;
+      color: var(--secondary-text);
       margin-bottom: 1.75rem;
-      line-height: 1.45;
     }
 
-    /* ─── LIQUID OTP V2 CHAMBER (Emerald Matrix) ─── */
-    .liquid-chamber {
+    .pin-input-wrap {
       position: relative;
-      width: 104px;
-      height: 104px;
-      margin: 0 auto 1.5rem;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.08), rgba(3, 7, 18, 0.92));
-      border: 2px solid rgba(16, 185, 129, 0.45);
-      box-shadow:
-        0 0 25px rgba(16, 185, 129, 0.35),
-        inset 0 0 20px rgba(16, 185, 129, 0.3);
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .liquid-water-body {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100%;
-      height: 20%;
-      background: linear-gradient(180deg, #34d399 0%, #10b981 60%, #047857 100%);
-      transition: height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .liquid-wave-svg {
-      position: absolute;
-      top: -12px;
-      left: 0;
-      width: 200%;
-      height: 14px;
-      fill: #34d399;
-      opacity: 0.85;
-      animation: waveMotion 3s linear infinite;
-    }
-
-    .liquid-wave-svg-back {
-      top: -14px;
-      fill: #059669;
-      opacity: 0.5;
-      animation: waveMotionReverse 4s linear infinite;
-    }
-
-    .liquid-bubble {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.6);
-      filter: blur(0.5px);
-      animation: bubbleRise 2.5s infinite ease-in;
-    }
-
-    .chamber-content {
-      position: relative;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
-      user-select: none;
-    }
-
-    .percentage-text {
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .percentage-sub {
-      font-size: 0.65rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      opacity: 0.85;
-    }
-
-    /* 4-Digit Cyber PIN Grid */
-    .pin-grid {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
       margin-bottom: 1.25rem;
-      position: relative;
     }
 
-    .pin-box-wrap {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .digit-box {
-      width: 56px;
-      height: 64px;
-      background: var(--input-bg);
-      border: 1.5px solid rgba(16, 185, 129, 0.3);
-      border-radius: 14px;
-      color: #34d399;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.6rem;
-      font-weight: 700;
-      text-align: center;
-      outline: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-      transition: all 0.2s ease;
-    }
-
-    .digit-box:focus {
-      border-color: #10b981;
-      box-shadow: 0 0 24px rgba(16, 185, 129, 0.45);
-      background: rgba(15, 23, 42, 0.98);
-      transform: translateY(-2px);
-    }
-
-    .digit-box.has-val {
-      border-color: #10b981;
-      background: rgba(16, 185, 129, 0.1);
-    }
-
-    .droplet-pip {
-      position: absolute;
-      top: -12px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50% 50% 50% 0;
-      background: #10b981;
-      transform: rotate(-45deg);
-      box-shadow: 0 0 8px #10b981;
-      display: none;
-    }
-
-    .pin-box-wrap.active .droplet-pip {
-      display: block;
-      animation: dropletBob 1.2s infinite ease-in-out;
-    }
-
-    /* Progress Underline */
-    .liquid-track {
+    .pin-input {
       width: 100%;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 9999px;
-      margin-bottom: 1.5rem;
-      overflow: hidden;
+      background-color: #FFFFFF !important;
+      color: var(--main-text) !important;
+      border: 1px solid var(--input-border) !important;
+      border-radius: 8px;
+      padding: 0.75rem 2.5rem 0.75rem 1rem;
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .liquid-fill-track {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #059669 0%, #10b981 50%, #34d399 100%);
-      border-radius: 9999px;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-      transition: width 0.3s ease;
+    .pin-input:focus {
+      border-color: var(--primary-green) !important;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+    }
+
+    .toggle-pin {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-text);
+      cursor: pointer;
+      font-size: 1.05rem;
+    }
+
+    .toggle-pin:hover {
+      color: var(--primary-green);
     }
 
     .alert-box {
-      padding: 0.85rem 1rem;
-      border-radius: 12px;
-      font-size: 0.85rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
       display: none;
       align-items: center;
-      justify-content: center;
       gap: 0.5rem;
-      margin-bottom: 1.25rem;
+      text-align: left;
     }
 
     .alert-error {
-      background: rgba(244, 63, 94, 0.15);
-      border: 1px solid rgba(244, 63, 94, 0.3);
-      color: #FCA5A5;
+      background: #FEE2E2;
+      color: var(--danger);
+      border: 1px solid #FCA5A5;
     }
 
     .alert-success {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #6EE7B7;
+      background: var(--light-green);
+      color: var(--deep-forest);
+      border: 1px solid #A7F3D0;
     }
 
     .btn-submit {
       width: 100%;
-      padding: 0.95rem 1.25rem;
-      background: linear-gradient(135deg, #047857 0%, #059669 50%, #10b981 100%);
+      background: var(--primary-green);
       color: #FFFFFF;
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
+      padding: 0.85rem;
       font-size: 0.95rem;
       font-weight: 700;
       cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      box-shadow: 0 6px 22px rgba(16, 185, 129, 0.45);
-      transition: all 0.25s ease;
+      margin-bottom: 1rem;
     }
 
-    .btn-submit:hover:not(:disabled) {
-      background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%);
-      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.55);
-      transform: translateY(-2px);
+    .btn-submit:hover {
+      background: var(--deep-forest);
+      transform: translateY(-1px);
     }
 
     .btn-submit:disabled {
-      opacity: 0.5;
+      opacity: 0.7;
       cursor: not-allowed;
       transform: none;
     }
@@ -353,87 +169,31 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      color: var(--text-muted);
+      color: var(--secondary-text);
       text-decoration: none;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
+      font-weight: 500;
       transition: color 0.15s ease;
-      margin-top: 1.5rem;
     }
 
     .btn-back:hover {
-      color: #34d399;
+      color: var(--deep-forest);
       text-decoration: underline;
-    }
-
-    @keyframes waveMotion {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    @keyframes waveMotionReverse {
-      0% { transform: translateX(-50%); }
-      100% { transform: translateX(0); }
-    }
-
-    @keyframes bubbleRise {
-      0% { bottom: -10px; opacity: 0; transform: scale(0.4); }
-      50% { opacity: 0.8; }
-      100% { bottom: 100%; opacity: 0; transform: scale(1.1); }
-    }
-
-    @keyframes dropletBob {
-      0%, 100% { transform: translateY(0) rotate(-45deg) scale(1); }
-      50% { transform: translateY(-3px) rotate(-45deg) scale(1.15); }
-    }
-
-    @media (max-width: 480px) {
-      .verify-card { padding: 2rem 1.25rem; }
-      .digit-box { width: 48px; height: 56px; font-size: 1.4rem; }
     }
   </style>
 </head>
 <body>
 
-  <div class="ambient-orb ambient-orb-1"></div>
-  <div class="ambient-orb ambient-orb-2"></div>
-
   <div class="verify-card">
-    <div class="card-top-glow"></div>
-
     <div class="brand-logo">
       <a href="/index.html" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.75rem;">
         <img src="/images/logo.png" alt="Website Builders Logo">
-        <span style="font-size: 1.4rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">Website <span style="color: #34d399;">Builders</span></span>
+        <span style="font-size: 1.4rem; font-weight: 800; color: var(--primary-dark-green); letter-spacing: -0.02em;">Website <span style="color: var(--primary-green);">Builders</span></span>
       </a>
     </div>
 
-    <div class="security-badge">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span>Restricted Security Clearance</span>
-    </div>
-
-    <!-- Fluid Emerald Liquid Chamber -->
-    <div class="liquid-chamber" id="liquidChamber">
-      <div class="liquid-water-body" id="liquidWaterBody">
-        <svg class="liquid-wave-svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path d="M0,0 C150,90 350,-40 500,50 C650,140 900,-20 1200,40 L1200,120 L0,120 Z" />
-        </svg>
-        <svg class="liquid-wave-svg liquid-wave-svg-back" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path d="M0,20 C200,100 450,-20 700,60 C950,140 1050,0 1200,30 L1200,120 L0,120 Z" />
-        </svg>
-        <span class="liquid-bubble" style="left:20%; width:5px; height:5px;"></span>
-        <span class="liquid-bubble" style="left:55%; width:7px; height:7px; animation-delay:1.1s;"></span>
-        <span class="liquid-bubble" style="left:80%; width:4px; height:4px; animation-delay:0.6s;"></span>
-      </div>
-
-      <div class="chamber-content" id="chamberContent">
-        <span class="percentage-text" id="liquidPercentageText">0%</span>
-        <span class="percentage-sub">Liquid</span>
-      </div>
-    </div>
-
-    <h1 class="verify-title">ADMIN PIN GATE</h1>
-    <p class="verify-subtitle">Enter your 4-digit authorized security PIN to unlock staff access.</p>
+    <h1 class="verify-title">ADMIN PORTAL ACCESS</h1>
+    <p class="verify-subtitle">Enter your authorized access PIN to continue.</p>
 
     <div id="alertBox" class="alert-box">
       <i id="alertIcon" class="fa-solid fa-circle-exclamation"></i>
@@ -441,133 +201,55 @@
     </div>
 
     <form id="pinForm" onsubmit="handlePinSubmit(event)">
-      <!-- Hidden input for standard forms and paste -->
-      <input type="hidden" id="pinInput" name="pin" value="">
-
-      <!-- 4 Individual Cyber PIN Boxes -->
-      <div class="pin-grid" id="pinGrid">
-        <div class="pin-box-wrap active" data-index="0">
-          <span class="droplet-pip"></span>
-          <input type="password" maxlength="1" inputmode="numeric" class="digit-box" autocomplete="off">
-        </div>
-        <div class="pin-box-wrap" data-index="1">
-          <span class="droplet-pip"></span>
-          <input type="password" maxlength="1" inputmode="numeric" class="digit-box" autocomplete="off">
-        </div>
-        <div class="pin-box-wrap" data-index="2">
-          <span class="droplet-pip"></span>
-          <input type="password" maxlength="1" inputmode="numeric" class="digit-box" autocomplete="off">
-        </div>
-        <div class="pin-box-wrap" data-index="3">
-          <span class="droplet-pip"></span>
-          <input type="password" maxlength="1" inputmode="numeric" class="digit-box" autocomplete="off">
-        </div>
+      <div class="pin-input-wrap">
+        <input type="password" id="pinInput" class="pin-input" placeholder="Enter Admin Access PIN" required autocomplete="current-password">
+        <i class="fa-regular fa-eye toggle-pin" id="togglePinIcon" onclick="togglePinVisibility()"></i>
       </div>
 
-      <!-- Fluid Progress Underline -->
-      <div class="liquid-track">
-        <div class="liquid-fill-track" id="liquidFillTrack"></div>
-      </div>
-
-      <button type="submit" id="submitBtn" class="btn-submit" disabled>
-        <span id="btnText">Unlock Admin Portal</span>
+      <button type="submit" id="submitBtn" class="btn-submit">
+        <span id="btnText">Continue to Admin Login</span>
         <i id="btnIcon" class="fa-solid fa-arrow-right"></i>
       </button>
     </form>
 
-    <div>
+    <div style="margin-top: 1.25rem;">
       <a href="/index.html" class="btn-back">
-        <i class="fa-solid fa-arrow-left"></i> Back to Homepage
+        <i class="fa-solid fa-arrow-left"></i> Back to Website
       </a>
     </div>
   </div>
 
   <script>
-    const digitInputs = document.querySelectorAll('.digit-box');
-    const pinWraps = document.querySelectorAll('.pin-box-wrap');
-    const hiddenPinInput = document.getElementById('pinInput');
-    const waterBody = document.getElementById('liquidWaterBody');
-    const fillTrack = document.getElementById('liquidFillTrack');
-    const percentageText = document.getElementById('liquidPercentageText');
-    const submitBtn = document.getElementById('submitBtn');
-
-    function updatePinState() {
-      const pin = Array.from(digitInputs).map(d => d.value).join('');
-      hiddenPinInput.value = pin;
-
-      const filled = pin.length;
-      const percent = Math.round((filled / 4) * 100);
-
-      const targetHeight = Math.max(20, percent);
-      waterBody.style.height = targetHeight + '%';
-      fillTrack.style.width = percent + '%';
-      percentageText.textContent = percent + '%';
-
-      submitBtn.disabled = (filled !== 4);
-    }
-
-    digitInputs.forEach((input, idx) => {
-      input.addEventListener('focus', () => {
-        pinWraps.forEach((w, i) => w.classList.toggle('active', i === idx));
-      });
-
-      input.addEventListener('input', (e) => {
-        const val = e.target.value.replace(/\D/g, '');
-        e.target.value = val;
-        input.classList.toggle('has-val', !!val);
-
-        if (val && idx < 3) {
-          digitInputs[idx + 1].focus();
-        }
-        updatePinState();
-
-        if (hiddenPinInput.value.length === 4) {
-          document.getElementById('pinForm').requestSubmit();
-        }
-      });
-
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !input.value && idx > 0) {
-          digitInputs[idx - 1].value = '';
-          digitInputs[idx - 1].classList.remove('has-val');
-          digitInputs[idx - 1].focus();
-          updatePinState();
-        }
-      });
-    });
-
-    // Paste handling
-    document.getElementById('pinGrid').addEventListener('paste', (e) => {
-      e.preventDefault();
-      const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 4);
-      if (!paste) return;
-      paste.split('').forEach((char, i) => {
-        if (digitInputs[i]) {
-          digitInputs[i].value = char;
-          digitInputs[i].classList.add('has-val');
-        }
-      });
-      const next = Math.min(paste.length, 3);
-      digitInputs[next].focus();
-      updatePinState();
-      if (paste.length === 4) {
-        document.getElementById('pinForm').requestSubmit();
+    function togglePinVisibility() {
+      const pinInput = document.getElementById('pinInput');
+      const icon = document.getElementById('togglePinIcon');
+      if (pinInput.type === 'password') {
+        pinInput.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        pinInput.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
       }
-    });
+    }
 
     async function handlePinSubmit(e) {
       e.preventDefault();
+      const pinInput = document.getElementById('pinInput');
       const alertBox = document.getElementById('alertBox');
       const alertMsg = document.getElementById('alertMsg');
       const alertIcon = document.getElementById('alertIcon');
+      const submitBtn = document.getElementById('submitBtn');
       const btnText = document.getElementById('btnText');
       const btnIcon = document.getElementById('btnIcon');
 
-      const pin = hiddenPinInput.value.trim();
-      if (pin.length !== 4) return;
+      const pin = pinInput.value.trim();
+      if (!pin) return;
 
+      // Loading state
       submitBtn.disabled = true;
-      btnText.textContent = 'Verifying PIN Gate...';
+      btnText.textContent = 'Verifying PIN...';
       btnIcon.className = 'fa-solid fa-spinner fa-spin';
       alertBox.style.display = 'none';
 
@@ -581,46 +263,43 @@
         const data = await response.json();
 
         if (response.ok && (data.status === 'success' || data.success)) {
+          // Success state
           alertBox.className = 'alert-box alert-success';
           alertIcon.className = 'fa-solid fa-circle-check';
-          alertMsg.textContent = 'Access Granted! Directing to Staff Portal...';
+          alertMsg.textContent = 'Access PIN Verified! Redirecting...';
           alertBox.style.display = 'flex';
           
-          btnText.textContent = 'Unlocked';
-          btnIcon.className = 'fa-solid fa-lock-open';
-
-          waterBody.style.height = '100%';
-          document.getElementById('chamberContent').innerHTML = '<i class="fa-solid fa-check" style="font-size:2rem; color:#fff;"></i>';
+          btnText.textContent = 'Access Granted';
+          btnIcon.className = 'fa-solid fa-check';
 
           setTimeout(() => {
             window.location.href = data.redirect || '/admin/login';
           }, 600);
         } else {
+          // Error state
           alertBox.className = 'alert-box alert-error';
           alertIcon.className = 'fa-solid fa-circle-exclamation';
           alertMsg.textContent = data.message || 'Incorrect Admin Access PIN.';
           alertBox.style.display = 'flex';
 
           submitBtn.disabled = false;
-          btnText.textContent = 'Unlock Admin Portal';
+          btnText.textContent = 'Continue to Admin Login';
           btnIcon.className = 'fa-solid fa-arrow-right';
+          pinInput.value = '';
+          pinInput.focus();
         }
       } catch (err) {
+        console.error('PIN verification error:', err);
         alertBox.className = 'alert-box alert-error';
         alertIcon.className = 'fa-solid fa-triangle-exclamation';
-        alertMsg.textContent = 'Network error verifying security PIN.';
+        alertMsg.textContent = 'Connection error. Please try again.';
         alertBox.style.display = 'flex';
 
         submitBtn.disabled = false;
-        btnText.textContent = 'Unlock Admin Portal';
+        btnText.textContent = 'Continue to Admin Login';
         btnIcon.className = 'fa-solid fa-arrow-right';
       }
     }
-
-    // Initial focus on first box
-    window.addEventListener('DOMContentLoaded', () => {
-      if (digitInputs[0]) digitInputs[0].focus();
-    });
   </script>
 </body>
 </html>

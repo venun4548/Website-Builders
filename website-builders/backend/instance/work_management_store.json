@@ -43,47 +43,5 @@
       "date": "2026-09-21 20:24:10"
     }
   ],
-  "archived_projects": [],
-  "messages": [
-    {
-      "message_id": "MSG-1790434605369",
-      "conversation_id": "CONV-USR-ADMIN-01-USR-TEST-CUST",
-      "sender_id": "USR-TEST-CUST",
-      "sender_name": "Test Client",
-      "sender_role": "User",
-      "receiver_id": "USR-ADMIN-01",
-      "receiver_name": "Support",
-      "receiver_role": "User",
-      "subject": "Automated Test Inquiry",
-      "body": "Hello, this is an automated test message from the client dashboard QA suite.",
-      "message": "Hello, this is an automated test message from the client dashboard QA suite.",
-      "project_id": "",
-      "customer_id": "USR-TEST-CUST",
-      "status": "SENT",
-      "created_at": "26-Sep-2026 08:26:45 PM",
-      "created_date": "26-Sep-2026",
-      "created_time": "08:26:45 PM",
-      "timestamp": "26-Sep-2026 08:26:45 PM"
-    },
-    {
-      "message_id": "MSG-1790434619298",
-      "conversation_id": "CONV-USR-ADMIN-01-USR-TEST-CUST",
-      "sender_id": "USR-TEST-STAFF",
-      "sender_name": "Test Staff Member",
-      "sender_role": "Staff",
-      "receiver_id": "USR-TEST-CUST",
-      "receiver_name": "Support",
-      "receiver_role": "User",
-      "subject": "Automated Test Reply",
-      "body": "Hello Client, we received your message and our team is actively working on it.",
-      "message": "Hello Client, we received your message and our team is actively working on it.",
-      "project_id": "",
-      "customer_id": "USR-TEST-CUST",
-      "status": "SENT",
-      "created_at": "26-Sep-2026 08:26:59 PM",
-      "created_date": "26-Sep-2026",
-      "created_time": "08:26:59 PM",
-      "timestamp": "26-Sep-2026 08:26:59 PM"
-    }
-  ]
+  "archived_projects": []
 }
